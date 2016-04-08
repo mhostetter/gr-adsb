@@ -1,0 +1,5 @@
+# Ignore build tree
+/build/**
+
+# Ignore raw IQ files
+*.fc32
