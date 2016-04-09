@@ -24,6 +24,11 @@ cmake_minimum_required(VERSION 2.6)
 project(gr-adsb CXX C)
 enable_testing()
 
+if(DEFINED ENV{PYBOMBS_PREFIX})
+    set(CMAKE_INSTALL_PREFIX $ENV{PYBOMBS_PREFIX})
+    message(STATUS "Used PyBOMBS to install GNU Radio. Setting CMAKE_INSTALL_PREFIX to $ENV{PYBOMBS_PREFIX}")
+endif()
+
 #select the release build type by default to get optimization flags
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE "Release")
