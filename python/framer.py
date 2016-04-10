@@ -697,19 +697,20 @@ class framer(gr.sync_block):
         # required fs is 2 Msps
         self.sps = fs/(1e6) 
         if (self.sps - numpy.floor(self.sps)) > 0:
-            print "Warning: %s is designed to operate on an integer number of samples per symbol" % (self.name)
-        self.sps = self.sps.astype(int) # Set the samples/symbol to an integer
+            print "Warning: ADS-B Framer is designed to operate on an integer number of samples per symbol"
+        self.sps = int(self.sps) # Set the samples/symbol to an integer
 
         self.burst_thresh = burst_thresh
         self.corr_thresh = corr_thresh
 
-        print "Initializing %s:" % (self.name)
+        print "Initializing ADS-B Framer:"
         print "\tfs = %f Msym/s" % (self.fs/1e6)
-        print "\tsps = %f" % (self.sps)
+        print "\tsps = %d" % (self.sps)
         print "\tBurst Threshold = %f" % (self.burst_thresh)
         print "\tCorrelation Threshold = %f" % (self.corr_thresh)
 
-        # Initialize the preamble correlation template
+        # Initialize the preamble "pulses" template
+        # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
         self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
         
         # Propagate tags
@@ -736,10 +737,22 @@ class framer(gr.sync_block):
                     # of samples, then check for correlation
                     if (self.pulse_idx + len(self.preamble_pulses)*self.sps) <= len(in0):
                         
-                                                
+                        pulse_amp = in0[self.pulse_idx:(self.pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
 
+                        # print "self.pulse_idx ", self.pulse_idx
+                        # print "pulse_amp ", pulse_amp
+
+                        # Set a pulse to 1 if it's greater than the middle amplitude of the detected pulse
+                        pulses = numpy.zeros(len(self.preamble_pulses))
+                        pulses[pulse_amp > in0[self.pulse_idx]/2] = 1
+
+                        # print "pulses ", pulses
+
+                        corr_matches = numpy.sum(pulses == self.preamble_pulses)
+
+                        if corr_matches == len(self.preamble_pulses):
                             # Found a preamble correlation, so tag it
-                            self.add_item_tag(0, self.nitems_written(0)+best_corr_idx, pmt.to_pmt("burst"), pmt.to_pmt("SOB"))
+                            self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx, pmt.to_pmt("burst"), pmt.to_pmt("SOB"))
 
         out[:] = in0
         return len(output_items[0])
@@ -761,6 +774,10 @@ class framer(gr.sync_block):
                 # Set the pulse index to the middle of the rising and falling edges
                 self.pulse_idx = numpy.mean((self.idx_rise_edge, self.idx_fall_edge)).astype(int)
                 
+                if 0:
+                    # Add a pulse tag for debug
+                    self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx, pmt.to_pmt("pulse"), pmt.to_pmt("high"))
+
                 return True # Found a pulse
 
         return False # Haven't found a pulse yet
