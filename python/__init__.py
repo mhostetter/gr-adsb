@@ -32,4 +32,5 @@ except ImportError:
 
 # import any pure python here
 from framer import framer
+from decoder import decoder
 #

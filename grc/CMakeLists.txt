@@ -18,5 +18,6 @@
 # Boston, MA 02110-1301, USA.
 
 install(FILES
-    adsb_framer.xml DESTINATION share/gnuradio/grc/blocks
+    adsb_framer.xml
+    adsb_decoder.xml DESTINATION share/gnuradio/grc/blocks
 )
