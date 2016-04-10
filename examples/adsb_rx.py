@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Adsb Rx
-# Generated: Sun Apr 10 17:30:49 2016
+# Generated: Sun Apr 10 18:04:31 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -60,7 +60,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.rf_gain = rf_gain = 14
         self.if_gain = if_gain = 32
         self.fs_mhz = fs_mhz = 20
-        self.filename = filename = "/home/matt/adsb_1088MHz_20Msps.fc32"
+        self.filename = filename = "/home/matt/adsb_test_vector.fc32"
         self.fc_mhz = fc_mhz = 1089
         self.bb_gain = bb_gain = 16
 
@@ -79,7 +79,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.qtgui_time_sink_x_0_0.set_y_label("Amplitude", "")
         
         self.qtgui_time_sink_x_0_0.enable_tags(-1, True)
-        self.qtgui_time_sink_x_0_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, qtgui.TRIG_SLOPE_POS, 0.0, 1e-6, 0, "burst")
+        self.qtgui_time_sink_x_0_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, qtgui.TRIG_SLOPE_POS, 0.0, 0, 0, "")
         self.qtgui_time_sink_x_0_0.enable_autoscale(False)
         self.qtgui_time_sink_x_0_0.enable_grid(True)
         self.qtgui_time_sink_x_0_0.enable_axis_labels(True)
@@ -126,7 +126,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.qtgui_time_sink_x_0.set_y_label("Amplitude", "")
         
         self.qtgui_time_sink_x_0.enable_tags(-1, True)
-        self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_TAG, qtgui.TRIG_SLOPE_POS, 0.0, 1e-6, 0, "burst")
+        self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_TAG, qtgui.TRIG_SLOPE_POS, 0.0, 1.25e-6, 0, "burst")
         self.qtgui_time_sink_x_0.enable_autoscale(False)
         self.qtgui_time_sink_x_0.enable_grid(True)
         self.qtgui_time_sink_x_0.enable_axis_labels(True)
@@ -203,8 +203,8 @@ class adsb_rx(gr.top_block, Qt.QWidget):
     def set_fs_mhz(self, fs_mhz):
         self.fs_mhz = fs_mhz
         self.blocks_throttle_0.set_sample_rate(self.fs_mhz*1e6)
-        self.qtgui_time_sink_x_0_0.set_samp_rate(self.fs_mhz*1e6)
         self.qtgui_time_sink_x_0.set_samp_rate(self.fs_mhz*1e6)
+        self.qtgui_time_sink_x_0_0.set_samp_rate(self.fs_mhz*1e6)
 
     def get_filename(self):
         return self.filename

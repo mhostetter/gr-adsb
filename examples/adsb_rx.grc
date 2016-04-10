@@ -221,7 +221,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -248,7 +248,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -767,7 +767,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -2738,7 +2738,7 @@
     </param>
     <param>
       <key>tr_delay</key>
-      <value>1e-6</value>
+      <value>1.25e-6</value>
     </param>
     <param>
       <key>tr_level</key>
@@ -3101,7 +3101,7 @@
     </param>
     <param>
       <key>tr_delay</key>
-      <value>1e-6</value>
+      <value>0</value>
     </param>
     <param>
       <key>tr_level</key>
@@ -3117,7 +3117,7 @@
     </param>
     <param>
       <key>tr_tag</key>
-      <value>"burst"</value>
+      <value>""</value>
     </param>
     <param>
       <key>type</key>
