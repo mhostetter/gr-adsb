@@ -684,7 +684,7 @@ class framer(gr.sync_block):
     """
     docstring for block framer
     """
-    def __init__(self, fs, burst_thresh, corr_thresh):
+    def __init__(self, fs, burst_thresh):
         gr.sync_block.__init__(self,
             name="ADS-B Framer",
             in_sig=[numpy.float32],
@@ -701,13 +701,11 @@ class framer(gr.sync_block):
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
         self.burst_thresh = burst_thresh
-        self.corr_thresh = corr_thresh
 
         print "Initializing ADS-B Framer:"
         print "\tfs = %f Msym/s" % (self.fs/1e6)
         print "\tsps = %d" % (self.sps)
         print "\tBurst Threshold = %f" % (self.burst_thresh)
-        print "\tCorrelation Threshold = %f" % (self.corr_thresh)
 
         # Initialize the preamble "pulses" template
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol

@@ -4,7 +4,7 @@
   <key>adsb_framer</key>
   <category>ADS-B</category>
   <import>import adsb</import>
-  <make>adsb.framer($fs, $burst_thresh, $corr_thresh)</make>
+  <make>adsb.framer($fs, $burst_thresh)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
@@ -19,12 +19,6 @@
   <param>
     <name>Burst Threshold</name>
     <key>burst_thresh</key>
-    <type>float</type>
-  </param>
-
-  <param>
-    <name>Corr. Threshold</name>
-    <key>corr_thresh</key>
     <type>float</type>
   </param>
 
