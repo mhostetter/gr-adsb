@@ -719,7 +719,7 @@ class framer(gr.sync_block):
             if abs(in0[ii]) > self.threshold:
                 # Check for correlation
 
-                self.add_item_tag(0, self.nitems_written(0), pmt.to_pmt("burst"), pmt.to_pmt("SOB"))
+                self.add_item_tag(0, self.nitems_written(0)+ii, pmt.to_pmt("burst"), pmt.to_pmt("SOB"))
 
         out[:] = in0
         return len(output_items[0])
