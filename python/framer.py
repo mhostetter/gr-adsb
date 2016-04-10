@@ -604,7 +604,7 @@
 #   IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
 # WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS
 # THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
-# GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+# GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING out0 OF THE
 # USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
 # DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
 # PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
@@ -717,7 +717,7 @@ class framer(gr.sync_block):
 
     def work(self, input_items, output_items):
         in0 = input_items[0]
-        out = output_items[0]
+        out0 = output_items[0]
 
         # Square signal by the threshold value
         in_ppm = numpy.zeros(len(in0))
@@ -751,8 +751,11 @@ class framer(gr.sync_block):
                         if corr_matches == len(self.preamble_pulses):
                             # Found a preamble correlation, so tag it
                             self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx, pmt.to_pmt("burst"), pmt.to_pmt("SOB"), pmt.to_pmt("framer"))
+                            self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx+(8+56-1)*self.sps, pmt.to_pmt("burst"), pmt.to_pmt("EOB_56"), pmt.to_pmt("framer"))
+                            self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx+(8+112-1)*self.sps, pmt.to_pmt("burst"), pmt.to_pmt("EOB_112"), pmt.to_pmt("framer"))
 
-        out[:] = in0
+
+        out0[:] = in0
         return len(output_items[0])
 
     def find_pulse(self, samp, samp_idx):

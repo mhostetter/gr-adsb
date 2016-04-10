@@ -512,7 +512,7 @@
     </param>
     <param>
       <key>burst_thresh</key>
-      <value>0.02</value>
+      <value>0.01</value>
     </param>
     <param>
       <key>comment</key>
@@ -523,16 +523,12 @@
       <value></value>
     </param>
     <param>
-      <key>corr_thresh</key>
-      <value>0.9</value>
-    </param>
-    <param>
       <key>_enabled</key>
       <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(704, 107)</value>
+      <value>(704, 115)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2730,7 +2726,7 @@
     </param>
     <param>
       <key>size</key>
-      <value>fs_mhz*112 + fs_mhz*2</value>
+      <value>fs_mhz*150</value>
     </param>
     <param>
       <key>srate</key>
