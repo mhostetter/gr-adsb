@@ -750,7 +750,7 @@ class framer(gr.sync_block):
 
                         if corr_matches == len(self.preamble_pulses):
                             # Found a preamble correlation, so tag it
-                            self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx, pmt.to_pmt("burst"), pmt.to_pmt("SOB"))
+                            self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx, pmt.to_pmt("burst"), pmt.to_pmt("SOB"), pmt.to_pmt("framer"))
 
         out[:] = in0
         return len(output_items[0])
@@ -774,7 +774,7 @@ class framer(gr.sync_block):
                 
                 if 0:
                     # Add a pulse tag for debug
-                    self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx, pmt.to_pmt("pulse"), pmt.to_pmt("high"))
+                    self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx, pmt.to_pmt("pulse"), pmt.to_pmt("high"), pmt.to_pmt("framer"))
 
                 return True # Found a pulse
 
