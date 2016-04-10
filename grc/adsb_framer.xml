@@ -2,7 +2,7 @@
 <block>
   <name>ADS-B Framer</name>
   <key>adsb_framer</key>
-  <category>ADSB</category>
+  <category>ADS-B</category>
   <import>import adsb</import>
   <make>adsb.framer($fs, $burst_thresh, $corr_thresh)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.

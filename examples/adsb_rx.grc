@@ -466,6 +466,45 @@
     </param>
   </block>
   <block>
+    <key>adsb_decoder</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(904, 129)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>adsb_decoder_0</value>
+    </param>
+    <param>
+      <key>maxoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>minoutbuf</key>
+      <value>0</value>
+    </param>
+  </block>
+  <block>
     <key>adsb_framer</key>
     <param>
       <key>alias</key>
@@ -689,7 +728,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 57)</value>
+      <value>(1088, 57)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -736,7 +775,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 283)</value>
+      <value>(904, 211)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -791,7 +830,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 371)</value>
+      <value>(904, 299)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2419,7 +2458,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 195)</value>
+      <value>(1088, 195)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -2782,7 +2821,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 107)</value>
+      <value>(1088, 107)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -3110,8 +3149,26 @@
     </param>
   </block>
   <connection>
-    <source_block_id>adsb_framer_0_0</source_block_id>
+    <source_block_id>adsb_decoder_0</source_block_id>
     <sink_block_id>blocks_null_sink_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>adsb_decoder_0</source_block_id>
+    <sink_block_id>qtgui_time_sink_x_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>adsb_decoder_0</source_block_id>
+    <sink_block_id>qtgui_time_sink_x_0_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>adsb_framer_0_0</source_block_id>
+    <sink_block_id>adsb_decoder_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -3124,18 +3181,6 @@
   <connection>
     <source_block_id>adsb_framer_0_0</source_block_id>
     <sink_block_id>blocks_tag_debug_0_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>adsb_framer_0_0</source_block_id>
-    <sink_block_id>qtgui_time_sink_x_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>adsb_framer_0_0</source_block_id>
-    <sink_block_id>qtgui_time_sink_x_0_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>

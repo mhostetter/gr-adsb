@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <block>
-  <name>decoder</name>
+  <name>ADS-B Decoder</name>
   <key>adsb_decoder</key>
-  <category>adsb</category>
+  <category>ADS-B</category>
   <import>import adsb</import>
   <make>adsb.decoder()</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
@@ -10,11 +10,8 @@
        * name
        * key (makes the value accessible as $keyname, e.g. in the make node)
        * type -->
-  <param>
-    <name>...</name>
-    <key>...</key>
-    <type>...</type>
-  </param>
+
+
 
   <!-- Make one 'sink' node per input. Sub-nodes:
        * name (an identifier for the GUI)
@@ -23,7 +20,7 @@
        * optional (set to 1 for optional inputs) -->
   <sink>
     <name>in</name>
-    <type><!-- e.g. int, float, complex, byte, short, xxx_vector, ...--></type>
+    <type>float</type>
   </sink>
 
   <!-- Make one 'source' node per output. Sub-nodes:
@@ -33,6 +30,6 @@
        * optional (set to 1 for optional inputs) -->
   <source>
     <name>out</name>
-    <type><!-- e.g. int, float, complex, byte, short, xxx_vector, ...--></type>
+    <type>float</type>
   </source>
 </block>

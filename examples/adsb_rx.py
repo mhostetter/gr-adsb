@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Adsb Rx
-# Generated: Sun Apr 10 16:48:40 2016
+# Generated: Sun Apr 10 17:09:45 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -166,13 +166,15 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, filename, True)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
         self.adsb_framer_0_0 = adsb.framer(fs_mhz*1e6, 0.02, 0.9)
+        self.adsb_decoder_0 = adsb.decoder()
 
         ##################################################
         # Connections
         ##################################################
+        self.connect((self.adsb_decoder_0, 0), (self.qtgui_time_sink_x_0, 0))    
+        self.connect((self.adsb_decoder_0, 0), (self.qtgui_time_sink_x_0_0, 0))    
+        self.connect((self.adsb_framer_0_0, 0), (self.adsb_decoder_0, 0))    
         self.connect((self.adsb_framer_0_0, 0), (self.blocks_tag_debug_0, 0))    
-        self.connect((self.adsb_framer_0_0, 0), (self.qtgui_time_sink_x_0, 0))    
-        self.connect((self.adsb_framer_0_0, 0), (self.qtgui_time_sink_x_0_0, 0))    
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.adsb_framer_0_0, 0))    
         self.connect((self.blocks_file_source_0, 0), (self.blocks_throttle_0, 0))    
         self.connect((self.blocks_throttle_0, 0), (self.blocks_complex_to_mag_squared_0, 0))    
@@ -201,8 +203,8 @@ class adsb_rx(gr.top_block, Qt.QWidget):
     def set_fs_mhz(self, fs_mhz):
         self.fs_mhz = fs_mhz
         self.blocks_throttle_0.set_sample_rate(self.fs_mhz*1e6)
-        self.qtgui_time_sink_x_0_0.set_samp_rate(self.fs_mhz*1e6)
         self.qtgui_time_sink_x_0.set_samp_rate(self.fs_mhz*1e6)
+        self.qtgui_time_sink_x_0_0.set_samp_rate(self.fs_mhz*1e6)
 
     def get_filename(self):
         return self.filename

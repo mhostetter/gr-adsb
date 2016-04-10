@@ -678,6 +678,7 @@
 
 import numpy
 from gnuradio import gr
+import pmt
 
 class decoder(gr.sync_block):
     """
@@ -685,9 +686,9 @@ class decoder(gr.sync_block):
     """
     def __init__(self):
         gr.sync_block.__init__(self,
-            name="decoder",
-            in_sig=[<+numpy.float+>],
-            out_sig=[<+numpy.float+>])
+            name="ADS-B Decoder",
+            in_sig=[numpy.float32],
+            out_sig=[numpy.float32])
 
 
     def work(self, input_items, output_items):
