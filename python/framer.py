@@ -691,23 +691,26 @@ class framer(gr.sync_block):
             out_sig=[numpy.float32])
 
         self.fs = fs
-        self.sps = fs/(1e6) # ADS-B is modulated at 1 Msym/s
+
+        # Calculate the samples/symbol
+        # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
+        # required fs is 2 Msps
+        self.sps = fs/(1e6) 
+        if (self.sps - numpy.floor(self.sps)) > 0:
+            print "Warning: %s is designed to operate on an integer number of samples per symbol" % (self.name)
+        self.sps = self.sps.astype(int) # Set the samples/symbol to an integer
+
         self.burst_thresh = burst_thresh
         self.corr_thresh = corr_thresh
 
-        # Number of correlations to do at each threshold crossing
-        self.num_corrs = numpy.ceil(self.sps/2).astype(int)
-
-        print "Initializing ADS-B Framer:"
+        print "Initializing %s:" % (self.name)
         print "\tfs = %f Msym/s" % (self.fs/1e6)
         print "\tsps = %f" % (self.sps)
-        print "\tthreshold = %f" % (self.burst_thresh)
-
-        if (self.sps - numpy.floor(self.sps)) > 0:
-            print "Warning: ADS-B Framer is designed to operate on an integer number of samples per symbol"
+        print "\tBurst Threshold = %f" % (self.burst_thresh)
+        print "\tCorrelation Threshold = %f" % (self.corr_thresh)
 
         # Initialize the preamble correlation template
-        self.gen_preamble_template()
+        self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
         
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
@@ -721,47 +724,43 @@ class framer(gr.sync_block):
         in_ppm = numpy.zeros(len(in0))
         in_ppm[in0 >= self.burst_thresh] = 1
 
-        best_corr_idx = -1e3
+        self.idx_rise_edge = -1
+        self.idx_fall_edge = -1
+        self.pulse_high = False
 
         for ii in range(0,len(in0)):
-            if ii <= best_corr_idx + self.sps/2:
-                continue
+                found_pulse = self.find_pulse(in0[ii], ii)
 
-            if in0[ii] > self.burst_thresh:
-                # Check for correlation
-                if (len(in0) - ii) > len(self.preamble_ppm):
-                    best_corr_idx = -1 # Index of best preambled correlation
-                    best_corr_matches = 0
+                if found_pulse == True:
+                    # If there are enough samples for the preamble to be present in this set
+                    # of samples, then check for correlation
+                    if (self.pulse_idx + len(self.preamble_pulses)*self.sps) <= len(in0):
+                        
+                                                
 
-                    peak = in0[ii] # Peak that crossed threshold
-
-                    # Slice the input into pulses to match the Pulse Position Modulation (PPM)
-                    in_ppm = numpy.zeros(len(self.preamble_ppm)+self.num_corrs)
-                    in_ppm[in0[ii:ii+len(self.preamble_ppm)+self.num_corrs] > peak/2] = 1
-
-                    # print "self.preamble_ppm.size ", self.preamble_ppm.size
-                    # print "in_ppm.size ", in_ppm.size
-                    # print "in0[ii:ii+len(self.preamble_ppm)+self.num_corrs].size ", in0[ii:ii+len(self.preamble_ppm)+self.num_corrs].size
-
-                    # Test for a correlation starting at the sample that crossed the threshold
-                    # We only need to correlate for 1/2 of a symbol duration
-                    for jj in range(0,self.num_corrs):
-                        corr_matches = numpy.sum(in_ppm[jj:-(self.num_corrs-jj)] == self.preamble_ppm)
-
-                        # print "in_ppm[jj:-(self.num_corrs-jj)].size ", in_ppm[jj:-(self.num_corrs-jj)].size
-
-                        if corr_matches >= self.corr_thresh*len(self.preamble_ppm):
-                            if corr_matches > best_corr_matches:
-                                best_corr_idx = ii+jj
-                                best_corr_matches = corr_matches
-
-                    if best_corr_idx != -1:
-                        # Found a preamble correlation, so tag it
-                        self.add_item_tag(0, self.nitems_written(0)+best_corr_idx, pmt.to_pmt("burst"), pmt.to_pmt("SOB"))
+                            # Found a preamble correlation, so tag it
+                            self.add_item_tag(0, self.nitems_written(0)+best_corr_idx, pmt.to_pmt("burst"), pmt.to_pmt("SOB"))
 
         out[:] = in0
         return len(output_items[0])
 
+    def find_pulse(self, samp, samp_idx):
+        # Determine boundaries of a pulse
+        if self.pulse_high == False:
+            # Pulse is low, check for a rising edge
+            if samp >= self.burst_thresh:
+                self.pulse_high = True
+                self.idx_rise_edge = samp_idx
+        
+        else:
+            # Pulse if high, check for a falling edge
+            if samp < self.burst_thresh:
+                self.pulse_high = False
+                self.idx_fall_edge = samp_idx
 
-    def gen_preamble_template(self):
-        self.preamble_ppm = numpy.repeat([1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0], round(self.sps)/2)
+                # Set the pulse index to the middle of the rising and falling edges
+                self.pulse_idx = numpy.mean((self.idx_rise_edge, self.idx_fall_edge)).astype(int)
+                
+                return True # Found a pulse
+
+        return False # Haven't found a pulse yet
