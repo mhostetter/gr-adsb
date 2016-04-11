@@ -4,13 +4,17 @@
   <key>adsb_decoder</key>
   <category>ADS-B</category>
   <import>import adsb</import>
-  <make>adsb.decoder()</make>
+  <make>adsb.decoder($fs)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
        * key (makes the value accessible as $keyname, e.g. in the make node)
        * type -->
-
+  <param>
+    <name>Sampling Rate</name>
+    <key>fs</key>
+    <type>float</type>
+  </param>
 
 
   <!-- Make one 'sink' node per input. Sub-nodes:

@@ -680,21 +680,161 @@ import numpy
 from gnuradio import gr
 import pmt
 
+MODE_S_56       = 56 
+MODE_S_112      = 112 
+
+# ADS-B Extended Squitter decoding informaiton available at:
+# http://www.cats.com.kh/download.php?path=vdzw4dHS08mjtKi6vNi31Mbn0tnZ2eycn6ydmqPE19rT7Mze4cSYpsetmdXd0w==
+
 class decoder(gr.sync_block):
     """
     docstring for block decoder
     """
-    def __init__(self):
+    def __init__(self, fs):
         gr.sync_block.__init__(self,
             name="ADS-B Decoder",
             in_sig=[numpy.float32],
             out_sig=[numpy.float32])
 
+        self.fs = fs
+
+        # Calculate the samples/symbol
+        # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
+        # required fs is 2 Msps
+        self.sps = fs/(1e6) 
+        if (self.sps - numpy.floor(self.sps)) > 0:
+            print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
+        self.sps = int(self.sps) # Set the samples/symbol to an integer
+
+        print "Initializing ADS-B Decoder:"
+        print "\tfs = %f Msym/s" % (self.fs/1e6)
+        print "\tsps = %d" % (self.sps)
+
+        self.msg_count = 0
+        self.sym0_idx = 0;
+        self.df = 0
+        self.ca = 0
+        self.aa = 0
+        self.me = 0
+        self.pi = 0
+        self.bits = numpy.zeros(MODE_S_112) # Array of data bits
+
+        # Propagate tags
+        self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
+
 
     def work(self, input_items, output_items):
         in0 = input_items[0]
-        out = output_items[0]
+        out0 = output_items[0]
         # <+signal processing here+>
-        out[:] = in0
+
+        # Get tags from ADS-B Framer block
+        tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt("burst"))
+
+        for ii in range(0,len(tags)):
+            value = pmt.to_python(tags[ii].value)
+
+            if value[0] == "SOB":
+                # Start of data, decode this packet
+                self.msg_count = value[1]
+                self.sym0_idx = tags[ii].offset - self.nitems_written(0)
+
+                # Is this packet fully within our samples
+                if ii+2 < len(tags):
+                    val1 = pmt.to_python(tags[ii+1].value)
+                    val2 = pmt.to_python(tags[ii+2].value)
+                    
+                    if val1[1] == self.msg_count and val2[1] == self.msg_count:
+                        # The EOB_56 and EOB_112 tags exist in this window, so 
+                        # demod the entire message
+                        
+                        # Grab the amplitudes where the "bit 1 pulse" should be
+                        bit1_idxs = range(self.sym0_idx, self.sym0_idx+self.sps*MODE_S_112, self.sps)
+                        bit1_amps = in0[bit1_idxs]
+
+                        # Grab the amplitudes where the "bit 0 pulse" should be
+                        bit0_idxs = range(self.sym0_idx+self.sps/2, self.sym0_idx+self.sps/2+self.sps*MODE_S_112, self.sps)
+                        bit0_amps = in0[bit0_idxs]
+
+                        self.bits = numpy.zeros(MODE_S_112)
+                        self.bits[bit1_amps > bit0_amps] = 1
+
+                        if 1:
+                            for ii in range(0,len(bit1_idxs)):
+                                # Tag the bit1 markers
+                                self.add_item_tag(  0, 
+                                                    self.nitems_written(0)+bit1_idxs[ii],
+                                                    pmt.to_pmt("bits"),
+                                                    pmt.to_pmt("1"),    
+                                                    pmt.to_pmt("decoder")
+                                                )
+                                # Tag the bit0 markers
+                                self.add_item_tag(  0, 
+                                                    self.nitems_written(0)+bit0_idxs[ii], 
+                                                    pmt.to_pmt("bits"),
+                                                    pmt.to_pmt("0"), 
+                                                    pmt.to_pmt("decoder")
+                                                )
+                            print self.bits
+
+
+                        self.decode_header()
+
+            # elif value[0] == "EOB_56":
+            #     print "Found burst %d at %d" % (value[1], tag.offset)
+            
+            # elif value[0] == "EOB_112":
+            #     print "Found burst %d at %d" % (value[1], tag.offset)
+            
+        out0[:] = in0
         return len(output_items[0])
 
+
+    def decode_header(self):
+        # See http://www.sigidwiki.com/images/1/15/ADS-B_for_Dummies.pdf
+
+        # Downlink Format, 5 bits
+        print self.bits[0:0+5]
+        self.df = int(''.join(map(str,self.bits[0:0+5].astype(int))),2)
+        
+        # Capability, 3 bits
+        print self.bits[5:5+3]
+        self.ca = int(''.join(map(str,self.bits[5:5+3].astype(int))),2)
+        
+        # Aircraft (ICAO) Address, 24 bits
+        print self.bits[8:8+24]
+        self.aa = int(''.join(map(str,self.bits[8:8+24].astype(int))),2)
+
+        print "Message %d" % (self.msg_count)
+        print "DF: %d" % (self.df)
+        print "CA: %d" % (self.ca)
+        print "AA: %d" % (self.aa)
+
+        if self.df == 11:
+            print "Acq squitter"
+        
+        elif self.df == 17:
+            print "ADS-B"
+
+        elif self.df == 18:
+            print "TIS-B"
+
+        elif self.df == 19:
+            print "Military"
+
+        elif self.df == 28:
+            print "Emergency/priority status"
+
+        elif self.df == 31:
+            print "Aircraft operational status"
+
+        return
+
+    def decode_data(self):
+        # ADS-B Data, 56
+        self.me = int(''.join(map(str,self.bits[32:32+56].astype(int))),2)
+        
+        # Parity Bits, 24
+        self.pi = int(''.join(map(str,self.bits[88:88+112].astype(int))),2)
+
+        return
