@@ -702,15 +702,12 @@ class framer(gr.sync_block):
 
         self.burst_thresh = burst_thresh
 
-        # Set the previous input sample to zero, needed for finding pulses
-        self.in_prev = 0
-
         # Initialize the preamble "pulses" template
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
         self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
         
-        # Running burst counter
-        self.burst_count = -1
+        self.in_prev = 0 # Last sample from previous work() call, needed for finding pulses        
+        self.burst_count = 0 # Running burst counter
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
@@ -738,110 +735,64 @@ class framer(gr.sync_block):
         # in_transitions = numpy.zeros(len(in0))
         in_transitions = in_pulses[1:] - in_pulses[:-1]
 
-        print "in0 ", len(in0)
-        print "in_pulses ", len(in_pulses)
-        print "in_pulses size ", in_pulses.size
-        print "in_pulses sum ", numpy.sum(in_pulses)
-        print "in_transitions len ", len(in_transitions)
-        print in_transitions
+        in_rise_edge_idxs = numpy.nonzero(in_transitions == 1)[0]
+        in_fall_edge_idxs = numpy.nonzero(in_transitions == -1)[0]
 
-        print "in_transitions sum abs ", numpy.sum(abs(in_transitions))
+        #
+        #
+        # TODO: match sure there is one and only one falling edge for each rising edge
+        #
+        #
 
-        rise_edge_idxs = numpy.nonzero(in_transitions == 1)[0]
-        fall_edge_idxs = numpy.nonzero(in_transitions == -1)[0]
+        # Find the index of the center of the pulses
+        pulse_idxs = numpy.mean((in_fall_edge_idxs,in_rise_edge_idxs),axis=0).astype(int)
 
-        print "rise_edge_idxs"
-        print rise_edge_idxs 
+        for pulse_idx in pulse_idxs[0:1]:
+            # If there are enough samples for the preamble to be present in this set
+            # of samples, then check for correlation
+            if (pulse_idx + len(self.preamble_pulses)*self.sps) <= len(in0):
+                # Find the amplitudes at each "pulse" (which is 1/2 symbol duration)
+                pulse_amps = in0[pulse_idx:(pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
 
-        print "fall_edge_idxs"
-        print fall_edge_idxs
+                # Set a pulse to 1 if it's greater than the middle amplitude of the detected pulse
+                pulses = numpy.zeros(len(self.preamble_pulses))
+                pulses[pulse_amps > in0[pulse_idx]/2] = 1
 
-        print "rise edges ", len(rise_edge_idxs)
-        print "fall edges ", len(fall_edge_idxs)
+                corr_matches = numpy.sum(pulses == self.preamble_pulses)
 
-        # self.idx_rise_edge = -1
-        # self.idx_fall_edge = -1
-        # self.pulse_high = False
+                if corr_matches == len(self.preamble_pulses):
+                    # Found a preamble correlation
+                    self.burst_count += 1
 
-        # for ii in range(0,len(in0)):
-        #         found_pulse = self.find_pulse(in0[ii], ii)
-
-        #         if found_pulse == True:
-        #             # If there are enough samples for the preamble to be present in this set
-        #             # of samples, then check for correlation
-        #             if (self.pulse_idx + len(self.preamble_pulses)*self.sps) <= len(in0):
-                        
-        #                 pulse_amp = in0[self.pulse_idx:(self.pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
-
-        #                 # print "self.pulse_idx ", self.pulse_idx
-        #                 # print "pulse_amp ", pulse_amp
-
-        #                 # Set a pulse to 1 if it's greater than the middle amplitude of the detected pulse
-        #                 pulses = numpy.zeros(len(self.preamble_pulses))
-        #                 pulses[pulse_amp > in0[self.pulse_idx]/2] = 1
-
-        #                 # print "pulses ", pulses
-
-        #                 corr_matches = numpy.sum(pulses == self.preamble_pulses)
-
-        #                 if corr_matches == len(self.preamble_pulses):
-        #                     # Found a preamble correlation
-        #                     self.burst_count += 1
-
-        #                     # Tag the start of the preamble
-        #                     self.add_item_tag(  0, 
-        #                                         self.nitems_written(0)+self.pulse_idx, 
-        #                                         pmt.to_pmt("burst"),
-        #                                         pmt.to_pmt(("SOP", self.burst_count)), 
-        #                                         pmt.to_pmt("framer")
-        #                                     )
-        #                     # Tag the start of the burst data
-        #                     self.add_item_tag(  0, 
-        #                                         self.nitems_written(0)+self.pulse_idx+(8)*self.sps, 
-        #                                         pmt.to_pmt("burst"), 
-        #                                         pmt.to_pmt(("SOB", self.burst_count)), 
-        #                                         pmt.to_pmt("framer")
-        #                                     )
-        #                     # Tag the end of the 56 bit burst
-        #                     self.add_item_tag(  0, 
-        #                                         self.nitems_written(0)+self.pulse_idx+(8+56-1)*self.sps + self.sps/2, 
-        #                                         pmt.to_pmt("burst"), 
-        #                                         pmt.to_pmt(("EOB_56", self.burst_count)), 
-        #                                         pmt.to_pmt("framer")
-        #                                     )
-        #                     # Tag the end of the 112 bit burst
-        #                     self.add_item_tag(  0, 
-        #                                         self.nitems_written(0)+self.pulse_idx+(8+112-1)*self.sps + self.sps/2, 
-        #                                         pmt.to_pmt("burst"),
-        #                                         pmt.to_pmt(("EOB_112", self.burst_count)), 
-        #                                         pmt.to_pmt("framer")
-        #                                     )
+                    # Tag the start of the preamble
+                    self.add_item_tag(  0, 
+                                        self.nitems_written(0)+pulse_idx, 
+                                        pmt.to_pmt("burst"),
+                                        pmt.to_pmt(("SOP", self.burst_count)), 
+                                        pmt.to_pmt("framer")
+                                    )
+                    # Tag the start of the burst data
+                    self.add_item_tag(  0, 
+                                        self.nitems_written(0)+pulse_idx+(8)*self.sps, 
+                                        pmt.to_pmt("burst"), 
+                                        pmt.to_pmt(("SOB", self.burst_count)), 
+                                        pmt.to_pmt("framer")
+                                    )
+                    # Tag the end of the 56 bit burst
+                    self.add_item_tag(  0, 
+                                        self.nitems_written(0)+pulse_idx+(8+56-1)*self.sps + self.sps/2, 
+                                        pmt.to_pmt("burst"), 
+                                        pmt.to_pmt(("EOB_56", self.burst_count)), 
+                                        pmt.to_pmt("framer")
+                                    )
+                    # Tag the end of the 112 bit burst
+                    self.add_item_tag(  0, 
+                                        self.nitems_written(0)+pulse_idx+(8+112-1)*self.sps + self.sps/2, 
+                                        pmt.to_pmt("burst"),
+                                        pmt.to_pmt(("EOB_112", self.burst_count)), 
+                                        pmt.to_pmt("framer")
+                                    )
 
 
         out0[:] = in0
         return len(output_items[0])
-
-    def find_pulse(self, samp, samp_idx):
-        # Determine boundaries of a pulse
-        if self.pulse_high == False:
-            # Pulse is low, check for a rising edge
-            if samp >= self.burst_thresh:
-                self.pulse_high = True
-                self.idx_rise_edge = samp_idx
-        
-        else:
-            # Pulse if high, check for a falling edge
-            if samp < self.burst_thresh:
-                self.pulse_high = False
-                self.idx_fall_edge = samp_idx
-
-                # Set the pulse index to the middle of the rising and falling edges
-                self.pulse_idx = numpy.mean((self.idx_rise_edge, self.idx_fall_edge)).astype(int)
-                
-                if 0:
-                    # Add a pulse tag for debug
-                    self.add_item_tag(0, self.nitems_written(0)+self.pulse_idx, pmt.to_pmt("pulse"), pmt.to_pmt("high"), pmt.to_pmt("framer"))
-
-                return True # Found a pulse
-
-        return False # Haven't found a pulse yet
