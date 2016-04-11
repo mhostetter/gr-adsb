@@ -771,14 +771,14 @@ class framer(gr.sync_block):
                                             )
                             # Tag the end of the 56 bit burst
                             self.add_item_tag(  0, 
-                                                self.nitems_written(0)+self.pulse_idx+(8+56-1)*self.sps, 
+                                                self.nitems_written(0)+self.pulse_idx+(8+56-1)*self.sps + self.sps/2, 
                                                 pmt.to_pmt("burst"), 
                                                 pmt.to_pmt(("EOB_56", self.burst_count)), 
                                                 pmt.to_pmt("framer")
                                             )
                             # Tag the end of the 112 bit burst
                             self.add_item_tag(  0, 
-                                                self.nitems_written(0)+self.pulse_idx+(8+112-1)*self.sps, 
+                                                self.nitems_written(0)+self.pulse_idx+(8+112-1)*self.sps + self.sps/2, 
                                                 pmt.to_pmt("burst"),
                                                 pmt.to_pmt(("EOB_112", self.burst_count)), 
                                                 pmt.to_pmt("framer")

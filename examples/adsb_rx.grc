@@ -225,7 +225,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(8, 499)</value>
+      <value>(184, 499)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -237,7 +237,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>"/home/matt/adsb_test_vector.fc32"</value>
+      <value>"/home/matt/adsb_1088MHz_20Msps.fc32"</value>
     </param>
   </block>
   <block>
@@ -252,7 +252,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(184, 499)</value>
+      <value>(8, 499)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -264,7 +264,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>"/home/matt/adsb_1088MHz_20Msps.fc32"</value>
+      <value>"/home/matt/adsb_test_vector.fc32"</value>
     </param>
   </block>
   <block>
@@ -485,7 +485,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 129)</value>
+      <value>(904, 123)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -502,6 +502,10 @@
     <param>
       <key>minoutbuf</key>
       <value>0</value>
+    </param>
+    <param>
+      <key>fs</key>
+      <value>fs_mhz*1e6</value>
     </param>
   </block>
   <block>
@@ -693,7 +697,7 @@
     </param>
     <param>
       <key>repeat</key>
-      <value>True</value>
+      <value>False</value>
     </param>
     <param>
       <key>vlen</key>
