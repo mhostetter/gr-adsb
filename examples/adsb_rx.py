@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Adsb Rx
-# Generated: Sun Apr 10 23:46:05 2016
+# Generated: Mon Apr 11 00:20:06 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -58,7 +58,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         # Variables
         ##################################################
         self.fs_mhz = fs_mhz = 20
-        self.filename = filename = "/home/matt/adsb_test_vector.fc32"
+        self.filename = filename = "/home/matt/adsb_1088MHz_20Msps.fc32"
         self.fc_mhz = fc_mhz = 1089
 
         ##################################################
@@ -159,8 +159,6 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_time_sink_x_0_win)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, fs_mhz*1e6,True)
-        self.blocks_tag_debug_0 = blocks.tag_debug(gr.sizeof_float*1, "", "burst"); self.blocks_tag_debug_0.set_display(True)
-        self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float*1)
         self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, filename, False)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
         self.adsb_framer_0_0 = adsb.framer(fs_mhz*1e6, 0.01)
@@ -169,11 +167,9 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.adsb_decoder_0, 0), (self.blocks_null_sink_0, 0))    
         self.connect((self.adsb_decoder_0, 0), (self.qtgui_time_sink_x_0, 0))    
         self.connect((self.adsb_decoder_0, 0), (self.qtgui_time_sink_x_1, 0))    
         self.connect((self.adsb_framer_0_0, 0), (self.adsb_decoder_0, 0))    
-        self.connect((self.adsb_framer_0_0, 0), (self.blocks_tag_debug_0, 0))    
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.adsb_framer_0_0, 0))    
         self.connect((self.blocks_file_source_0, 0), (self.blocks_throttle_0, 0))    
         self.connect((self.blocks_throttle_0, 0), (self.blocks_complex_to_mag_squared_0, 0))    
@@ -189,9 +185,9 @@ class adsb_rx(gr.top_block, Qt.QWidget):
 
     def set_fs_mhz(self, fs_mhz):
         self.fs_mhz = fs_mhz
-        self.blocks_throttle_0.set_sample_rate(self.fs_mhz*1e6)
         self.qtgui_time_sink_x_0.set_samp_rate(self.fs_mhz*1e6)
         self.qtgui_time_sink_x_1.set_samp_rate(self.fs_mhz*1e6)
+        self.blocks_throttle_0.set_sample_rate(self.fs_mhz*1e6)
 
     def get_filename(self):
         return self.filename
