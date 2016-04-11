@@ -828,6 +828,9 @@ class decoder(gr.sync_block):
         elif self.df == 31:
             print "Aircraft operational status"
 
+        else:
+            print "Unknown DF"
+
         return
 
     def decode_data(self):
