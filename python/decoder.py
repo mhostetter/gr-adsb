@@ -759,7 +759,7 @@ class decoder(gr.sync_block):
                         self.bits = numpy.zeros(MODE_S_112)
                         self.bits[bit1_amps > bit0_amps] = 1
 
-                        if 1:
+                        if 0:
                             for ii in range(0,len(bit1_idxs)):
                                 # Tag the bit1 markers
                                 self.add_item_tag(  0, 
@@ -794,21 +794,18 @@ class decoder(gr.sync_block):
         # See http://www.sigidwiki.com/images/1/15/ADS-B_for_Dummies.pdf
 
         # Downlink Format, 5 bits
-        print self.bits[0:0+5]
         self.df = int(''.join(map(str,self.bits[0:0+5].astype(int))),2)
         
         # Capability, 3 bits
-        print self.bits[5:5+3]
         self.ca = int(''.join(map(str,self.bits[5:5+3].astype(int))),2)
         
         # Aircraft (ICAO) Address, 24 bits
-        print self.bits[8:8+24]
         self.aa = int(''.join(map(str,self.bits[8:8+24].astype(int))),2)
 
-        print "Message %d" % (self.msg_count)
-        print "DF: %d" % (self.df)
-        print "CA: %d" % (self.ca)
-        print "AA: %d" % (self.aa)
+        # print "Message %d" % (self.msg_count)
+        # print "DF: %d" % (self.df)
+        # print "CA: %d" % (self.ca)
+        # print "AA: %d" % (self.aa)
 
         if self.df == 11:
             print "Acq squitter"
@@ -821,6 +818,9 @@ class decoder(gr.sync_block):
 
         elif self.df == 19:
             print "Military"
+
+        elif self.df in [20,21,22]:
+            print "Airborne position"
 
         elif self.df == 28:
             print "Emergency/priority status"
