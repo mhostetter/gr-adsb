@@ -724,7 +724,6 @@ class framer(gr.sync_block):
         
         # Square signal by the threshold value
         in_pulses = numpy.zeros(len(in0)+1)
-        # pulse_high = numpy.insert(in0, 0, self.in_prev) >= self.burst_thresh
         in_pulses[numpy.insert(in0, 0, self.in_prev) >= self.burst_thresh] = 1
 
         # Set in_prev for the next call
@@ -732,17 +731,27 @@ class framer(gr.sync_block):
 
         # Subtract the previous pulse from the current sample to get transitions
         # +1 = rising edge, -1 = falling edge
-        # in_transitions = numpy.zeros(len(in0))
         in_transitions = in_pulses[1:] - in_pulses[:-1]
 
         in_rise_edge_idxs = numpy.nonzero(in_transitions == 1)[0]
         in_fall_edge_idxs = numpy.nonzero(in_transitions == -1)[0]
 
-        #
-        #
-        # TODO: match sure there is one and only one falling edge for each rising edge
-        #
-        #
+        # Make sure there is one and only one falling edge for each rising edge
+        if len(in_rise_edge_idxs) > 0 and len(in_fall_edge_idxs) > 0:
+            # Make sure the first sample for the rising and falling edge indices corresponds
+            # to the same pulse
+            if in_fall_edge_idxs[0] - in_rise_edge_idxs[0] < 0:
+                # The first falling edge comes before the first rising edge, so remove it
+                in_fall_edge_idxs = numpy.delete(in_fall_edge_idxs, 0)
+
+            diff_in_edges = len(in_rise_edge_idxs) - len(in_fall_edge_idxs)
+            if diff_in_edges > 0:
+                # If there are more rising edges than falling (could) only be 1 more, then
+                # remove the extras (1 really)
+                if diff_in_edges == 1:
+                    in_rise_edge_idxs = numpy.delete(in_rise_edge_idxs, len(in_rise_edge_idxs)-1)
+                else:
+                    print "Oh no, this shouldn't be happening..."
 
         # Find the index of the center of the pulses
         pulse_idxs = numpy.mean((in_fall_edge_idxs,in_rise_edge_idxs),axis=0).astype(int)
