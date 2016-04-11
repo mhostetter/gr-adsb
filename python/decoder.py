@@ -706,10 +706,6 @@ class decoder(gr.sync_block):
             print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
-        print "Initializing ADS-B Decoder:"
-        print "\tfs = %f Msym/s" % (self.fs/1e6)
-        print "\tsps = %d" % (self.sps)
-
         self.msg_count = 0
         self.sym0_idx = 0;
         self.df = 0
@@ -721,6 +717,10 @@ class decoder(gr.sync_block):
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
+
+        print "Initialized ADS-B Decoder:"
+        print "\tfs = %f Msym/s" % (self.fs/1e6)
+        print "\tsps = %d" % (self.sps)
 
 
     def work(self, input_items, output_items):

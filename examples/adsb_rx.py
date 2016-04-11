@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Adsb Rx
-# Generated: Sun Apr 10 19:58:04 2016
+# Generated: Mon Apr 11 00:20:06 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -57,36 +57,33 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.rf_gain = rf_gain = 14
-        self.if_gain = if_gain = 32
         self.fs_mhz = fs_mhz = 20
         self.filename = filename = "/home/matt/adsb_1088MHz_20Msps.fc32"
         self.fc_mhz = fc_mhz = 1089
-        self.bb_gain = bb_gain = 16
 
         ##################################################
         # Blocks
         ##################################################
-        self.qtgui_time_sink_x_0_0 = qtgui.time_sink_f(
-        	fs_mhz*500, #size
+        self.qtgui_time_sink_x_1 = qtgui.time_sink_f(
+        	fs_mhz*150, #size
         	fs_mhz*1e6, #samp_rate
         	"", #name
         	1 #number of inputs
         )
-        self.qtgui_time_sink_x_0_0.set_update_time(0.10)
-        self.qtgui_time_sink_x_0_0.set_y_axis(0, 0.1)
+        self.qtgui_time_sink_x_1.set_update_time(0.10)
+        self.qtgui_time_sink_x_1.set_y_axis(0, 0.2)
         
-        self.qtgui_time_sink_x_0_0.set_y_label("Amplitude", "")
+        self.qtgui_time_sink_x_1.set_y_label("Amplitude", "")
         
-        self.qtgui_time_sink_x_0_0.enable_tags(-1, True)
-        self.qtgui_time_sink_x_0_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, qtgui.TRIG_SLOPE_POS, 0.0, 0, 0, "")
-        self.qtgui_time_sink_x_0_0.enable_autoscale(False)
-        self.qtgui_time_sink_x_0_0.enable_grid(True)
-        self.qtgui_time_sink_x_0_0.enable_axis_labels(True)
-        self.qtgui_time_sink_x_0_0.enable_control_panel(False)
+        self.qtgui_time_sink_x_1.enable_tags(-1, True)
+        self.qtgui_time_sink_x_1.set_trigger_mode(qtgui.TRIG_MODE_TAG, qtgui.TRIG_SLOPE_POS, 0.0, 1.25e-6, 0, "burst")
+        self.qtgui_time_sink_x_1.enable_autoscale(False)
+        self.qtgui_time_sink_x_1.enable_grid(True)
+        self.qtgui_time_sink_x_1.enable_axis_labels(True)
+        self.qtgui_time_sink_x_1.enable_control_panel(False)
         
         if not False:
-          self.qtgui_time_sink_x_0_0.disable_legend()
+          self.qtgui_time_sink_x_1.disable_legend()
         
         labels = ["", "", "", "", "",
                   "", "", "", "", ""]
@@ -103,30 +100,30 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         
         for i in xrange(1):
             if len(labels[i]) == 0:
-                self.qtgui_time_sink_x_0_0.set_line_label(i, "Data {0}".format(i))
+                self.qtgui_time_sink_x_1.set_line_label(i, "Data {0}".format(i))
             else:
-                self.qtgui_time_sink_x_0_0.set_line_label(i, labels[i])
-            self.qtgui_time_sink_x_0_0.set_line_width(i, widths[i])
-            self.qtgui_time_sink_x_0_0.set_line_color(i, colors[i])
-            self.qtgui_time_sink_x_0_0.set_line_style(i, styles[i])
-            self.qtgui_time_sink_x_0_0.set_line_marker(i, markers[i])
-            self.qtgui_time_sink_x_0_0.set_line_alpha(i, alphas[i])
+                self.qtgui_time_sink_x_1.set_line_label(i, labels[i])
+            self.qtgui_time_sink_x_1.set_line_width(i, widths[i])
+            self.qtgui_time_sink_x_1.set_line_color(i, colors[i])
+            self.qtgui_time_sink_x_1.set_line_style(i, styles[i])
+            self.qtgui_time_sink_x_1.set_line_marker(i, markers[i])
+            self.qtgui_time_sink_x_1.set_line_alpha(i, alphas[i])
         
-        self._qtgui_time_sink_x_0_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0_0.pyqwidget(), Qt.QWidget)
-        self.top_layout.addWidget(self._qtgui_time_sink_x_0_0_win)
+        self._qtgui_time_sink_x_1_win = sip.wrapinstance(self.qtgui_time_sink_x_1.pyqwidget(), Qt.QWidget)
+        self.top_layout.addWidget(self._qtgui_time_sink_x_1_win)
         self.qtgui_time_sink_x_0 = qtgui.time_sink_f(
-        	fs_mhz*150, #size
+        	fs_mhz*500, #size
         	fs_mhz*1e6, #samp_rate
         	"", #name
         	1 #number of inputs
         )
         self.qtgui_time_sink_x_0.set_update_time(0.10)
-        self.qtgui_time_sink_x_0.set_y_axis(0, 0.1)
+        self.qtgui_time_sink_x_0.set_y_axis(0, 0.05)
         
         self.qtgui_time_sink_x_0.set_y_label("Amplitude", "")
         
         self.qtgui_time_sink_x_0.enable_tags(-1, True)
-        self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_TAG, qtgui.TRIG_SLOPE_POS, 0.0, 1.25e-6, 0, "burst")
+        self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_FREE, qtgui.TRIG_SLOPE_POS, 0.0, 0, 0, "")
         self.qtgui_time_sink_x_0.enable_autoscale(False)
         self.qtgui_time_sink_x_0.enable_grid(True)
         self.qtgui_time_sink_x_0.enable_axis_labels(True)
@@ -171,7 +168,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         # Connections
         ##################################################
         self.connect((self.adsb_decoder_0, 0), (self.qtgui_time_sink_x_0, 0))    
-        self.connect((self.adsb_decoder_0, 0), (self.qtgui_time_sink_x_0_0, 0))    
+        self.connect((self.adsb_decoder_0, 0), (self.qtgui_time_sink_x_1, 0))    
         self.connect((self.adsb_framer_0_0, 0), (self.adsb_decoder_0, 0))    
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.adsb_framer_0_0, 0))    
         self.connect((self.blocks_file_source_0, 0), (self.blocks_throttle_0, 0))    
@@ -183,26 +180,14 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         event.accept()
 
 
-    def get_rf_gain(self):
-        return self.rf_gain
-
-    def set_rf_gain(self, rf_gain):
-        self.rf_gain = rf_gain
-
-    def get_if_gain(self):
-        return self.if_gain
-
-    def set_if_gain(self, if_gain):
-        self.if_gain = if_gain
-
     def get_fs_mhz(self):
         return self.fs_mhz
 
     def set_fs_mhz(self, fs_mhz):
         self.fs_mhz = fs_mhz
-        self.blocks_throttle_0.set_sample_rate(self.fs_mhz*1e6)
         self.qtgui_time_sink_x_0.set_samp_rate(self.fs_mhz*1e6)
-        self.qtgui_time_sink_x_0_0.set_samp_rate(self.fs_mhz*1e6)
+        self.qtgui_time_sink_x_1.set_samp_rate(self.fs_mhz*1e6)
+        self.blocks_throttle_0.set_sample_rate(self.fs_mhz*1e6)
 
     def get_filename(self):
         return self.filename
@@ -216,12 +201,6 @@ class adsb_rx(gr.top_block, Qt.QWidget):
 
     def set_fc_mhz(self, fc_mhz):
         self.fc_mhz = fc_mhz
-
-    def get_bb_gain(self):
-        return self.bb_gain
-
-    def set_bb_gain(self, bb_gain):
-        self.bb_gain = bb_gain
 
 
 def main(top_block_cls=adsb_rx, options=None):
