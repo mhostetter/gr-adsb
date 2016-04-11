@@ -724,98 +724,98 @@ class framer(gr.sync_block):
     def work(self, input_items, output_items):
         in0 = input_items[0]
         out0 = output_items[0]
-
-        print in0[0:5]
-        print [555555, in0[0:5]]
         
         # Square signal by the threshold value
         in_pulses = numpy.zeros(len(in0)+1)
-        pulse_high = in0 >= self.burst_thresh
-        pulse_high = [False, pulse_high]
-        in_pulses[pulse_high] = 1
+        # pulse_high = numpy.insert(in0, 0, self.in_prev) >= self.burst_thresh
+        in_pulses[numpy.insert(in0, 0, self.in_prev) >= self.burst_thresh] = 1
 
         # Set in_prev for the next call
         self.in_prev = in0[-1]
 
         # Subtract the previous pulse from the current sample to get transitions
         # +1 = rising edge, -1 = falling edge
-        in_transitions = numpy.zeros(len(in0))
+        # in_transitions = numpy.zeros(len(in0))
         in_transitions = in_pulses[1:] - in_pulses[:-1]
 
         print "in0 ", len(in0)
         print "in_pulses ", len(in_pulses)
         print "in_pulses size ", in_pulses.size
         print "in_pulses sum ", numpy.sum(in_pulses)
-        print "in_transitions ", len(in_transitions)
-
+        print "in_transitions len ", len(in_transitions)
         print in_transitions
+
+        print "in_transitions sum abs ", numpy.sum(abs(in_transitions))
 
         rise_edge_idxs = numpy.nonzero(in_transitions == 1)[0]
         fall_edge_idxs = numpy.nonzero(in_transitions == -1)[0]
 
+        print "rise_edge_idxs"
         print rise_edge_idxs 
+
+        print "fall_edge_idxs"
         print fall_edge_idxs
 
         print "rise edges ", len(rise_edge_idxs)
         print "fall edges ", len(fall_edge_idxs)
 
-        self.idx_rise_edge = -1
-        self.idx_fall_edge = -1
-        self.pulse_high = False
+        # self.idx_rise_edge = -1
+        # self.idx_fall_edge = -1
+        # self.pulse_high = False
 
-        for ii in range(0,len(in0)):
-                found_pulse = self.find_pulse(in0[ii], ii)
+        # for ii in range(0,len(in0)):
+        #         found_pulse = self.find_pulse(in0[ii], ii)
 
-                if found_pulse == True:
-                    # If there are enough samples for the preamble to be present in this set
-                    # of samples, then check for correlation
-                    if (self.pulse_idx + len(self.preamble_pulses)*self.sps) <= len(in0):
+        #         if found_pulse == True:
+        #             # If there are enough samples for the preamble to be present in this set
+        #             # of samples, then check for correlation
+        #             if (self.pulse_idx + len(self.preamble_pulses)*self.sps) <= len(in0):
                         
-                        pulse_amp = in0[self.pulse_idx:(self.pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
+        #                 pulse_amp = in0[self.pulse_idx:(self.pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
 
-                        # print "self.pulse_idx ", self.pulse_idx
-                        # print "pulse_amp ", pulse_amp
+        #                 # print "self.pulse_idx ", self.pulse_idx
+        #                 # print "pulse_amp ", pulse_amp
 
-                        # Set a pulse to 1 if it's greater than the middle amplitude of the detected pulse
-                        pulses = numpy.zeros(len(self.preamble_pulses))
-                        pulses[pulse_amp > in0[self.pulse_idx]/2] = 1
+        #                 # Set a pulse to 1 if it's greater than the middle amplitude of the detected pulse
+        #                 pulses = numpy.zeros(len(self.preamble_pulses))
+        #                 pulses[pulse_amp > in0[self.pulse_idx]/2] = 1
 
-                        # print "pulses ", pulses
+        #                 # print "pulses ", pulses
 
-                        corr_matches = numpy.sum(pulses == self.preamble_pulses)
+        #                 corr_matches = numpy.sum(pulses == self.preamble_pulses)
 
-                        if corr_matches == len(self.preamble_pulses):
-                            # Found a preamble correlation
-                            self.burst_count += 1
+        #                 if corr_matches == len(self.preamble_pulses):
+        #                     # Found a preamble correlation
+        #                     self.burst_count += 1
 
-                            # Tag the start of the preamble
-                            self.add_item_tag(  0, 
-                                                self.nitems_written(0)+self.pulse_idx, 
-                                                pmt.to_pmt("burst"),
-                                                pmt.to_pmt(("SOP", self.burst_count)), 
-                                                pmt.to_pmt("framer")
-                                            )
-                            # Tag the start of the burst data
-                            self.add_item_tag(  0, 
-                                                self.nitems_written(0)+self.pulse_idx+(8)*self.sps, 
-                                                pmt.to_pmt("burst"), 
-                                                pmt.to_pmt(("SOB", self.burst_count)), 
-                                                pmt.to_pmt("framer")
-                                            )
-                            # Tag the end of the 56 bit burst
-                            self.add_item_tag(  0, 
-                                                self.nitems_written(0)+self.pulse_idx+(8+56-1)*self.sps + self.sps/2, 
-                                                pmt.to_pmt("burst"), 
-                                                pmt.to_pmt(("EOB_56", self.burst_count)), 
-                                                pmt.to_pmt("framer")
-                                            )
-                            # Tag the end of the 112 bit burst
-                            self.add_item_tag(  0, 
-                                                self.nitems_written(0)+self.pulse_idx+(8+112-1)*self.sps + self.sps/2, 
-                                                pmt.to_pmt("burst"),
-                                                pmt.to_pmt(("EOB_112", self.burst_count)), 
-                                                pmt.to_pmt("framer")
-                                            )
+        #                     # Tag the start of the preamble
+        #                     self.add_item_tag(  0, 
+        #                                         self.nitems_written(0)+self.pulse_idx, 
+        #                                         pmt.to_pmt("burst"),
+        #                                         pmt.to_pmt(("SOP", self.burst_count)), 
+        #                                         pmt.to_pmt("framer")
+        #                                     )
+        #                     # Tag the start of the burst data
+        #                     self.add_item_tag(  0, 
+        #                                         self.nitems_written(0)+self.pulse_idx+(8)*self.sps, 
+        #                                         pmt.to_pmt("burst"), 
+        #                                         pmt.to_pmt(("SOB", self.burst_count)), 
+        #                                         pmt.to_pmt("framer")
+        #                                     )
+        #                     # Tag the end of the 56 bit burst
+        #                     self.add_item_tag(  0, 
+        #                                         self.nitems_written(0)+self.pulse_idx+(8+56-1)*self.sps + self.sps/2, 
+        #                                         pmt.to_pmt("burst"), 
+        #                                         pmt.to_pmt(("EOB_56", self.burst_count)), 
+        #                                         pmt.to_pmt("framer")
+        #                                     )
+        #                     # Tag the end of the 112 bit burst
+        #                     self.add_item_tag(  0, 
+        #                                         self.nitems_written(0)+self.pulse_idx+(8+112-1)*self.sps + self.sps/2, 
+        #                                         pmt.to_pmt("burst"),
+        #                                         pmt.to_pmt(("EOB_112", self.burst_count)), 
+        #                                         pmt.to_pmt("framer")
+        #                                     )
 
 
         out0[:] = in0
