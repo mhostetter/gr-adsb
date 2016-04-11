@@ -702,10 +702,8 @@ class framer(gr.sync_block):
 
         self.burst_thresh = burst_thresh
 
-        print "Initializing ADS-B Framer:"
-        print "\tfs = %f Msym/s" % (self.fs/1e6)
-        print "\tsps = %d" % (self.sps)
-        print "\tBurst Threshold = %f" % (self.burst_thresh)
+        # Set the previous input sample to zero, needed for finding pulses
+        self.in_prev = 0
 
         # Initialize the preamble "pulses" template
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
@@ -717,14 +715,49 @@ class framer(gr.sync_block):
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
+        print "Initialized ADS-B Framer:"
+        print "\tfs = %f Msym/s" % (self.fs/1e6)
+        print "\tsps = %d" % (self.sps)
+        print "\tBurst Threshold = %f" % (self.burst_thresh)
+
 
     def work(self, input_items, output_items):
         in0 = input_items[0]
         out0 = output_items[0]
 
+        print in0[0:5]
+        print [555555, in0[0:5]]
+        
         # Square signal by the threshold value
-        in_ppm = numpy.zeros(len(in0))
-        in_ppm[in0 >= self.burst_thresh] = 1
+        in_pulses = numpy.zeros(len(in0)+1)
+        pulse_high = in0 >= self.burst_thresh
+        pulse_high = [False, pulse_high]
+        in_pulses[pulse_high] = 1
+
+        # Set in_prev for the next call
+        self.in_prev = in0[-1]
+
+        # Subtract the previous pulse from the current sample to get transitions
+        # +1 = rising edge, -1 = falling edge
+        in_transitions = numpy.zeros(len(in0))
+        in_transitions = in_pulses[1:] - in_pulses[:-1]
+
+        print "in0 ", len(in0)
+        print "in_pulses ", len(in_pulses)
+        print "in_pulses size ", in_pulses.size
+        print "in_pulses sum ", numpy.sum(in_pulses)
+        print "in_transitions ", len(in_transitions)
+
+        print in_transitions
+
+        rise_edge_idxs = numpy.nonzero(in_transitions == 1)[0]
+        fall_edge_idxs = numpy.nonzero(in_transitions == -1)[0]
+
+        print rise_edge_idxs 
+        print fall_edge_idxs
+
+        print "rise edges ", len(rise_edge_idxs)
+        print "fall edges ", len(fall_edge_idxs)
 
         self.idx_rise_edge = -1
         self.idx_fall_edge = -1
