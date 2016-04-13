@@ -679,6 +679,7 @@
 import numpy
 from gnuradio import gr
 import pmt
+import math
 
 class framer(gr.sync_block):
     """
@@ -772,33 +773,34 @@ class framer(gr.sync_block):
                 if corr_matches == len(self.preamble_pulses):
                     # Found a preamble correlation
                     self.burst_count += 1
+                    self.snr = 10.0*math.log(float(in0[pulse_idx]/numpy.median(in0)),10)
 
                     # Tag the start of the preamble
-                    self.add_item_tag(  0, 
-                                        self.nitems_written(0)+pulse_idx, 
+                    self.add_item_tag(  0,
+                                        self.nitems_written(0)+pulse_idx,
                                         pmt.to_pmt("burst"),
-                                        pmt.to_pmt(("SOP", self.burst_count)), 
+                                        pmt.to_pmt(("SOP", self.burst_count, self.snr)),
                                         pmt.to_pmt("framer")
                                     )
                     # Tag the start of the burst data
-                    self.add_item_tag(  0, 
-                                        self.nitems_written(0)+pulse_idx+(8)*self.sps, 
-                                        pmt.to_pmt("burst"), 
-                                        pmt.to_pmt(("SOB", self.burst_count)), 
+                    self.add_item_tag(  0,
+                                        self.nitems_written(0)+pulse_idx+(8)*self.sps,
+                                        pmt.to_pmt("burst"),
+                                        pmt.to_pmt(("SOB", self.burst_count)),
                                         pmt.to_pmt("framer")
                                     )
                     # Tag the end of the 56 bit burst
-                    self.add_item_tag(  0, 
-                                        self.nitems_written(0)+pulse_idx+(8+56-1)*self.sps + self.sps/2, 
-                                        pmt.to_pmt("burst"), 
-                                        pmt.to_pmt(("EOB_56", self.burst_count)), 
+                    self.add_item_tag(  0,
+                                        self.nitems_written(0)+pulse_idx+(8+56-1)*self.sps + self.sps/2,
+                                        pmt.to_pmt("burst"),
+                                        pmt.to_pmt(("EOB_56", self.burst_count)),
                                         pmt.to_pmt("framer")
                                     )
                     # Tag the end of the 112 bit burst
-                    self.add_item_tag(  0, 
-                                        self.nitems_written(0)+pulse_idx+(8+112-1)*self.sps + self.sps/2, 
+                    self.add_item_tag(  0,
+                                        self.nitems_written(0)+pulse_idx+(8+112-1)*self.sps + self.sps/2,
                                         pmt.to_pmt("burst"),
-                                        pmt.to_pmt(("EOB_112", self.burst_count)), 
+                                        pmt.to_pmt(("EOB_112", self.burst_count)),
                                         pmt.to_pmt("framer")
                                     )
 
