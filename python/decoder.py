@@ -680,11 +680,11 @@ import numpy
 from gnuradio import gr
 import pmt
 
+
 MODE_S_56       = 56 
 MODE_S_112      = 112 
+CALLSIGN_LUT    = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ#####_###############0123456789######"
 
-# ADS-B Extended Squitter decoding informaiton available at:
-# http://www.cats.com.kh/download.php?path=vdzw4dHS08mjtKi6vNi31Mbn0tnZ2eycn6ydmqPE19rT7Mze4cSYpsetmdXd0w==
 
 class decoder(gr.sync_block):
     """
@@ -707,12 +707,16 @@ class decoder(gr.sync_block):
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
         self.msg_count = 0
-        self.sym0_idx = 0;
+        self.snr = 0
+        self.sym0_idx = 0
         self.df = 0
+        self.df_str = ""
         self.ca = 0
         self.aa = 0
         self.me = 0
         self.pi = 0
+        self.tc = 0
+        self.callsign = ""
         self.bits = numpy.zeros(MODE_S_112) # Array of data bits
 
         # Propagate tags
@@ -737,8 +741,9 @@ class decoder(gr.sync_block):
             if value[0] == "SOB":
                 # Start of data, decode this packet
                 self.msg_count = value[1]
+                self.snr = value[2]
                 self.sym0_idx = tags[ii].offset - self.nitems_written(0)
-
+                
                 # Is this packet fully within our samples
                 if ii+2 < len(tags):
                     val1 = pmt.to_python(tags[ii+1].value)
@@ -790,54 +795,65 @@ class decoder(gr.sync_block):
         return len(output_items[0])
 
 
+    # ADS-B Extended Squitter decoding informaiton available at:
+    # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
+    # http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
+    # http://www.anteni.net/adsb/Doc/1090-WP30-18-DRAFT_DO-260B-V42.pdf
+    # http://www.cats.com.kh/download.php?path=vdzw4dHS08mjtKi6vNi31Mbn0tnZ2eycn6ydmqPE19rT7Mze4cSYpsetmdXd0w==
     def decode_header(self):
         # See http://www.sigidwiki.com/images/1/15/ADS-B_for_Dummies.pdf
 
         # Downlink Format, 5 bits
-        self.df = int(''.join(map(str,self.bits[0:0+5].astype(int))),2)
+        self.df = int("".join(map(str,self.bits[0:0+5].astype(int))),2)
         
         # Capability, 3 bits
-        self.ca = int(''.join(map(str,self.bits[5:5+3].astype(int))),2)
+        self.ca = int("".join(map(str,self.bits[5:5+3].astype(int))),2)
         
-        # Aircraft (ICAO) Address, 24 bits
-        self.aa = int(''.join(map(str,self.bits[8:8+24].astype(int))),2)
+        # Address Announced, ICAO address 24 bits
+        self.aa = int("".join(map(str,self.bits[8:8+24].astype(int))),2)
 
-        # print "Message %d" % (self.msg_count)
-        # print "DF: %d" % (self.df)
-        # print "CA: %d" % (self.ca)
-        # print "AA: %d" % (self.aa)
+        # ADS-B Data, 56
+        # self.me = int("".join(map(str,self.bits[32:32+56].astype(int))),2)
 
-        if self.df == 11:
-            print "Acq squitter"
-        
-        elif self.df == 17:
-            print "ADS-B"
+        # Parity/Interrogator Indentifier, 24
+        self.pi = int("".join(map(str,self.bits[88:88+112].astype(int))),2)
 
-        elif self.df == 18:
-            print "TIS-B"
 
-        elif self.df == 19:
-            print "Military"
+        # if self.df == 11:
+        #     print "Acq squitter"        
+        if self.df == 17:
+            self.df_str = "ADS-B"
+            self.decode_data(self.df)
 
-        elif self.df in [20,21,22]:
-            print "Airborne position"
-
-        elif self.df == 28:
-            print "Emergency/priority status"
-
-        elif self.df == 31:
-            print "Aircraft operational status"
-
-        else:
-            print "Unknown DF"
+        # elif self.df == 18:
+        #     self.df_str = "TIS-B   "
+        # elif self.df == 19:
+        #     self.df_str = "Military"
+        # elif self.df == 28:
+        #     print "Emergency/priority status"
+        # elif self.df == 31:
+        #     print "Aircraft operational status"
+        # else:
+        #     print "Unknown DF"
 
         return
 
-    def decode_data(self):
-        # ADS-B Data, 56
-        self.me = int(''.join(map(str,self.bits[32:32+56].astype(int))),2)
+    def decode_data(self, df):
+
         
-        # Parity Bits, 24
-        self.pi = int(''.join(map(str,self.bits[88:88+112].astype(int))),2)
+        if df == 17:
+            # Type Code, 5 bits
+            self.tc = int("".join(map(str,self.bits[32:32+5].astype(int))),2)
+
+            if self.tc in [1,2,3,4]:
+                # Grab callsign using character LUT
+                self.callsign = ""
+                for ii in range(0,8):
+                    self.callsign += CALLSIGN_LUT[int("".join(map(str,self.bits[40+ii*6:40+(ii+1)*6].astype(int))),2)]
+
+            else:
+                self.callsign = ""
+
+            print "%d\t%d\t%06x\t%d\t%f\t%s" % (self.df, self.ca, self.aa, self.tc, self.snr, self.callsign)
 
         return
