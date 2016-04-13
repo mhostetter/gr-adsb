@@ -705,7 +705,7 @@ class framer(gr.sync_block):
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
         self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
         
-        self.in_prev = 0 # Last sample from previous work() call, needed for finding pulses        
+        self.prev_in0 = 0 # Last sample from previous work() call, needed for finding pulses        
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
@@ -720,39 +720,43 @@ class framer(gr.sync_block):
         in0 = input_items[0]
         out0 = output_items[0]
 
-        # Square signal by the threshold value
-        in_pulses = numpy.zeros(len(in0)+1)
-        in_pulses[numpy.insert(in0, 0, self.in_prev) >= self.burst_thresh] = 1
+        # Create a binary array that represents when the input goes above
+        # the threshold value
+        # NOTE: Add the last sample from the previous work() call to the 
+        # beginning of this block of samples
+        in0_pulses = numpy.zeros(len(in0)+1).astype(int)
+        in0_pulses[numpy.insert(in0, 0, self.prev_in0) >= self.burst_thresh] = 1
 
-        # Set in_prev for the next call
-        self.in_prev = in0[-1]
+        # Set prev_in0 for the next work() call
+        self.prev_in0 = in0[-1]
 
-        # Subtract the previous pulse from the current sample to get transitions
+        # Subtract the previous pulse from the current pulse to get transitions
         # +1 = rising edge, -1 = falling edge
-        in_transitions = in_pulses[1:] - in_pulses[:-1]
+        in0_transitions = in0_pulses[1:] - in0_pulses[:-1]
 
-        in_rise_edge_idxs = numpy.nonzero(in_transitions == 1)[0]
-        in_fall_edge_idxs = numpy.nonzero(in_transitions == -1)[0]
+        in0_rise_edge_idxs = numpy.nonzero(in0_transitions == 1)[0]
+        in0_fall_edge_idxs = numpy.nonzero(in0_transitions == -1)[0]
 
         # Make sure there is one and only one falling edge for each rising edge
-        if len(in_rise_edge_idxs) > 0 and len(in_fall_edge_idxs) > 0:
+        if len(in0_rise_edge_idxs) > 0 and len(in0_fall_edge_idxs) > 0:
             # Make sure the first sample for the rising and falling edge indices corresponds
             # to the same pulse
-            if in_fall_edge_idxs[0] - in_rise_edge_idxs[0] < 0:
+            if in0_fall_edge_idxs[0] - in0_rise_edge_idxs[0] < 0:
                 # The first falling edge comes before the first rising edge, so remove it
-                in_fall_edge_idxs = numpy.delete(in_fall_edge_idxs, 0)
+                in0_fall_edge_idxs = numpy.delete(in0_fall_edge_idxs, 0)
 
-            diff_in_edges = len(in_rise_edge_idxs) - len(in_fall_edge_idxs)
-            if diff_in_edges > 0:
-                # If there are more rising edges than falling (could) only be 1 more, then
-                # remove the extras (1 really)
-                if diff_in_edges == 1:
-                    in_rise_edge_idxs = numpy.delete(in_rise_edge_idxs, len(in_rise_edge_idxs)-1)
+            if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) > 0:
+                # If there are more rising edges than falling edges, then
+                # remove the extras
+                # NOTE: There technically can only possibly be 1 extra rising edge, if 
+                # there are more, something went terribly wrong
+                if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) == 1:
+                    in0_rise_edge_idxs = numpy.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs)-1)
                 else:
                     print "Oh no, this shouldn't be happening..."
 
         # Find the index of the center of the pulses
-        pulse_idxs = numpy.mean((in_fall_edge_idxs-1,in_rise_edge_idxs),axis=0).astype(int)
+        pulse_idxs = numpy.mean((in0_fall_edge_idxs-1,in0_rise_edge_idxs),axis=0).astype(int)
 
         for pulse_idx in pulse_idxs:
             # If there are enough samples for the preamble to be present in this set
