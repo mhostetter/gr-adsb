@@ -741,8 +741,7 @@ class decoder(gr.sync_block):
         for tag in tags:
             # Grab metadata for this tag
             value = pmt.to_python(tag.value)
-            self.msg_count = value[1]
-            self.snr = value[2] # SNR in power dBs
+            self.snr = value[1] # SNR in power dBs
 
             # Calculate the SOB and EOB offsets            
             sob_offset = tag.offset + (8)*self.sps # Start of burst index (middle of the "bit 1 pulse")

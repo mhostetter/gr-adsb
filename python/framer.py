@@ -706,7 +706,6 @@ class framer(gr.sync_block):
         self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
         
         self.in_prev = 0 # Last sample from previous work() call, needed for finding pulses        
-        self.burst_count = 0 # Running burst counter
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
@@ -770,14 +769,13 @@ class framer(gr.sync_block):
 
                 if corr_matches == len(self.preamble_pulses):
                     # Found a preamble correlation
-                    self.burst_count += 1
                     snr = 10.0*math.log(float(in0[pulse_idx]/numpy.median(in0)),10)
                     
                     # Tag the start of the preamble
                     self.add_item_tag(  0,
                                         self.nitems_written(0)+pulse_idx,
                                         pmt.to_pmt("burst"),
-                                        pmt.to_pmt(("SOP", self.burst_count, snr)),
+                                        pmt.to_pmt(("SOP", snr)),
                                         pmt.to_pmt("framer")
                                     )
 
