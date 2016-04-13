@@ -705,7 +705,12 @@ class framer(gr.sync_block):
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
         self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
         
-        self.prev_in0 = 0 # Last sample from previous work() call, needed for finding pulses        
+        # Last sample from previous work() call.  Needed for finding pulses at 
+        # the beginning of the current work() call.        
+        self.prev_in0 = 0 
+
+        # End of the last burst (56 bit message).  Don't look for preambles during a valid packet
+        self.last_eob_idx = -1
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
@@ -719,6 +724,12 @@ class framer(gr.sync_block):
     def work(self, input_items, output_items):
         in0 = input_items[0]
         out0 = output_items[0]
+
+        if len(input_items[0]) != len(output_items[0]):
+            print "WARNING!!!!!!!!!!!!!!!!"
+
+        # Reset the EOB index because we haven't found any bursts yet
+        self.last_eob_idx = -1
 
         # Create a binary array that represents when the input goes above
         # the threshold value
@@ -761,35 +772,45 @@ class framer(gr.sync_block):
         # For each pulse found, check if that pulse is the beginning of the ADS-B
         # preamble.
         for pulse_idx in pulse_idxs:
-            # If there are enough samples for the preamble to be completely contained 
-            # in this set of samples, then check for a preamble correlation
-            if pulse_idx + len(self.preamble_pulses)*self.sps < len(in0):
-                # Starting at the center of the discovered pulse, find the amplitudes of each 
-                # half symbol and then compare it to what the preamble symbols
-                amps = in0[pulse_idx:(pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
+            # Only process this pulse if it's not a pulse from the previous packet.
+            # There will be many "pulses" in a valid packet and we don't want to waster
+            # cycles looking for preambles where they won't be
+            if pulse_idx > self.last_eob_idx:
+                # If there are enough samples for the preamble to be completely contained 
+                # in this set of samples, then check for a preamble correlation
+                if pulse_idx + len(self.preamble_pulses)*self.sps < len(in0):
+                    # Starting at the center of the discovered pulse, find the amplitudes of each 
+                    # half symbol and then compare it to what the preamble symbols
+                    amps = in0[pulse_idx:(pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
 
-                # Set a pulse to 1 if it's greater than 1/2 the amplitude of the detected pulse
-                pulses = numpy.zeros(len(self.preamble_pulses), dtype=int)
-                pulses[amps > in0[pulse_idx]/2] = 1
+                    # Set a pulse to 1 if it's greater than 1/2 the amplitude of the detected pulse
+                    pulses = numpy.zeros(len(self.preamble_pulses), dtype=int)
+                    pulses[amps > in0[pulse_idx]/2] = 1
 
-                # Count how many "pulses" or 1/2 symbols match the preamble "pulses"
-                corr_matches = numpy.sum(pulses == self.preamble_pulses)
+                    # Count how many "pulses" or 1/2 symbols match the preamble "pulses"
+                    corr_matches = numpy.sum(pulses == self.preamble_pulses)
 
-                # Only assert preamble found if all the 1/2 symbols match
-                if corr_matches == len(self.preamble_pulses):
-                    # Found a preamble correlation
-                    # NOTE: The median of a Rayleigh distributed random variable is 1.6 dB
-                    # less than the average.  So add 1.6 dB to get a more accurate power
-                    # SNR.
-                    snr = 10.0*math.log(float(in0[pulse_idx]/numpy.median(in0[0:pulse_idx])),10) + 1.6
-                    
-                    # Tag the start of the preamble
-                    self.add_item_tag(  0,
-                                        self.nitems_written(0)+pulse_idx,
-                                        pmt.to_pmt("burst"),
-                                        pmt.to_pmt(("SOP", snr)),
-                                        pmt.to_pmt("framer")
-                                    )
+                    # Only assert preamble found if all the 1/2 symbols match
+                    if corr_matches == len(self.preamble_pulses):
+                        # Found a preamble correlation
+                        # NOTE: The median of a Rayleigh distributed random variable is 1.6 dB
+                        # less than the average.  So add 1.6 dB to get a more accurate power
+                        # SNR.
+                        snr = 10.0*math.log(float(in0[pulse_idx]/numpy.median(in0[0:pulse_idx])),10) + 1.6
+                        
+                        # Calculate when this burst will end so we don't have to trigger
+                        # off of all the "pulses" in this packet
+                        # NOTE: Assume the shorter 56 bit packet because we don't yet know
+                        # the packet length
+                        self.last_eob_idx = pulse_idx + (8+56-1)*self.sps
+
+                        # Tag the start of the preamble
+                        self.add_item_tag(  0,
+                                            self.nitems_written(0)+pulse_idx,
+                                            pmt.to_pmt("burst"),
+                                            pmt.to_pmt(("SOP", snr)),
+                                            pmt.to_pmt("framer")
+                                        )
 
         out0[:] = in0
         return len(output_items[0])
