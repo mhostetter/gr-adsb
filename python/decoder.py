@@ -679,11 +679,10 @@
 import numpy
 from gnuradio import gr
 import pmt
-
+import csv
 
 NUM_BITS        = 112 
 CALLSIGN_LUT    = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ#####_###############0123456789######"
-
 
 class decoder(gr.sync_block):
     """
@@ -720,6 +719,13 @@ class decoder(gr.sync_block):
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
+
+        # Open files
+        self.fp_csv = open("/home/matt/adsb.csv", "w")
+        self.wr_csv = csv.writer(self.fp_csv)
+        self.wr_csv.writerow(("DF", "CA", "AA", "TC", "PI"))
+
+        # self.fp_db = open("/home/matt/adsb.sqlite", "w")
 
         print "Initialized ADS-B Decoder:"
         print "\tfs = %f Msym/s" % (fs/1e6)
@@ -855,6 +861,12 @@ class decoder(gr.sync_block):
             print "%d\t%d\t%06x\t%d\t%f\t%s" % (self.df, self.ca, self.aa, self.tc, self.snr, self.callsign)
 
         else:
+            self.tc = -1
+
             print self.df
 
+        # Write to a CSV file
+        self.wr_csv.writerow((self.df, self.ca, self.aa, self.tc, self.pi))
+
         return
+
