@@ -752,7 +752,7 @@ class framer(gr.sync_block):
                     print "Oh no, this shouldn't be happening..."
 
         # Find the index of the center of the pulses
-        pulse_idxs = numpy.mean((in_fall_edge_idxs,in_rise_edge_idxs),axis=0).astype(int)
+        pulse_idxs = numpy.mean((in_fall_edge_idxs-1,in_rise_edge_idxs),axis=0).astype(int)
 
         for pulse_idx in pulse_idxs:
             # If there are enough samples for the preamble to be present in this set
