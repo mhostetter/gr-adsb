@@ -778,7 +778,7 @@ class framer(gr.sync_block):
                 # Only assert preamble found if all the 1/2 symbols match
                 if corr_matches == len(self.preamble_pulses):
                     # Found a preamble correlation
-                    snr = 10.0*math.log(float(in0[pulse_idx]/numpy.median(in0)),10)
+                    snr = 10.0*math.log(float(in0[pulse_idx]/numpy.median(in0[0:pulse_idx])),10)
                     
                     # Tag the start of the preamble
                     self.add_item_tag(  0,
