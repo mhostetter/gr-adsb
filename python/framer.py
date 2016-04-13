@@ -757,7 +757,7 @@ class framer(gr.sync_block):
         # Find the index of the center of the pulses
         pulse_idxs = numpy.mean((in_fall_edge_idxs,in_rise_edge_idxs),axis=0).astype(int)
 
-        for pulse_idx in pulse_idxs[0:1]:
+        for pulse_idx in pulse_idxs:
             # If there are enough samples for the preamble to be present in this set
             # of samples, then check for correlation
             if (pulse_idx + len(self.preamble_pulses)*self.sps) <= len(in0):
