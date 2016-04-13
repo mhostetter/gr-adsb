@@ -681,8 +681,7 @@ from gnuradio import gr
 import pmt
 
 
-MODE_S_56       = 56 
-MODE_S_112      = 112 
+NUM_BITS        = 112 
 CALLSIGN_LUT    = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ#####_###############0123456789######"
 
 
@@ -706,16 +705,18 @@ class decoder(gr.sync_block):
 
         self.msg_count = 0
         self.snr = 0
-        self.sym0_idx = 0
         self.df = 0
-        self.df_str = ""
         self.ca = 0
         self.aa = 0
         self.me = 0
         self.pi = 0
         self.tc = 0
         self.callsign = ""
-        self.bits = numpy.zeros(MODE_S_112) # Array of data bits
+        
+        # Array of data bits
+        self.bits = []
+        self.bit_idx = 0
+        self.straddled_packet = 0
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
@@ -728,67 +729,71 @@ class decoder(gr.sync_block):
     def work(self, input_items, output_items):
         in0 = input_items[0]
         out0 = output_items[0]
-        # <+signal processing here+>
+
+        # If there was a packet that straddled the previous block and this
+        # block, finish decoding it
+        if self.straddled_packet == 1:
+            self.straddled_packet = 0
 
         # Get tags from ADS-B Framer block
         tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt("burst"))
 
-        for ii in range(0,len(tags)):
-            value = pmt.to_python(tags[ii].value)
+        for tag in tags:
+            # Grab metadata for this tag
+            value = pmt.to_python(tag.value)
+            self.msg_count = value[1]
+            self.snr = value[2] # SNR in power dBs
 
-            if value[0] == "SOB":
-                # Start of data, decode this packet
-                self.msg_count = value[1]
-                self.snr = value[2]
-                self.sym0_idx = tags[ii].offset - self.nitems_written(0)
-                
-                # Is this packet fully within our samples
-                if ii+2 < len(tags):
-                    val1 = pmt.to_python(tags[ii+1].value)
-                    val2 = pmt.to_python(tags[ii+2].value)
-                    
-                    if val1[1] == self.msg_count and val2[1] == self.msg_count:
-                        # The EOB_56 and EOB_112 tags exist in this window, so 
-                        # demod the entire message
-                        
-                        # Grab the amplitudes where the "bit 1 pulse" should be
-                        bit1_idxs = range(self.sym0_idx, self.sym0_idx+self.sps*MODE_S_112, self.sps)
-                        bit1_amps = in0[bit1_idxs]
+            # Calculate the SOB and EOB offsets            
+            sob_offset = tag.offset + (8)*self.sps # Start of burst index (middle of the "bit 1 pulse")
+            eob_offset = tag.offset + (8+112-1)*self.sps + self.sps/2 # End of burst index (middle of the "bit 0 pulse")
 
-                        # Grab the amplitudes where the "bit 0 pulse" should be
-                        bit0_idxs = range(self.sym0_idx+self.sps/2, self.sym0_idx+self.sps/2+self.sps*MODE_S_112, self.sps)
-                        bit0_amps = in0[bit0_idxs]
+            # Find the SOB and EOB indices in this block of samples
+            sob_idx = sob_offset - self.nitems_written(0)
+            eob_idx = eob_offset - self.nitems_written(0)
 
-                        self.bits = numpy.zeros(MODE_S_112)
-                        self.bits[bit1_amps > bit0_amps] = 1
+            if eob_idx < len(input_items[0]):
+                # The packet is fully within this block of samples, so demod
+                # the entire burst
 
-                        if 0:
-                            for ii in range(0,len(bit1_idxs)):
-                                # Tag the bit1 markers
-                                self.add_item_tag(  0, 
-                                                    self.nitems_written(0)+bit1_idxs[ii],
-                                                    pmt.to_pmt("bits"),
-                                                    pmt.to_pmt("1"),    
-                                                    pmt.to_pmt("decoder")
-                                                )
-                                # Tag the bit0 markers
-                                self.add_item_tag(  0, 
-                                                    self.nitems_written(0)+bit0_idxs[ii], 
-                                                    pmt.to_pmt("bits"),
-                                                    pmt.to_pmt("0"), 
-                                                    pmt.to_pmt("decoder")
-                                                )
-                            print self.bits
+                # Grab the amplitudes where the "bit 1 pulse" should be
+                bit1_idxs = range(sob_idx, sob_idx+self.sps*NUM_BITS, self.sps)
+                bit1_amps = in0[bit1_idxs]
+
+                # Grab the amplitudes where the "bit 0 pulse" should be
+                bit0_idxs = range(sob_idx+self.sps/2, sob_idx+self.sps*NUM_BITS+self.sps/2, self.sps)
+                bit0_amps = in0[bit0_idxs]
+
+                self.bits = numpy.zeros(NUM_BITS, dtype=int)
+                self.bits[bit1_amps > bit0_amps] = 1
+
+                self.decode_header()
+                self.decode_data()
+
+            else:
+                # The packet is only partially contained in this block of
+                # samples, decode as much as possible
+                self.straddled_packet = 1
+                # print "Straddled packet"
 
 
-                        self.decode_header()
+            if 0:
+                # Tag the 0 and 1 bits markers for debug
+                for ii in range(0,len(bit1_idxs)):
+                    self.add_item_tag(  0, 
+                                        self.nitems_written(0)+bit1_idxs[ii],
+                                        pmt.to_pmt("bits"),
+                                        pmt.to_pmt("1"),    
+                                        pmt.to_pmt("decoder")
+                                    )
+                    self.add_item_tag(  0, 
+                                        self.nitems_written(0)+bit0_idxs[ii], 
+                                        pmt.to_pmt("bits"),
+                                        pmt.to_pmt("0"), 
+                                        pmt.to_pmt("decoder")
+                                    )
 
-            # elif value[0] == "EOB_56":
-            #     print "Found burst %d at %d" % (value[1], tag.offset)
-            
-            # elif value[0] == "EOB_112":
-            #     print "Found burst %d at %d" % (value[1], tag.offset)
-            
+
         out0[:] = in0
         return len(output_items[0])
 
@@ -802,31 +807,28 @@ class decoder(gr.sync_block):
         # See http://www.sigidwiki.com/images/1/15/ADS-B_for_Dummies.pdf
 
         # Downlink Format, 5 bits
-        self.df = int("".join(map(str,self.bits[0:0+5].astype(int))),2)
-        
+        self.df = int("".join(map(str,self.bits[0:0+5])),2)
+
         # Capability, 3 bits
-        self.ca = int("".join(map(str,self.bits[5:5+3].astype(int))),2)
+        self.ca = int("".join(map(str,self.bits[5:5+3])),2)
         
         # Address Announced, ICAO address 24 bits
-        self.aa = int("".join(map(str,self.bits[8:8+24].astype(int))),2)
+        self.aa = int("".join(map(str,self.bits[8:8+24])),2)
 
         # ADS-B Data, 56
-        # self.me = int("".join(map(str,self.bits[32:32+56].astype(int))),2)
+        # self.me = int("".join(map(str,self.bits[32:32+56])),2)
 
         # Parity/Interrogator Indentifier, 24
-        self.pi = int("".join(map(str,self.bits[88:88+112].astype(int))),2)
-
+        self.pi = int("".join(map(str,self.bits[88:88+112])),2)
 
         # if self.df == 11:
         #     print "Acq squitter"        
-        if self.df == 17:
-            self.df_str = "ADS-B"
-            self.decode_data(self.df)
-
+        # if self.df == 17:
+        #     print = "ADS-B"
         # elif self.df == 18:
-        #     self.df_str = "TIS-B   "
+        #     print "TIS-B"
         # elif self.df == 19:
-        #     self.df_str = "Military"
+        #     print "Military"
         # elif self.df == 28:
         #     print "Emergency/priority status"
         # elif self.df == 31:
@@ -836,22 +838,24 @@ class decoder(gr.sync_block):
 
         return
 
-    def decode_data(self, df):
+    def decode_data(self):
 
-        
-        if df == 17:
+        if self.df == 17:
             # Type Code, 5 bits
-            self.tc = int("".join(map(str,self.bits[32:32+5].astype(int))),2)
+            self.tc = int("".join(map(str,self.bits[32:32+5])),2)
 
             if self.tc in [1,2,3,4]:
                 # Grab callsign using character LUT
                 self.callsign = ""
                 for ii in range(0,8):
-                    self.callsign += CALLSIGN_LUT[int("".join(map(str,self.bits[40+ii*6:40+(ii+1)*6].astype(int))),2)]
+                    self.callsign += CALLSIGN_LUT[int("".join(map(str,self.bits[40+ii*6:40+(ii+1)*6])),2)]
 
             else:
                 self.callsign = ""
 
             print "%d\t%d\t%06x\t%d\t%f\t%s" % (self.df, self.ca, self.aa, self.tc, self.snr, self.callsign)
+
+        else:
+            print self.df
 
         return
