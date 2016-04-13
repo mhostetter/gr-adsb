@@ -724,7 +724,7 @@ class framer(gr.sync_block):
         # the threshold value
         # NOTE: Add the last sample from the previous work() call to the 
         # beginning of this block of samples
-        in0_pulses = numpy.zeros(len(in0)+1).astype(int)
+        in0_pulses = numpy.zeros(len(in0)+1, dtype=int)
         in0_pulses[numpy.insert(in0, 0, self.prev_in0) >= self.burst_thresh] = 1
 
         # Set prev_in0 for the next work() call
@@ -755,22 +755,27 @@ class framer(gr.sync_block):
                 else:
                     print "Oh no, this shouldn't be happening..."
 
-        # Find the index of the center of the pulses
+        # Find the index of the center of each pulses
         pulse_idxs = numpy.mean((in0_fall_edge_idxs-1,in0_rise_edge_idxs),axis=0).astype(int)
 
+        # For each pulse found, check if that pulse is the beginning of the ADS-B
+        # preamble.
         for pulse_idx in pulse_idxs:
-            # If there are enough samples for the preamble to be present in this set
-            # of samples, then check for correlation
-            if (pulse_idx + len(self.preamble_pulses)*self.sps) <= len(in0):
-                # Find the amplitudes at each "pulse" (which is 1/2 symbol duration)
-                pulse_amps = in0[pulse_idx:(pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
+            # If there are enough samples for the preamble to be completely contained 
+            # in this set of samples, then check for a preamble correlation
+            if pulse_idx + len(self.preamble_pulses)*self.sps < len(in0):
+                # Starting at the center of the discovered pulse, find the amplitudes of each 
+                # half symbol and then compare it to what the preamble symbols
+                amps = in0[pulse_idx:(pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
 
-                # Set a pulse to 1 if it's greater than the middle amplitude of the detected pulse
+                # Set a pulse to 1 if it's greater than 1/2 the amplitude of the detected pulse
                 pulses = numpy.zeros(len(self.preamble_pulses), dtype=int)
-                pulses[pulse_amps > in0[pulse_idx]/2] = 1
+                pulses[amps > in0[pulse_idx]/2] = 1
 
+                # Count how many "pulses" or 1/2 symbols match the preamble "pulses"
                 corr_matches = numpy.sum(pulses == self.preamble_pulses)
 
+                # Only assert preamble found if all the 1/2 symbols match
                 if corr_matches == len(self.preamble_pulses):
                     # Found a preamble correlation
                     snr = 10.0*math.log(float(in0[pulse_idx]/numpy.median(in0)),10)
