@@ -721,7 +721,7 @@ class decoder(gr.sync_block):
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
         # Open files
-        self.fp_csv = open("/home/matt/adsb.csv", "w")
+        self.fp_csv = open("/home/matt/adsb.csv", "a")
         self.wr_csv = csv.writer(self.fp_csv)
         self.wr_csv.writerow(("DF", "CA", "AA", "TC", "PI"))
 
