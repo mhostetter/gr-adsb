@@ -89,7 +89,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -116,7 +116,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -143,7 +143,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -160,33 +160,6 @@
     <param>
       <key>value</key>
       <value>1090</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(184, 539)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>filename</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>"/home/matt/adsb_1090MHz_4Msps.fc32"</value>
     </param>
   </block>
   <block>
@@ -228,6 +201,60 @@
     </param>
     <param>
       <key>_coordinate</key>
+      <value>(184, 539)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>filename</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>"/home/matt/adsb_1090MHz_4Msps.fc32"</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(104, 611)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>fs_mhz</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>4</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>1</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
       <value>(8, 155)</value>
     </param>
     <param>
@@ -255,33 +282,6 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(104, 611)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>fs_mhz</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>4</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
       <value>(8, 283)</value>
     </param>
     <param>
@@ -305,7 +305,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -375,7 +375,7 @@
     </param>
     <param>
       <key>burst_thresh</key>
-      <value>0.005</value>
+      <value>0.003</value>
     </param>
     <param>
       <key>comment</key>
@@ -586,7 +586,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>file</key>
@@ -618,7 +618,7 @@
     </param>
     <param>
       <key>repeat</key>
-      <value>True</value>
+      <value>False</value>
     </param>
     <param>
       <key>vlen</key>
@@ -649,7 +649,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(912, 105)</value>
+      <value>(928, 105)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -798,7 +798,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -2137,7 +2137,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -2379,7 +2379,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(912, 147)</value>
+      <value>(928, 147)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -2651,11 +2651,11 @@
     </param>
     <param>
       <key>size</key>
-      <value>fs_mhz*150</value>
+      <value>int(fs_mhz*150)</value>
     </param>
     <param>
       <key>srate</key>
-      <value>fs_mhz*1e6</value>
+      <value>int(fs_mhz*1e6)</value>
     </param>
     <param>
       <key>tr_chan</key>
@@ -2667,7 +2667,7 @@
     </param>
     <param>
       <key>tr_level</key>
-      <value>0.0</value>
+      <value>0</value>
     </param>
     <param>
       <key>tr_mode</key>
@@ -2742,7 +2742,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(912, 235)</value>
+      <value>(928, 235)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -3014,11 +3014,11 @@
     </param>
     <param>
       <key>size</key>
-      <value>fs_mhz*500</value>
+      <value>int(fs_mhz*500)</value>
     </param>
     <param>
       <key>srate</key>
-      <value>fs_mhz*1e6</value>
+      <value>int(fs_mhz*1e6)</value>
     </param>
     <param>
       <key>tr_chan</key>
