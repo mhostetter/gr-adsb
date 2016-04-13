@@ -26,7 +26,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>True</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -82,45 +82,6 @@
     </param>
   </block>
   <block>
-    <key>variable_qtgui_entry</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>20</value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(104, 347)</value>
-    </param>
-    <param>
-      <key>gui_hint</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>bb_gain</value>
-    </param>
-    <param>
-      <key>label</key>
-      <value></value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>real</value>
-    </param>
-  </block>
-  <block>
     <key>variable</key>
     <param>
       <key>comment</key>
@@ -128,7 +89,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -148,45 +109,6 @@
     </param>
   </block>
   <block>
-    <key>variable_qtgui_entry</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>1089</value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(104, 91)</value>
-    </param>
-    <param>
-      <key>gui_hint</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>fc_mhz</value>
-    </param>
-    <param>
-      <key>label</key>
-      <value></value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>real</value>
-    </param>
-  </block>
-  <block>
     <key>variable</key>
     <param>
       <key>comment</key>
@@ -195,33 +117,6 @@
     <param>
       <key>_enabled</key>
       <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(8, 571)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>fc_mhz</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>1089</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -248,11 +143,65 @@
     </param>
     <param>
       <key>_enabled</key>
+      <value>1</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(8, 611)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>fc_mhz</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>1090</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>1</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(184, 539)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>filename</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>"/home/matt/adsb_1090MHz_4Msps.fc32"</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
       <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(8, 499)</value>
+      <value>(8, 539)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -279,99 +228,6 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(184, 499)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>filename</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>"/home/matt/adsb_1088MHz_20Msps.fc32"</value>
-    </param>
-  </block>
-  <block>
-    <key>variable_qtgui_entry</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>8</value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(104, 155)</value>
-    </param>
-    <param>
-      <key>gui_hint</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>fs_mhz</value>
-    </param>
-    <param>
-      <key>label</key>
-      <value></value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>real</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(104, 571)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>fs_mhz</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>20</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
       <value>(8, 155)</value>
     </param>
     <param>
@@ -388,26 +244,18 @@
     </param>
   </block>
   <block>
-    <key>variable_qtgui_entry</key>
+    <key>variable</key>
     <param>
       <key>comment</key>
       <value></value>
     </param>
     <param>
-      <key>value</key>
-      <value>32</value>
-    </param>
-    <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(104, 283)</value>
-    </param>
-    <param>
-      <key>gui_hint</key>
-      <value></value>
+      <value>(104, 611)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -415,15 +263,11 @@
     </param>
     <param>
       <key>id</key>
-      <value>if_gain</value>
+      <value>fs_mhz</value>
     </param>
     <param>
-      <key>label</key>
-      <value></value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>real</value>
+      <key>value</key>
+      <value>4</value>
     </param>
   </block>
   <block>
@@ -434,7 +278,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -454,45 +298,6 @@
     </param>
   </block>
   <block>
-    <key>variable_qtgui_entry</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>14</value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(104, 219)</value>
-    </param>
-    <param>
-      <key>gui_hint</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>rf_gain</value>
-    </param>
-    <param>
-      <key>label</key>
-      <value></value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>real</value>
-    </param>
-  </block>
-  <block>
     <key>variable</key>
     <param>
       <key>comment</key>
@@ -500,7 +305,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
@@ -539,7 +344,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 123)</value>
+      <value>(728, 163)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -586,7 +391,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(704, 115)</value>
+      <value>(536, 155)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -629,7 +434,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 129)</value>
+      <value>(352, 169)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -672,7 +477,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(600, 459)</value>
+      <value>(456, 499)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -703,7 +508,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(600, 411)</value>
+      <value>(456, 451)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -738,11 +543,11 @@
     </param>
     <param>
       <key>file</key>
-      <value>"/home/matt/adsb_1089MHz_8Msps.fc32"</value>
+      <value>"/home/matt/adsb_1090MHz_4Msps.fc32"</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 19)</value>
+      <value>(352, 59)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -781,7 +586,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>file</key>
@@ -789,7 +594,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(88, 427)</value>
+      <value>(16, 467)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -813,7 +618,7 @@
     </param>
     <param>
       <key>repeat</key>
-      <value>False</value>
+      <value>True</value>
     </param>
     <param>
       <key>vlen</key>
@@ -840,11 +645,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1088, 65)</value>
+      <value>(912, 105)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -891,7 +696,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 211)</value>
+      <value>(728, 251)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -946,7 +751,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(904, 299)</value>
+      <value>(728, 339)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -993,11 +798,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(328, 435)</value>
+      <value>(176, 475)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2332,11 +2137,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(256, 51)</value>
+      <value>(104, 91)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2475,7 +2280,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 291)</value>
+      <value>(352, 339)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -2566,7 +2371,7 @@
     </param>
     <param>
       <key>entags</key>
-      <value>True</value>
+      <value>False</value>
     </param>
     <param>
       <key>_enabled</key>
@@ -2574,7 +2379,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1088, 107)</value>
+      <value>(912, 147)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -2846,7 +2651,7 @@
     </param>
     <param>
       <key>size</key>
-      <value>fs_mhz*125</value>
+      <value>fs_mhz*150</value>
     </param>
     <param>
       <key>srate</key>
@@ -2882,7 +2687,7 @@
     </param>
     <param>
       <key>update_time</key>
-      <value>0.10</value>
+      <value>0.01</value>
     </param>
     <param>
       <key>ylabel</key>
@@ -2894,7 +2699,7 @@
     </param>
     <param>
       <key>ymax</key>
-      <value>0.2</value>
+      <value>0.25</value>
     </param>
     <param>
       <key>ymin</key>
@@ -2937,7 +2742,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(1088, 195)</value>
+      <value>(912, 235)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -3292,7 +3097,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>True</value>
+      <value>1</value>
     </param>
     <param>
       <key>fftsize</key>
@@ -3300,7 +3105,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 187)</value>
+      <value>(352, 235)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -3336,7 +3141,7 @@
     </param>
     <param>
       <key>color1</key>
-      <value>6</value>
+      <value>5</value>
     </param>
     <param>
       <key>label1</key>
@@ -3480,7 +3285,7 @@
     </param>
     <param>
       <key>update_time</key>
-      <value>0.005</value>
+      <value>0.01</value>
     </param>
     <param>
       <key>wintype</key>
@@ -3544,6 +3349,12 @@
   <connection>
     <source_block_id>blocks_throttle_0</source_block_id>
     <sink_block_id>qtgui_sink_x_0</sink_block_id>
+    <source_key>0</source_key>
+    <sink_key>0</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>blocks_throttle_0</source_block_id>
+    <sink_block_id>qtgui_waterfall_sink_x_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
