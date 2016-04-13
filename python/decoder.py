@@ -696,8 +696,6 @@ class decoder(gr.sync_block):
             in_sig=[numpy.float32],
             out_sig=[numpy.float32])
 
-        self.fs = fs
-
         # Calculate the samples/symbol
         # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
         # required fs is 2 Msps
@@ -723,7 +721,7 @@ class decoder(gr.sync_block):
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
         print "Initialized ADS-B Decoder:"
-        print "\tfs = %f Msym/s" % (self.fs/1e6)
+        print "\tfs = %f Msym/s" % (fs/1e6)
         print "\tsps = %d" % (self.sps)
 
 
