@@ -726,7 +726,7 @@ class framer(gr.sync_block):
     def work(self, input_items, output_items):
         in0 = input_items[0]
         out0 = output_items[0]
-        
+
         # Create a binary array that represents when the input goes above
         # the threshold value
         # NOTE: Add the last sample from the previous work() call to the 
@@ -763,7 +763,10 @@ class framer(gr.sync_block):
                     print "Oh no, this shouldn't be happening..."
 
         # Find the index of the center of each pulses
-        pulse_idxs = numpy.mean((in0_fall_edge_idxs-1,in0_rise_edge_idxs),axis=0).astype(int)
+        if len(in0_rise_edge_idxs) > 0:
+            pulse_idxs = numpy.mean((in0_fall_edge_idxs,in0_rise_edge_idxs),axis=0).astype(int)
+        else:
+            pulse_idxs = []
 
         # For each pulse found, check if that pulse is the beginning of the ADS-B
         # preamble.
@@ -774,6 +777,15 @@ class framer(gr.sync_block):
             if pulse_idx > self.last_eob_idx:
                 # Reset EOB index so we don't trigger on it later
                 self.last_eob_idx = -1
+
+                # Tag the detected pulses for debug
+                if 0:
+                    self.add_item_tag(  0, 
+                        self.nitems_written(0)+pulse_idx,
+                        pmt.to_pmt("pulse"),
+                        pmt.to_pmt("1"),    
+                        pmt.to_pmt("framer")
+                    )
 
                 # If there are enough samples for the preamble to be completely contained 
                 # in this set of samples, then check for a preamble correlation
