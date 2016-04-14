@@ -806,7 +806,6 @@ class decoder(gr.sync_block):
         return len(output_items[0])
 
 
-    # ADS-B Extended Squitter decoding informaiton available at:
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
     # http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
     # http://www.anteni.net/adsb/Doc/1090-WP30-18-DRAFT_DO-260B-V42.pdf
@@ -825,28 +824,21 @@ class decoder(gr.sync_block):
 
         # ADS-B Data, 56
         # self.me = int("".join(map(str,self.bits[32:32+56])),2)
+        self.me = self.bits[32:32+56]
 
         # Parity/Interrogator Indentifier, 24
-        self.pi = int("".join(map(str,self.bits[88:88+112])),2)
+        # self.pi = int("".join(map(str,self.bits[88:88+24])),2)
+        self.pi = self.bits[88:88+24]
 
-        # if self.df == 11:
-        #     print "Acq squitter"        
-        # if self.df == 17:
-        #     print = "ADS-B"
-        # elif self.df == 18:
-        #     print "TIS-B"
-        # elif self.df == 19:
-        #     print "Military"
-        # elif self.df == 28:
-        #     print "Emergency/priority status"
-        # elif self.df == 31:
-        #     print "Aircraft operational status"
-        # else:
-        #     print "Unknown DF"
+        parity_passed = self.check_parity()
+        
+        if parity_passed == 1:
+            # If parity check passes, then decode the message contents
+            self.decode_message()
 
         return
 
-    def decode_data(self):
+    def decode_message(self):
 
         if self.df == 17:
             # Type Code, 5 bits
@@ -863,13 +855,35 @@ class decoder(gr.sync_block):
 
             print "%d\t%d\t%06x\t%d\t%f\t%s" % (self.df, self.ca, self.aa, self.tc, self.snr, self.callsign)
 
-        else:
+        elif self.df == 18 and self.ca in [0,1,6]:
             self.tc = -1
-
             print self.df
+
+        elif self.df == 19 and self.ca == 0:
+            self.tc = -1
+            print self.df
+
+        # if self.df == 11:
+        #     print "Acq squitter"        
+        # if self.df == 17:
+        #     print = "ADS-B"
+        # elif self.df == 18:
+        #     print "TIS-B"
+        # elif self.df == 19:
+        #     print "Military"
+        # elif self.df == 28:
+        #     print "Emergency/priority status"
+        # elif self.df == 31:
+        #     print "Aircraft operational status"
+        # else:
+        #     print "Unknown DF"
 
         # Write to a CSV file
         self.wr_csv.writerow((self.df, self.ca, self.aa, self.tc, self.pi))
 
         return
 
+    # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1994/022_CRC_calculations_for_Mode_S.pdf
+    # http://jetvision.de/sbs/adsb/crc.htm
+    def check_parity(self):
+        return 1
