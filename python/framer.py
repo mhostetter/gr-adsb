@@ -712,6 +712,8 @@ class framer(gr.sync_block):
         # End of the last burst (56 bit message).  Don't look for preambles during a valid packet
         self.last_eob_idx = -1
 
+        self.straddled_packet = 0
+
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
@@ -724,13 +726,7 @@ class framer(gr.sync_block):
     def work(self, input_items, output_items):
         in0 = input_items[0]
         out0 = output_items[0]
-
-        if len(input_items[0]) != len(output_items[0]):
-            print "WARNING!!!!!!!!!!!!!!!!"
-
-        # Reset the EOB index because we haven't found any bursts yet
-        self.last_eob_idx = -1
-
+        
         # Create a binary array that represents when the input goes above
         # the threshold value
         # NOTE: Add the last sample from the previous work() call to the 
@@ -776,6 +772,9 @@ class framer(gr.sync_block):
             # There will be many "pulses" in a valid packet and we don't want to waster
             # cycles looking for preambles where they won't be
             if pulse_idx > self.last_eob_idx:
+                # Reset EOB index so we don't trigger on it later
+                self.last_eob_idx = -1
+
                 # If there are enough samples for the preamble to be completely contained 
                 # in this set of samples, then check for a preamble correlation
                 if pulse_idx + len(self.preamble_pulses)*self.sps < len(in0):
@@ -811,6 +810,11 @@ class framer(gr.sync_block):
                                             pmt.to_pmt(("SOP", snr)),
                                             pmt.to_pmt("framer")
                                         )
+
+        # Check if the end of this burst will be in the next work() call
+        if self.last_eob_idx >= len(in0):
+            # Wrap the index so it's ready for the next work() call
+            self.last_eob_idx -= len(in0)
 
         out0[:] = in0
         return len(output_items[0])
