@@ -744,6 +744,9 @@ class decoder(gr.sync_block):
         # Get tags from ADS-B Framer block
         tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt("burst"))
 
+        bit1_idxs = []
+        bit0_idxs = []
+
         for tag in tags:
             # Grab metadata for this tag
             value = pmt.to_python(tag.value)
