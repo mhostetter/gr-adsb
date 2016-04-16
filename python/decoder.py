@@ -688,7 +688,7 @@ class decoder(gr.sync_block):
     """
     docstring for block decoder
     """
-    def __init__(self, fs):
+    def __init__(self, fs, err_corr):
         gr.sync_block.__init__(self,
             name="ADS-B Decoder",
             in_sig=[numpy.float32],
@@ -701,7 +701,9 @@ class decoder(gr.sync_block):
         if (self.sps - numpy.floor(self.sps)) > 0:
             print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
-        
+
+        self.err_corr = err_corr;
+
         self.msg_count = 0
         self.snr = 0
 
@@ -834,43 +836,43 @@ class decoder(gr.sync_block):
         # Address Announced, ICAO address 24 bits
         self.aa = int("".join(map(str,self.bits[8:8+24])),2)
 
-        print "\n\n\n"
-        print "SNR ", self.snr
-        print "DF ", self.df
-        print "CA ", self.ca
-        print "AA ", self.aa
-
         return
 
 
     # http://jetvision.de/sbs/adsb/crc.htm
     def check_parity(self):
-        if self.df in [0,4,5,11]:
-            # 56 bit payload
-            self.pi = int("".join(map(str,self.bits[32:32+24])),2)
+        # if self.df in [0,4,5,11]:
+        #     # 56 bit payload
+        #     self.pi = int("".join(map(str,self.bits[32:32+24])),2)
 
-            print "pi bits"
-            print self.bits[32:32+24]
+        #     print "pi bits"
+        #     print self.bits[32:32+24]
 
-            crc = self.compute_crc(56)
+        #     crc = self.compute_crc(56)
 
-        elif self.df in [16,17,18,19,20,21]:
+        if self.df in [16,17,18,19,20,21]:
             # 112 bit payload
             self.pi = int("".join(map(str,self.bits[88:88+24])),2)
+
+            print "\n\n\n"
+            print "SNR ", self.snr
+            print "DF ", self.df
+            print "CA ", self.ca
+            print "AA ", self.aa
 
             print "pi bits"
             print self.bits[88:88+24]
 
             crc = self.compute_crc(112)
 
+            print "pi  ", self.pi
+            print "crc ", crc
+            print "delta ", self.pi - crc
+
         else:
-            # Non-supported downlink format
+            # Unsupported downlink format
             self.pi = -1
             crc = 0
-
-        print "pi  ", self.pi
-        print "crc ", crc
-        print "delta ", self.pi - crc
 
         if self.pi == crc:
             return 1

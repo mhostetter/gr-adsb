@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Adsb Rx
-# Generated: Wed Apr 13 01:42:01 2016
+# Generated: Fri Apr 15 23:42:20 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -76,7 +76,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         	"", #name
                 1 #number of inputs
         )
-        self.qtgui_waterfall_sink_x_0.set_update_time(0.01)
+        self.qtgui_waterfall_sink_x_0.set_update_time(0.1)
         self.qtgui_waterfall_sink_x_0.enable_grid(False)
         self.qtgui_waterfall_sink_x_0.enable_axis_labels(True)
         
@@ -110,7 +110,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         	"", #name
         	1 #number of inputs
         )
-        self.qtgui_time_sink_x_0.set_update_time(0.01)
+        self.qtgui_time_sink_x_0.set_update_time(0.1)
         self.qtgui_time_sink_x_0.set_y_axis(0, 0.25)
         
         self.qtgui_time_sink_x_0.set_y_label("Amplitude", "")
@@ -151,7 +151,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_time_sink_x_0_win)
-        self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + "hackrf=0,bias=1" )
+        self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + "hackrf=0,bias=0" )
         self.osmosdr_source_0.set_sample_rate(fs_mhz*1e6)
         self.osmosdr_source_0.set_center_freq(fc_mhz*1e6, 0)
         self.osmosdr_source_0.set_freq_corr(0, 0)
@@ -166,8 +166,8 @@ class adsb_rx(gr.top_block, Qt.QWidget):
           
         self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float*1)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
-        self.adsb_framer_0_0 = adsb.framer(fs_mhz*1e6, 0.003)
-        self.adsb_decoder_0 = adsb.decoder(fs_mhz*1e6)
+        self.adsb_framer_0_0 = adsb.framer(fs_mhz*1e6, 0.01)
+        self.adsb_decoder_0 = adsb.decoder(fs_mhz*1e6, False)
 
         ##################################################
         # Connections
@@ -204,17 +204,17 @@ class adsb_rx(gr.top_block, Qt.QWidget):
 
     def set_fs_mhz(self, fs_mhz):
         self.fs_mhz = fs_mhz
-        self.osmosdr_source_0.set_sample_rate(self.fs_mhz*1e6)
-        self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc_mhz*1e6, self.fs_mhz*1e6)
         self.qtgui_time_sink_x_0.set_samp_rate(int(self.fs_mhz*1e6))
+        self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc_mhz*1e6, self.fs_mhz*1e6)
+        self.osmosdr_source_0.set_sample_rate(self.fs_mhz*1e6)
 
     def get_fc_mhz(self):
         return self.fc_mhz
 
     def set_fc_mhz(self, fc_mhz):
         self.fc_mhz = fc_mhz
-        self.osmosdr_source_0.set_center_freq(self.fc_mhz*1e6, 0)
         self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc_mhz*1e6, self.fs_mhz*1e6)
+        self.osmosdr_source_0.set_center_freq(self.fc_mhz*1e6, 0)
 
     def get_bb_gain(self):
         return self.bb_gain

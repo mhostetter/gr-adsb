@@ -4,7 +4,7 @@
   <key>adsb_decoder</key>
   <category>ADS-B</category>
   <import>import adsb</import>
-  <make>adsb.decoder($fs)</make>
+  <make>adsb.decoder($fs, $err_corr)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
@@ -15,7 +15,20 @@
     <key>fs</key>
     <type>float</type>
   </param>
-
+  <param>
+    <name>Error Correction</name>
+    <key>err_corr</key>
+    <value>False</value>
+    <type>enum</type>
+    <option>
+      <name>Yes</name>
+      <key>True</key>
+    </option>
+    <option>
+      <name>No</name>
+      <key>False</key>
+    </option>
+  </param>
 
   <!-- Make one 'sink' node per input. Sub-nodes:
        * name (an identifier for the GUI)
