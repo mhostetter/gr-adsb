@@ -19,9 +19,9 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import numpy
 from gnuradio import gr
 import pmt
+import numpy as np
 import datetime as dt
 import csv
 
@@ -37,14 +37,14 @@ class decoder(gr.sync_block):
     def __init__(self, fs, error_corr, print_level):
         gr.sync_block.__init__(self,
             name="ADS-B Decoder",
-            in_sig=[numpy.float32],
-            out_sig=[numpy.float32])
+            in_sig=[np.float32],
+            out_sig=[np.float32])
 
         # Calculate the samples/symbol
         # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
         # required fs is 2 Msps
         self.sps = fs/(1e6) 
-        if (self.sps - numpy.floor(self.sps)) > 0:
+        if (self.sps - np.floor(self.sps)) > 0:
             print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
@@ -117,7 +117,7 @@ class decoder(gr.sync_block):
                 bit0_idxs = range(sob_idx+self.sps/2, sob_idx+self.sps*NUM_BITS+self.sps/2, self.sps)
                 bit0_amps = in0[bit0_idxs]
 
-                self.bits = numpy.zeros(NUM_BITS, dtype=int)
+                self.bits = np.zeros(NUM_BITS, dtype=int)
                 self.bits[bit1_amps > bit0_amps] = 1
 
                 # Reset decoder values before decoding next burs
@@ -205,21 +205,20 @@ class decoder(gr.sync_block):
 
 
     def reset_plane_altimetry(self, plane):
-        plane["alt"] = numpy.NaN
-        plane["speed"] = numpy.NaN
-        plane["heading"] = numpy.NaN
-        plane["lat"] = numpy.NaN
-        plane["lon"] = numpy.NaN
-        plane["cpr"] = numpy.ndarray((2,3))
+        plane["alt"] = np.NaN
+        plane["speed"] = np.NaN
+        plane["heading"] = np.NaN
+        plane["lat"] = np.NaN
+        plane["lon"] = np.NaN
+        plane["cpr"] = np.ndarray((2,3))
 
 
     def print_planes(self):
         print "\n\n"
-        # print "                                                                               "
-        print "Aircrft  Callsign Alt   Speed Hdng Lat         Lon         Msgs Secs"
+        print "Aircarft Callsign Alt   Speed Hdng Lat         Lon         Msgs Secs"
         print "-------- -------- ----- ----- ---- ----------- ----------- ---- ----"
         # print "a6234b   ABC123__ 38000 375   -176 75.4444     34.898      71   10  "
-        
+
         for key in self.planes.keys():
             print "%s   %s %s %s %s %s %s %s %s" % (key,
                     "{:8s}".format(self.planes[key]["callsign"]),
@@ -302,10 +301,10 @@ class decoder(gr.sync_block):
         num_data_bits = payload_length - num_crc_bits
 
         data = self.bits[0:num_data_bits]
-        data = numpy.append(data, numpy.zeros(num_crc_bits, dtype=int))
+        data = np.append(data, np.zeros(num_crc_bits, dtype=int))
 
         # CRC polynomial (0xFFFA048) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 + x^11 + x^12 + x^14 + x^21 + x^24
-        poly = numpy.array([1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1])
+        poly = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1])
         
         for ii in range(0,num_data_bits):
             if data[ii] == 1:
@@ -483,10 +482,10 @@ class decoder(gr.sync_block):
                         velocity_sn *= -1 # Flip direction
 
                     # Speed (knots)
-                    speed = numpy.sqrt(velocity_sn**2 + velocity_we**2)
+                    speed = np.sqrt(velocity_sn**2 + velocity_we**2)
                     
                     # Heading (degrees)
-                    heading = numpy.arctan2(velocity_sn,velocity_we)*360.0/(2.0*numpy.pi)
+                    heading = np.arctan2(velocity_sn,velocity_we)*360.0/(2.0*np.pi)
                     
                     # Vertical Rate (ft/min)
                     vertical_rate = (vr - 1)*64
@@ -561,13 +560,17 @@ class decoder(gr.sync_block):
 
 
         elif self.df == 18 and self.ca in [0,1,6]:
-            self.tc = -1
-            print "DF %d " % (self.df)
+            # Type Code, 5 bits
+            self.tc = self.bin2dec(self.bits[32:32+5])
+
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
 
         elif self.df == 19 and self.ca == 0:
-            self.tc = -1
-            print "DF %d " % (self.df)
-        
+            # Type Code, 5 bits
+            self.tc = self.bin2dec(self.bits[32:32+5])
+
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
         # if self.df == 11:
         #     print "Acq squitter"        
         # if self.df == 17:
@@ -611,7 +614,7 @@ class decoder(gr.sync_block):
 
         # Remove the Q-bit from the altitude bits to calculate the
         # altitude
-        alt_bits = numpy.delete(alt_bits, 7)
+        alt_bits = np.delete(alt_bits, 7)
         alt_dec = self.bin2dec(alt_bits)
 
         # Altitude in ft
