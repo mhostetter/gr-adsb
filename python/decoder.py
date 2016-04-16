@@ -821,6 +821,12 @@ class decoder(gr.sync_block):
         self.callsign = ""
 
 
+    def bin2dec(self, bits):
+        if len(bits) == 1:
+            return bits[0]
+        else:
+            return int("".join(map(str,bits)),2)
+
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
     # http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
     # http://www.anteni.net/adsb/Doc/1090-WP30-18-DRAFT_DO-260B-V42.pdf
@@ -829,13 +835,13 @@ class decoder(gr.sync_block):
         # See http://www.sigidwiki.com/images/1/15/ADS-B_for_Dummies.pdf
 
         # Downlink Format, 5 bits
-        self.df = int("".join(map(str,self.bits[0:0+5])),2)
+        self.df = self.bin2dec(self.bits[0:0+5])
 
         # Capability, 3 bits
-        self.ca = int("".join(map(str,self.bits[5:5+3])),2)
+        self.ca = self.bin2dec(self.bits[5:5+3])
         
-        # Address Announced, ICAO address 24 bits
-        self.aa = int("".join(map(str,self.bits[8:8+24])),2)
+        # Address Announced (ICAO Address) 24 bits
+        self.aa = self.bin2dec(self.bits[8:8+24])
 
         return
 
@@ -844,7 +850,9 @@ class decoder(gr.sync_block):
     def check_parity(self):
         # if self.df in [0,4,5,11]:
         #     # 56 bit payload
-        #     self.pi = int("".join(map(str,self.bits[32:32+24])),2)
+
+        #     # Parity/Interrogator ID, 24 bits
+        #     self.pi = self.bin2dec(self.bits[32:32+24])
 
         #     print "pi bits"
         #     print self.bits[32:32+24]
@@ -853,7 +861,9 @@ class decoder(gr.sync_block):
 
         if self.df in [16,17,18,19,20,21]:
             # 112 bit payload
-            self.pi = int("".join(map(str,self.bits[88:88+24])),2)
+
+            # Parity/Interrogator ID, 24 bits
+            self.pi = self.bin2dec(self.bits[88:88+24])
 
             print "\n\n\n"
             print "SNR ", self.snr
@@ -905,7 +915,7 @@ class decoder(gr.sync_block):
         print "crc bits"
         print data[num_data_bits:num_data_bits+num_crc_bits]
 
-        crc = int("".join(map(str,data[num_data_bits:num_data_bits+num_crc_bits])),2)
+        crc = self.bin2dec(data[num_data_bits:num_data_bits+num_crc_bits])
 
         return crc
 
@@ -923,13 +933,13 @@ class decoder(gr.sync_block):
     def decode_message(self):
         if self.df == 17:
             # Type Code, 5 bits
-            self.tc = int("".join(map(str,self.bits[32:32+5])),2)
+            self.tc = self.bin2dec(self.bits[32:32+5])
 
             if self.tc in [1,2,3,4]:
                 # Grab callsign using character LUT
                 self.callsign = ""
                 for ii in range(0,8):
-                    self.callsign += CALLSIGN_LUT[int("".join(map(str,self.bits[40+ii*6:40+(ii+1)*6])),2)]
+                    self.callsign += CALLSIGN_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
 
             else:
                 self.callsign = ""
