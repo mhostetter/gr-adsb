@@ -701,21 +701,16 @@ class decoder(gr.sync_block):
         if (self.sps - numpy.floor(self.sps)) > 0:
             print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
-
+        
         self.msg_count = 0
         self.snr = 0
-        self.df = 0
-        self.ca = 0
-        self.aa = 0
-        self.me = 0
-        self.pi = 0
-        self.tc = 0
-        self.callsign = ""
-        
+
         # Array of data bits
         self.bits = []
         self.bit_idx = 0
         self.straddled_packet = 0
+
+        self.reset()
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
@@ -775,8 +770,15 @@ class decoder(gr.sync_block):
                 self.bits = numpy.zeros(NUM_BITS, dtype=int)
                 self.bits[bit1_amps > bit0_amps] = 1
 
+                # Reset decoder values before decoding next burs
+                self.reset()
+
+                # Decode the header (common) part of the packet
                 self.decode_header()
-                self.decode_data()
+
+                if self.check_parity() == 1:
+                    # If parity check passes, then decode the message contents
+                    self.decode_message()
 
             else:
                 # The packet is only partially contained in this block of
@@ -788,7 +790,7 @@ class decoder(gr.sync_block):
             if 0:
                 # Tag the 0 and 1 bits markers for debug
                 for ii in range(0,len(bit1_idxs)):
-                    self.add_item_tag(  0, 
+                    self.add_item_tag(  0,
                                         self.nitems_written(0)+bit1_idxs[ii],
                                         pmt.to_pmt("bits"),
                                         pmt.to_pmt("1"),    
@@ -804,6 +806,16 @@ class decoder(gr.sync_block):
 
         out0[:] = in0
         return len(output_items[0])
+
+
+    def reset(self):
+        self.df = 0
+        self.ca = 0
+        self.aa = 0
+        self.me = 0
+        self.pi = 0
+        self.tc = 0
+        self.callsign = ""
 
 
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
@@ -822,24 +834,78 @@ class decoder(gr.sync_block):
         # Address Announced, ICAO address 24 bits
         self.aa = int("".join(map(str,self.bits[8:8+24])),2)
 
-        # ADS-B Data, 56
-        # self.me = int("".join(map(str,self.bits[32:32+56])),2)
-        self.me = self.bits[32:32+56]
-
-        # Parity/Interrogator Indentifier, 24
-        # self.pi = int("".join(map(str,self.bits[88:88+24])),2)
-        self.pi = self.bits[88:88+24]
-
-        parity_passed = self.check_parity()
-        
-        if parity_passed == 1:
-            # If parity check passes, then decode the message contents
-            self.decode_message()
+        print "\n\n\n"
+        print "SNR ", self.snr
+        print "DF ", self.df
+        print "CA ", self.ca
+        print "AA ", self.aa
 
         return
 
-    def decode_message(self):
 
+    # http://jetvision.de/sbs/adsb/crc.htm
+    def check_parity(self):
+        if self.df in [0,4,5,11]:
+            # 56 bit payload
+            self.pi = int("".join(map(str,self.bits[32:32+24])),2)
+
+            print "pi bits"
+            print self.bits[32:32+24]
+
+            crc = self.compute_crc(56)
+
+        elif self.df in [16,17,18,19,20,21]:
+            # 112 bit payload
+            self.pi = int("".join(map(str,self.bits[88:88+24])),2)
+
+            print "pi bits"
+            print self.bits[88:88+24]
+
+            crc = self.compute_crc(112)
+
+        else:
+            # Non-supported downlink format
+            self.pi = -1
+            crc = 0
+
+        print "pi  ", self.pi
+        print "crc ", crc
+        print "delta ", self.pi - crc
+
+        if self.pi == crc:
+            return 1
+        else:
+            return 0
+
+
+    # http://www.radarspotters.eu/forum/index.php?topic=5617.msg41293#msg41293
+    # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1994/022_CRC_calculations_for_Mode_S.pdf
+    def compute_crc(self, payload_length):
+        num_crc_bits = 24 # For all payload lengths
+        num_data_bits = payload_length - num_crc_bits
+
+        data = self.bits[0:num_data_bits]
+        data = numpy.append(data, numpy.zeros(num_crc_bits, dtype=int))
+
+        # CRC polynomial (0xFFFA048) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 + x^11 + x^12 + x^14 + x^21 + x^24
+        poly = numpy.array([1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1])
+        
+        for ii in range(0,num_data_bits):
+            if data[ii] == 1:
+                # XOR the data with the CRC polynomial
+                # NOTE: The data polynomial and CRC polynomial are Galois Fields
+                # in GF(2)
+                data[ii:ii+num_crc_bits+1] = (data[ii:ii+num_crc_bits+1] + poly) % 2
+
+        print "crc bits"
+        print data[num_data_bits:num_data_bits+num_crc_bits]
+
+        crc = int("".join(map(str,data[num_data_bits:num_data_bits+num_crc_bits])),2)
+
+        return crc
+
+
+    def decode_message(self):
         if self.df == 17:
             # Type Code, 5 bits
             self.tc = int("".join(map(str,self.bits[32:32+5])),2)
@@ -853,7 +919,7 @@ class decoder(gr.sync_block):
             else:
                 self.callsign = ""
 
-            print "%d\t%d\t%06x\t%d\t%f\t%s" % (self.df, self.ca, self.aa, self.tc, self.snr, self.callsign)
+            print "%d\t%d\t%06x\t%d\t%d\t%f\t%s" % (self.df, self.ca, self.aa, self.tc, self.pi, self.snr, self.callsign)
 
         elif self.df == 18 and self.ca in [0,1,6]:
             self.tc = -1
@@ -882,8 +948,3 @@ class decoder(gr.sync_block):
         self.wr_csv.writerow((self.df, self.ca, self.aa, self.tc, self.pi))
 
         return
-
-    # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1994/022_CRC_calculations_for_Mode_S.pdf
-    # http://jetvision.de/sbs/adsb/crc.htm
-    def check_parity(self):
-        return 1
