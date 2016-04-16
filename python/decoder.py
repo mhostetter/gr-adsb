@@ -824,6 +824,7 @@ class decoder(gr.sync_block):
     def bin2dec(self, bits):
         return int("".join(map(str,bits)),2)
 
+
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
     # http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
     # http://www.anteni.net/adsb/Doc/1090-WP30-18-DRAFT_DO-260B-V42.pdf
@@ -868,8 +869,8 @@ class decoder(gr.sync_block):
             print "CA ", self.ca
             print "AA ", self.aa
 
-            print "pi bits"
-            print self.bits[88:88+24]
+            # print "pi bits"
+            # print self.bits[88:88+24]
 
             crc = self.compute_crc(112)
 
@@ -909,8 +910,8 @@ class decoder(gr.sync_block):
                 # in GF(2)
                 data[ii:ii+num_crc_bits+1] = (data[ii:ii+num_crc_bits+1] + poly) % 2
 
-        print "crc bits"
-        print data[num_data_bits:num_data_bits+num_crc_bits]
+        # print "crc bits"
+        # print data[num_data_bits:num_data_bits+num_crc_bits]
 
         crc = self.bin2dec(data[num_data_bits:num_data_bits+num_crc_bits])
 
@@ -947,7 +948,7 @@ class decoder(gr.sync_block):
             elif self.tc in range(5,9):
                 print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
             
-            ### Airborne Position (Baro Alto) ###
+            ### Airborne Position (Baro Altitude) ###
             elif self.tc in range(9,19):
                 # Surveillance Status, 2 bits
                 ss = self.bin2dec(self.bits[37:37+2])
@@ -985,6 +986,88 @@ class decoder(gr.sync_block):
                 # Ground velocity subtype
                 if st in [1,2]:
                     print "Ground velocity"
+
+                    # Intent Change Flag, 1 bit
+                    ic = self.bits[40]
+
+                    # Reserved-A, 1 bit
+                    resv_a = self.bits[41]
+
+                    # Velocity Uncertainty (NAC), 3 bits
+                    nac = self.bin2dec(self.bits[42:42+3])
+
+                    # Velocity Sign East-West, 1 bit
+                    nac = self.bits[45]
+
+                    # Velocity Sign East-West, 1 bit
+                    s_ew = self.bits[45]
+
+                    # Velocity East-West, 10 bits
+                    v_ew = self.bin2dec(self.bits[46:46+10])
+
+                    # Velocity Sign North-South, 1 bit
+                    s_ns = self.bits[56]
+
+                    # Velocity North-South, 10 bits
+                    v_ns = self.bin2dec(self.bits[57:57+10])
+
+                    # Vertical Rate Source, 1 bit
+                    vr_src = self.bits[67]
+
+                    # Vertical Rate Sign, 1 bit
+                    s_vr = self.bits[68]
+
+                    # Vertical Rate, 9 bits
+                    vr = self.bin2dec(self.bits[69:69+9])
+                    
+                    # Reserved-B, 2 bits
+                    resv_b = self.bin2dec(self.bits[78:78+2])
+
+                    # Difference from Baro Altitude and GNSS Height (HAE) Sign, 1 bit
+                    s_diff = self.bits[80]
+
+                    # Difference from Baro Altitude and GNSS Height (HAE), 7 bits
+                    diff = self.bits[81:81+7]
+
+                    # Velocity West to East
+                    velocity_we = (v_ew - 1)
+                    # s_ew = 0, flying West ot East
+                    # s_ew = 1, flying East to West
+                    if s_ew == 1:
+                        velocity_we *= -1 # Flip direction
+                    print "Velocity W-E ", velocity_we
+
+                    # Velocity South to North
+                    velocity_sn = (v_ns - 1)
+                    # s_ns = 0, flying South to North
+                    # s_ns = 1, flying North to South
+                    if s_ns == 1:
+                        velocity_sn *= -1 # Flip direction
+                    print "Velocity S-N ", velocity_sn
+                    
+                    # Speed (knots)
+                    speed = numpy.sqrt(velocity_sn**2 + velocity_we**2)
+                    print "Speed (kn) ", speed
+
+                    # Heading (degrees)
+                    heading = numpy.arctan2(velocity_sn,velocity_we)*360.0/(2.0*numpy.pi)
+                    print "Heading (deg) ", heading
+
+                    # Vertical Rate (ft/s)
+                    vertical_rate = vr
+                    # s_vr = 0, ascending
+                    # s_vr = 1, descending
+                    if s_vr == 1:
+                        vertical_rate *= -1
+                    print "Vertical Rate (ft/s) ", vertical_rate
+
+                    if vr_src == 0:
+                        print "Baro-pressure altitude change rate"
+                    elif vr_src == 1:
+                        print "Geometric altitude change rate"
+                    else:
+                        print "Unknown vertical rate source"
+
                 # Airborne velocity subtype
                 elif st in [3,4]:
                     print "Air velocity"
