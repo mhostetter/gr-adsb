@@ -822,10 +822,7 @@ class decoder(gr.sync_block):
 
 
     def bin2dec(self, bits):
-        if len(bits) == 1:
-            return bits[0]
-        else:
-            return int("".join(map(str,bits)),2)
+        return int("".join(map(str,bits)),2)
 
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
     # http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
