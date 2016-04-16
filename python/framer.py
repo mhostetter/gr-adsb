@@ -804,6 +804,8 @@ class framer(gr.sync_block):
                     # Only assert preamble found if all the 1/2 symbols match
                     if corr_matches == len(self.preamble_pulses):
                         # Found a preamble correlation
+                        # NOTE: in0[] is already a power vector I^2 + Q^2, so to compute power
+                        # SNR we take 10*log10().
                         # NOTE: The median of a Rayleigh distributed random variable is 1.6 dB
                         # less than the average.  So add 1.6 dB to get a more accurate power
                         # SNR.
@@ -815,11 +817,11 @@ class framer(gr.sync_block):
                         # the packet length
                         self.last_eob_idx = pulse_idx + (8+56-1)*self.sps
 
-                        # Tag the start of the preamble
+                        # Tag the start of the burst (preamble)
                         self.add_item_tag(  0,
                                             self.nitems_written(0)+pulse_idx,
                                             pmt.to_pmt("burst"),
-                                            pmt.to_pmt(("SOP", snr)),
+                                            pmt.to_pmt(("SOB", snr)),
                                             pmt.to_pmt("framer")
                                         )
 
