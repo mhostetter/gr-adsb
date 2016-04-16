@@ -930,21 +930,98 @@ class decoder(gr.sync_block):
         return 0 # Parity failed
 
 
+    # http://adsb-decode-guide.readthedocs.org/en/latest/introduction.html
     def decode_message(self):
         if self.df == 17:
             # Type Code, 5 bits
             self.tc = self.bin2dec(self.bits[32:32+5])
+            print "TC ", self.tc
 
-            if self.tc in [1,2,3,4]:
+            ### Aircraft Indentification ###
+            if self.tc in range(1,5):
                 # Grab callsign using character LUT
                 self.callsign = ""
                 for ii in range(0,8):
+                    # There are 8 characters in the callsign, each is represented using
+                    # 6 bits
                     self.callsign += CALLSIGN_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
 
+            ### Surface Position ###
+            elif self.tc in range(5,9):
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+            
+            ### Airborne Position (Baro Alto) ###
+            elif self.tc in range(9,19):
+                # Surveillance Status, 2 bits
+                self.ss = self.bin2dec(self.bits[37:37+2])
+
+                # NIC Supplement-B, 1 bit
+                self.nic_sb = self.bits[39]
+
+                # Altitude, 12 bits
+                self.alt = self.bits[40:40+12]
+
+                # Time, 1 bit
+                self.time = self.bits[52]
+
+                # CPR Odd/Even Frame Flag, 1 bit
+                self.odd_frame = self.bits[53]
+
+                # Latitude in CPR Format, 17 bits
+                self.lat_cpr = self.bin2dec(self.bits[54:54+17])
+
+                # Longitude in CPR Format, 17 bits
+                self.lon_cpr = self.bin2dec(self.bits[71:71+17])
+
+                (self.lat_dec, self.lon_dec) = self.calculate_lat_lon()
+                self.alt_ft = self.calculate_altitude()
+
+                print "Latitude:      %d" % (self.lat_dec)
+                print "Longitude:     %d" % (self.lon_dec)
+                print "Altitude (ft): %d" % (self.alt_ft)
+
+            ### Airborne Velocities ###
+            elif self.tc in [19]:
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+            ### Airborne Position (GNSS Height) ###
+            elif self.tc in range(20,23):
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+            ### Test Message ###
+            elif self.tc in [23]:
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+            ### Surface System Status ###
+            elif self.tc in [24]:
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+            ### Reserved ###
+            elif self.tc in range(25,28):
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+            ### Extended Squitter A/C Status ###
+            elif self.tc in [28]:
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+            ### Target State and Status (V.2) ###
+            elif self.tc in [29]:
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+            ### Reserved ###
+            elif self.tc in [30]:
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+            ### Aircraft Operation Status ###
+            elif self.tc in [31]:
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
             else:
-                self.callsign = ""
+                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
 
             print "%d\t%d\t%06x\t%d\t%d\t%f\t%s" % (self.df, self.ca, self.aa, self.tc, self.pi, self.snr, self.callsign)
+
 
         elif self.df == 18 and self.ca in [0,1,6]:
             self.tc = -1
@@ -973,3 +1050,37 @@ class decoder(gr.sync_block):
         self.wr_csv.writerow((self.df, self.ca, self.aa, self.tc, self.pi))
 
         return
+
+
+    # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf
+    def calculate_lat_lon(self):
+        lat_dec = 0
+        lon_dec = 0
+        return (lat_dec, lon_dec)
+
+
+    # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf
+    def calculate_altitude(self):
+        # Altitude, 12 bits
+        alt_bits = self.bits[40:40+12]
+
+        # Q-bit, 1 bit
+        q_bit = self.bits[47]
+
+        if q_bit == 0:
+            # Q-bit = 0, altitude is encoded in multiples of 100 ft
+            multiplier = 100
+        else:
+            # Q-bit = 1, altitude is encoded in multiples of 25 ft
+            multiplier = 25
+
+        # Remove the Q-bit from the altitude bits to calculate the
+        # altitude
+        alt_bits = numpy.delete(alt_bits, 7)
+        alt_dec = self.bin2dec(alt_bits)
+
+        # Altitude in ft
+        alt_ft = alt_dec*multiplier - 1000
+
+        return alt_ft
+
