@@ -681,14 +681,15 @@ from gnuradio import gr
 import pmt
 import csv
 
-NUM_BITS        = 112 
-CALLSIGN_LUT    = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ#####_###############0123456789######"
+NUM_BITS            = 112 
+NUM_BITS_TO_FLIP    = 1
+CALLSIGN_LUT        = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ#####_###############0123456789######"
 
 class decoder(gr.sync_block):
     """
     docstring for block decoder
     """
-    def __init__(self, fs, err_corr):
+    def __init__(self, fs, error_correction):
         gr.sync_block.__init__(self,
             name="ADS-B Decoder",
             in_sig=[numpy.float32],
@@ -702,7 +703,7 @@ class decoder(gr.sync_block):
             print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
-        self.err_corr = err_corr;
+        self.error_correction = error_correction
 
         self.msg_count = 0
         self.snr = 0
@@ -869,15 +870,17 @@ class decoder(gr.sync_block):
             print "crc ", crc
             print "delta ", self.pi - crc
 
+            if self.pi == crc:
+                return 1 # Parity passed
+            else:
+                if self.error_correction == True:
+                    return self.correct_errors()
+                else:
+                    return 0 # Parity failed
+
         else:
             # Unsupported downlink format
-            self.pi = -1
-            crc = 0
-
-        if self.pi == crc:
-            return 1
-        else:
-            return 0
+            return 0 # Parity failed
 
 
     # http://www.radarspotters.eu/forum/index.php?topic=5617.msg41293#msg41293
@@ -905,6 +908,16 @@ class decoder(gr.sync_block):
         crc = int("".join(map(str,data[num_data_bits:num_data_bits+num_crc_bits])),2)
 
         return crc
+
+
+    def correct_errors(self):
+        for ii in range(0,pow(2,NUM_BITS_TO_FLIP)):
+            # Flip bit
+            crc = self.compute_crc(112)
+            if self.pi == crc:
+                return 1 # Parity passed
+        
+        return 0 # Parity failed
 
 
     def decode_message(self):

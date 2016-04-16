@@ -4,7 +4,7 @@
   <key>adsb_decoder</key>
   <category>ADS-B</category>
   <import>import adsb</import>
-  <make>adsb.decoder($fs, $err_corr)</make>
+  <make>adsb.decoder($fs, $error_correction)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
@@ -17,7 +17,7 @@
   </param>
   <param>
     <name>Error Correction</name>
-    <key>err_corr</key>
+    <key>error_correction</key>
     <value>False</value>
     <type>enum</type>
     <option>
