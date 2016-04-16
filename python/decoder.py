@@ -396,13 +396,13 @@ class decoder(gr.sync_block):
                     heading = numpy.arctan2(velocity_sn,velocity_we)*360.0/(2.0*numpy.pi)
                     print "Heading (deg) ", heading
 
-                    # Vertical Rate (ft/s)
-                    vertical_rate = vr
+                    # Vertical Rate (ft/min)
+                    vertical_rate = (vr - 1)*64
                     # s_vr = 0, ascending
                     # s_vr = 1, descending
-                    if s_vr == 1:
+                    if s_vr == 1:   
                         vertical_rate *= -1
-                    print "Vertical Rate (ft/s) ", vertical_rate
+                    print "Vertical Rate (ft/min) ", vertical_rate
 
                     if vr_src == 0:
                         print "Baro-pressure altitude change rate"
@@ -451,9 +451,6 @@ class decoder(gr.sync_block):
 
             else:
                 print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-
-            print "%d\t%d\t%06x\t%d\t%d\t%f\t%s" % (self.df, self.ca, self.aa, self.tc, self.pi, self.snr, self.callsign)
 
 
         elif self.df == 18 and self.ca in [0,1,6]:
