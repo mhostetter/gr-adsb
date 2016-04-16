@@ -32,7 +32,7 @@ class decoder(gr.sync_block):
     """
     docstring for block decoder
     """
-    def __init__(self, fs, error_correction):
+    def __init__(self, fs, error_corr, print_level):
         gr.sync_block.__init__(self,
             name="ADS-B Decoder",
             in_sig=[numpy.float32],
@@ -46,7 +46,8 @@ class decoder(gr.sync_block):
             print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
-        self.error_correction = error_correction
+        self.error_corr = error_corr
+        self.print_level = print_level
 
         self.msg_count = 0
         self.snr = 0
@@ -184,6 +185,13 @@ class decoder(gr.sync_block):
         # Address Announced (ICAO Address) 24 bits
         self.aa = self.bin2dec(self.bits[8:8+24])
 
+        if self.print_level == "Verbose":
+            print "\n\n"
+            print "SNR\t%1.2f dB" % (self.snr)
+            print "DF\t%d" % (self.df)
+            print "CA\t%d" % (self.ca)
+            print "AA\t%06x" % (self.aa)
+
         return
 
 
@@ -206,28 +214,17 @@ class decoder(gr.sync_block):
             # Parity/Interrogator ID, 24 bits
             self.pi = self.bin2dec(self.bits[88:88+24])
 
-            print "\n\n\n"
-            print "SNR ", self.snr
-            print "DF ", self.df
-            print "CA ", self.ca
-            print "AA ", self.aa
-
-            # print "pi bits"
-            # print self.bits[88:88+24]
-
             crc = self.compute_crc(112)
 
-            print "pi  ", self.pi
-            print "crc ", crc
-            print "delta ", self.pi - crc
+            if self.print_level == "Verbose":
+                print "pi\t", self.pi
+                print "crc\t", crc
+                print "delta\t", self.pi - crc
 
             if self.pi == crc:
                 return 1 # Parity passed
             else:
-                if self.error_correction == True:
-                    return self.correct_errors()
-                else:
-                    return 0 # Parity failed
+                return self.correct_errors()
 
         else:
             # Unsupported downlink format
@@ -262,13 +259,22 @@ class decoder(gr.sync_block):
 
 
     def correct_errors(self):
-        for ii in range(0,pow(2,NUM_BITS_TO_FLIP)):
-            # Flip bit
-            crc = self.compute_crc(112)
-            if self.pi == crc:
-                return 1 # Parity passed
+        if self.error_corr == "None":
+            return 0 # Didn't attempt to make the parity pass
+
+        if self.error_corr == "Conservative":
+            for ii in range(0,pow(2,NUM_BITS_TO_FLIP)):
+                # Flip bit
+                crc = self.compute_crc(112)
+                if self.pi == crc:
+                    return 1 # Parity passed
         
-        return 0 # Parity failed
+        elif self.error_corr == "Brute Force":
+            # Implement this
+            return 0 # Parity failed
+
+        else:
+            return 0 # Parity failed
 
 
     # http://adsb-decode-guide.readthedocs.org/en/latest/introduction.html
@@ -276,16 +282,22 @@ class decoder(gr.sync_block):
         if self.df == 17:
             # Type Code, 5 bits
             self.tc = self.bin2dec(self.bits[32:32+5])
-            print "TC ", self.tc
+            
+            if self.print_level == "Verbose":
+                print "TC\t%d" % (self.tc)
 
             ### Aircraft Indentification ###
             if self.tc in range(1,5):
                 # Grab callsign using character LUT
                 self.callsign = ""
+                
                 for ii in range(0,8):
                     # There are 8 characters in the callsign, each is represented using
                     # 6 bits
                     self.callsign += CALLSIGN_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
+
+                if self.print_level == "Verbose":
+                    print "Callsign\t%s" % (self.callsign)
 
             ### Surface Position ###
             elif self.tc in range(5,9):
@@ -317,9 +329,11 @@ class decoder(gr.sync_block):
                 (lat_dec, lon_dec) = self.calculate_lat_lon()
                 alt_ft = self.calculate_altitude()
 
-                print "Latitude:      %d" % (lat_dec)
-                print "Longitude:     %d" % (lon_dec)
-                print "Altitude (ft): %d" % (alt_ft)
+                if self.print_level == "Verbose":
+                    print "Airborne Position"
+                    print "Latitude\t%d" % (lat_dec)
+                    print "Longitude\t%d" % (lon_dec)
+                    print "Altitude\t%d ft" % (alt_ft)
 
             ### Airborne Velocities ###
             elif self.tc in [19]:
@@ -328,8 +342,6 @@ class decoder(gr.sync_block):
 
                 # Ground velocity subtype
                 if st in [1,2]:
-                    print "Ground velocity"
-
                     # Intent Change Flag, 1 bit
                     ic = self.bits[40]
 
@@ -378,7 +390,6 @@ class decoder(gr.sync_block):
                     # s_ew = 1, flying East to West
                     if s_ew == 1:
                         velocity_we *= -1 # Flip direction
-                    print "Velocity W-E ", velocity_we
 
                     # Velocity South to North
                     velocity_sn = (v_ns - 1)
@@ -386,34 +397,39 @@ class decoder(gr.sync_block):
                     # s_ns = 1, flying North to South
                     if s_ns == 1:
                         velocity_sn *= -1 # Flip direction
-                    print "Velocity S-N ", velocity_sn
-                    
+
                     # Speed (knots)
                     speed = numpy.sqrt(velocity_sn**2 + velocity_we**2)
-                    print "Speed (kn) ", speed
-
+                    
                     # Heading (degrees)
                     heading = numpy.arctan2(velocity_sn,velocity_we)*360.0/(2.0*numpy.pi)
-                    print "Heading (deg) ", heading
-
+                    
                     # Vertical Rate (ft/min)
                     vertical_rate = (vr - 1)*64
                     # s_vr = 0, ascending
                     # s_vr = 1, descending
                     if s_vr == 1:   
                         vertical_rate *= -1
-                    print "Vertical Rate (ft/min) ", vertical_rate
-
-                    if vr_src == 0:
-                        print "Baro-pressure altitude change rate"
-                    elif vr_src == 1:
-                        print "Geometric altitude change rate"
-                    else:
-                        print "Unknown vertical rate source"
+                    
+                    if self.print_level == "Verbose":
+                        print "Ground Velocity"
+                        print "Velocity W-E\t%1.2f knots" % (velocity_we)
+                        print "Velocity S-N\t%1.2f knots" % (velocity_sn)
+                        print "Speed\t\t%1.2f knots" % (speed)
+                        print "Heading\t\t%1.1f deg" % (heading)
+                        print "Vertical Rate\t%d ft/min" % (vertical_rate)
+                        if vr_src == 0:
+                            print "Baro-pressure altitude change rate"
+                        elif vr_src == 1:
+                            print "Geometric altitude change rate"
+                        else:
+                            print "Unknown vertical rate source"
 
                 # Airborne velocity subtype
-                elif st in [3,4]:
-                    print "Air velocity"
+                elif st in [3,4]:                
+                    if self.print_level == "Verbose":
+                        print "Air Velocity"
+
                 else:
                     print "DF %d TC %d ST %d Not yet implemented" % (self.df, self.tc, self.st)
 
