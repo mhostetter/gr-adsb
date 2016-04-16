@@ -982,7 +982,17 @@ class decoder(gr.sync_block):
 
             ### Airborne Velocities ###
             elif self.tc in [19]:
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+                # Sub Type, 3 bits
+                self.st = self.bin2dec(self.bits[37:37+3])
+
+                # Ground velocity subtype
+                if self.st in [1,2]:
+                    print "Ground velocity"
+                # Airborne velocity subtype
+                elif self.st in [3,4]:
+                    print "Air velocity"
+                else:
+                    print "DF %d TC %d ST %d Not yet implemented" % (self.df, self.tc, self.st)
 
             ### Airborne Position (GNSS Height) ###
             elif self.tc in range(20,23):
