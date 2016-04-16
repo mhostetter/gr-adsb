@@ -116,60 +116,6 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(200, 587)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>fc_mhz</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>1090</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(200, 731)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>fc_mhz</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>1090</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
       <value>1</value>
     </param>
     <param>
@@ -228,7 +174,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(8, 587)</value>
+      <value>(200, 731)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -236,11 +182,11 @@
     </param>
     <param>
       <key>id</key>
-      <value>filename</value>
+      <value>fc_mhz</value>
     </param>
     <param>
       <key>value</key>
-      <value>"/home/matt/adsb_test_vector.fc32"</value>
+      <value>1090</value>
     </param>
   </block>
   <block>
@@ -255,7 +201,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(8, 731)</value>
+      <value>(200, 587)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -263,11 +209,11 @@
     </param>
     <param>
       <key>id</key>
-      <value>filename</value>
+      <value>fc_mhz</value>
     </param>
     <param>
       <key>value</key>
-      <value>"/home/matt/adsb_1090MHz_2Msps.fc32"</value>
+      <value>1090</value>
     </param>
   </block>
   <block>
@@ -309,7 +255,88 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(296, 587)</value>
+      <value>(8, 731)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>filename</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>"/home/matt/adsb_1090MHz_2Msps.fc32"</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(8, 587)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>filename</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>"/home/matt/adsb_test_vector.fc32"</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>1</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(8, 155)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>fs_mhz</value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>4</value>
+    </param>
+  </block>
+  <block>
+    <key>variable</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(296, 659)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -359,38 +386,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(8, 155)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>fs_mhz</value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>4</value>
-    </param>
-  </block>
-  <block>
-    <key>variable</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
       <value>0</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(296, 659)</value>
+      <value>(296, 587)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -478,12 +478,12 @@
       <value>1</value>
     </param>
     <param>
-      <key>err_corr</key>
-      <value>False</value>
+      <key>error_corr</key>
+      <value>"None"</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(728, 155)</value>
+      <value>(728, 147)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -500,6 +500,10 @@
     <param>
       <key>minoutbuf</key>
       <value>0</value>
+    </param>
+    <param>
+      <key>print_level</key>
+      <value>"Brief"</value>
     </param>
     <param>
       <key>fs</key>
@@ -2272,7 +2276,7 @@
     </param>
     <param>
       <key>args</key>
-      <value>hackrf=0,bias=0</value>
+      <value>hackrf=0,bias=1</value>
     </param>
     <param>
       <key>_enabled</key>
