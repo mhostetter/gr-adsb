@@ -953,43 +953,43 @@ class decoder(gr.sync_block):
             ### Airborne Position (Baro Alto) ###
             elif self.tc in range(9,19):
                 # Surveillance Status, 2 bits
-                self.ss = self.bin2dec(self.bits[37:37+2])
+                ss = self.bin2dec(self.bits[37:37+2])
 
                 # NIC Supplement-B, 1 bit
-                self.nic_sb = self.bits[39]
+                nic_sb = self.bits[39]
 
                 # Altitude, 12 bits
-                self.alt = self.bits[40:40+12]
+                alt = self.bits[40:40+12]
 
                 # Time, 1 bit
-                self.time = self.bits[52]
+                time = self.bits[52]
 
                 # CPR Odd/Even Frame Flag, 1 bit
-                self.odd_frame = self.bits[53]
+                odd_frame = self.bits[53]
 
                 # Latitude in CPR Format, 17 bits
-                self.lat_cpr = self.bin2dec(self.bits[54:54+17])
+                lat_cpr = self.bin2dec(self.bits[54:54+17])
 
                 # Longitude in CPR Format, 17 bits
-                self.lon_cpr = self.bin2dec(self.bits[71:71+17])
+                lon_cpr = self.bin2dec(self.bits[71:71+17])
 
-                (self.lat_dec, self.lon_dec) = self.calculate_lat_lon()
-                self.alt_ft = self.calculate_altitude()
+                (lat_dec, lon_dec) = self.calculate_lat_lon()
+                alt_ft = self.calculate_altitude()
 
-                print "Latitude:      %d" % (self.lat_dec)
-                print "Longitude:     %d" % (self.lon_dec)
-                print "Altitude (ft): %d" % (self.alt_ft)
+                print "Latitude:      %d" % (lat_dec)
+                print "Longitude:     %d" % (lon_dec)
+                print "Altitude (ft): %d" % (alt_ft)
 
             ### Airborne Velocities ###
             elif self.tc in [19]:
                 # Sub Type, 3 bits
-                self.st = self.bin2dec(self.bits[37:37+3])
+                st = self.bin2dec(self.bits[37:37+3])
 
                 # Ground velocity subtype
-                if self.st in [1,2]:
+                if st in [1,2]:
                     print "Ground velocity"
                 # Airborne velocity subtype
-                elif self.st in [3,4]:
+                elif st in [3,4]:
                     print "Air velocity"
                 else:
                     print "DF %d TC %d ST %d Not yet implemented" % (self.df, self.tc, self.st)
