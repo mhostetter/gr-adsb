@@ -35,7 +35,7 @@ class decoder(gr.sync_block):
     """
     docstring for block decoder
     """
-    def __init__(self, fs, error_corr, print_level):
+    def __init__(self, fs, error_corr, print_level, log_csv, csv_filename, log_db, db_filename):
         gr.sync_block.__init__(self,
             name="ADS-B Decoder",
             in_sig=[np.float32],
@@ -51,6 +51,10 @@ class decoder(gr.sync_block):
 
         self.error_corr = error_corr
         self.print_level = print_level
+        self.log_csv = log_csv
+        self.csv_filename = csv_filename
+        self.log_db = log_db
+        self.db_filename = db_filename
 
         # Array of data bits
         self.bits = []
@@ -66,17 +70,28 @@ class decoder(gr.sync_block):
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
-        # Open files
-        self.fp_csv = open("/home/matt/adsb.csv", "a")
-        self.wr_csv = csv.writer(self.fp_csv)
-        self.wr_csv.writerow(("DF", "CA", "AA", "TC", "PI"))
+        # Initialize CSV file
+        if self.log_csv == True:
+            self.fp_csv = open(self.csv_filename, "a")
+            self.wr_csv = csv.writer(self.fp_csv)
+            self.wr_csv.writerow(("Aircraft ID", "Callsign", "Altitude (ft)", "Speed (kn)", "Heading (deg", "Latitude", "Longitude", "Message Count", "Time Since Seen (s)"))
 
-        # self.fp_db = open("/home/matt/adsb.sqlite", "w")
+        # Initialize database
+        if self.log_db == True:
+            print "TODO: Needs to be implemented"
+            # self.fp_db = open("/home/matt/adsb.sqlite", "w")
 
-        print "Initialized ADS-B Decoder:"
-        print "\tfs = %f Msym/s" % (fs/1e6)
-        print "\tsps = %d" % (self.sps)
-
+        print "\nInitialized ADS-B Decoder:"
+        print "  Sampling Rate:       %1.2f Msps" % (fs/1e6)
+        print "  Samples Per Symbol:  %d" % (self.sps)
+        print "  Print Level:         %s" % (self.print_level)
+        print "  Log to CSV:          %s" % (self.log_csv)
+        if self.log_csv == True:
+            print "    CSV Filename:      %s" % (self.csv_filename)
+        print "  Log to Database:     %s" % (self.log_db)
+        if self.log_db == True:
+            print "    Database Filename: %s" % (self.db_filename)
+            
 
     def work(self, input_items, output_items):
         in0 = input_items[0]
@@ -214,6 +229,7 @@ class decoder(gr.sync_block):
         # plane["cpr"] = np.ndarray((2,3))
         plane["cpr"] = [(np.NaN, np.NaN, dt.datetime.fromtimestamp(0)),(np.NaN, np.NaN, dt.datetime.fromtimestamp(0))]
 
+
     def print_planes(self):
         print "\n\n"
         print "Aircarft Callsign Alt   Speed Hdng Lat         Lon         Msgs Secs"
@@ -231,6 +247,35 @@ class decoder(gr.sync_block):
                     "{:4d}".format(self.planes[key]["num_msgs"]),
                     "{:4.0f}".format((dt.datetime.now() - self.planes[key]["last_seen"]).total_seconds())
                 )
+
+
+    def write_plane_to_csv(self):
+        # Write current plane to CSV file
+        self.wr_csv.writerow((self.aa_str,
+                    "{:8s}".format(self.planes[self.aa_str]["callsign"]),
+                    "{:5.0f}".format(self.planes[self.aa_str]["alt"]),
+                    "{:5.0f}".format(self.planes[self.aa_str]["speed"]),
+                    "{:4.0f}".format(self.planes[self.aa_str]["heading"]),
+                    "{:11.7f}".format(self.planes[self.aa_str]["lat"]),
+                    "{:11.7f}".format(self.planes[self.aa_str]["lon"]),
+                    "{:4d}".format(self.planes[self.aa_str]["num_msgs"]),
+                    "{:4.0f}".format((dt.datetime.now() - self.planes[self.aa_str]["last_seen"]).total_seconds()))
+                )
+
+
+    def write_plane_to_db(self):
+        # Write current plane to database
+        print "TODO: Need to implement this"
+        # self.wr_csv.writerow((self.aa_str,
+        #             "{:8s}".format(self.planes[self.aa_str]["callsign"]),
+        #             "{:5.0f}".format(self.planes[self.aa_str]["alt"]),
+        #             "{:5.0f}".format(self.planes[self.aa_str]["speed"]),
+        #             "{:4.0f}".format(self.planes[self.aa_str]["heading"]),
+        #             "{:11.7f}".format(self.planes[self.aa_str]["lat"]),
+        #             "{:11.7f}".format(self.planes[self.aa_str]["lon"]),
+        #             "{:4d}".format(self.planes[self.aa_str]["num_msgs"]),
+        #             "{:4.0f}".format((dt.datetime.now() - self.planes[self.aa_str]["last_seen"]).total_seconds()))
+        #         )
 
 
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
@@ -372,6 +417,12 @@ class decoder(gr.sync_block):
                 elif self.print_level == "Verbose":
                     print "Callsign\t%s" % (self.callsign)
 
+                if self.log_csv == True:
+                    self.write_plane_to_csv()
+
+                if self.log_db == True:
+                    self.write_plane_to_db()
+
             ### Surface Position ###
             elif self.tc in range(5,9):
                 print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
@@ -419,6 +470,11 @@ class decoder(gr.sync_block):
                     print "Latitude\t%d" % (lat_dec)
                     print "Longitude\t%d" % (lon_dec)
 
+                if self.log_csv == True:
+                    self.write_plane_to_csv()
+
+                if self.log_db == True:
+                    self.write_plane_to_db()
 
             ### Airborne Velocities ###
             elif self.tc in [19]:
@@ -516,6 +572,12 @@ class decoder(gr.sync_block):
                             print "Geometric altitude change rate"
                         else:
                             print "Unknown vertical rate source"
+        
+                    if self.log_csv == True:
+                        self.write_plane_to_csv()
+
+                    if self.log_db == True:
+                        self.write_plane_to_db()
 
                 # Airborne velocity subtype
                 elif st in [3,4]:                
@@ -587,9 +649,6 @@ class decoder(gr.sync_block):
         #     print "Aircraft operational status"
         # else:
         #     print "Unknown DF"
-
-        # Write to a CSV file
-        self.wr_csv.writerow((self.df, self.ca, self.aa, self.tc, self.pi))
 
 
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf

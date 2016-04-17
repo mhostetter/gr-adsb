@@ -466,12 +466,20 @@
       <value></value>
     </param>
     <param>
+      <key>csv_filename</key>
+      <value>"/home/matt/adsb.csv"</value>
+    </param>
+    <param>
       <key>comment</key>
       <value></value>
     </param>
     <param>
       <key>affinity</key>
       <value></value>
+    </param>
+    <param>
+      <key>db_filename</key>
+      <value>"/home/matt/adsb.sqlite"</value>
     </param>
     <param>
       <key>_enabled</key>
@@ -483,7 +491,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(728, 147)</value>
+      <value>(728, 115)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -492,6 +500,14 @@
     <param>
       <key>id</key>
       <value>adsb_decoder_0</value>
+    </param>
+    <param>
+      <key>log_csv</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>log_db</key>
+      <value>False</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -518,7 +534,7 @@
     </param>
     <param>
       <key>burst_thresh</key>
-      <value>0.01</value>
+      <value>0.005</value>
     </param>
     <param>
       <key>comment</key>
@@ -839,7 +855,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(736, 251)</value>
+      <value>(736, 299)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -894,7 +910,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(736, 339)</value>
+      <value>(736, 387)</value>
     </param>
     <param>
       <key>_rotation</key>

@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Adsb Rx
-# Generated: Sat Apr 16 13:36:40 2016
+# Generated: Sun Apr 17 00:03:45 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -166,8 +166,8 @@ class adsb_rx(gr.top_block, Qt.QWidget):
           
         self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float*1)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
-        self.adsb_framer_0_0 = adsb.framer(fs_mhz*1e6, 0.01)
-        self.adsb_decoder_0 = adsb.decoder(fs_mhz*1e6, "None", "Brief")
+        self.adsb_framer_0_0 = adsb.framer(fs_mhz*1e6, 0.005)
+        self.adsb_decoder_0 = adsb.decoder(fs_mhz*1e6, "None", "Brief", True, "/home/matt/adsb.csv", False, "/home/matt/adsb.sqlite")
 
         ##################################################
         # Connections

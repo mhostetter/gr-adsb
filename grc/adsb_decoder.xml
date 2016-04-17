@@ -4,7 +4,7 @@
   <key>adsb_decoder</key>
   <category>ADS-B</category>
   <import>import adsb</import>
-  <make>adsb.decoder($fs, $error_corr, $print_level)</make>
+  <make>adsb.decoder($fs, $error_corr, $print_level, $log_csv, $csv_filename, $log_db, $db_filename)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
@@ -50,6 +50,46 @@
       <name>Verbose</name>
       <key>"Verbose"</key>
     </option>
+  </param>
+  <param>
+    <name>Log to CSV</name>
+    <key>log_csv</key>
+    <value>"Disabled"</value>
+    <type>enum</type>
+    <option>
+      <name>Disabled</name>
+      <key>False</key>
+    </option>
+    <option>
+      <name>Enabled</name>
+      <key>True</key>
+    </option>
+  </param>
+  <param>
+    <name>CSV Filename</name>
+    <key>csv_filename</key>
+    <value>""</value>
+    <type>string</type>
+  </param>
+  <param>
+    <name>Log to Database</name>
+    <key>log_db</key>
+    <value>"Disabled"</value>
+    <type>enum</type>
+    <option>
+      <name>Disabled</name>
+      <key>False</key>
+    </option>
+    <option>
+      <name>Enabled</name>
+      <key>True</key>
+    </option>
+  </param>
+  <param>
+    <name>Database Filename</name>
+    <key>db_filename</key>
+    <value>""</value>
+    <type>string</type>
   </param>
 
   <!-- Make one 'sink' node per input. Sub-nodes:
