@@ -26,7 +26,6 @@ import datetime as dt
 import csv
 
 NUM_BITS                = 112
-NUM_PLANES_TO_TRACK     = 50
 CPR_TIMEOUT_S           = 30 # Seconds consider CPR-encoded lat/lon info invalid
 PLANE_TIMEOUT_S         = 5*60
 CALLSIGN_LUT            = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ#####_###############0123456789######"
@@ -187,36 +186,32 @@ class decoder(gr.sync_block):
         return int("".join(map(str,bits)),2)
 
 
-    def update_plane(self, aa_str):
-        if self.planes.has_key(aa_str) == True:
-            seconds_since_last_seen = (dt.datetime.now() - self.planes[aa_str]["last_seen"]).total_seconds()
-            if seconds_since_last_seen > PLANE_TIMEOUT_S:
-                # If the plane has timed out, delete its old altimetry values
-                self.reset_plane_altimetry(self.planes[aa_str])
+    def update_plane(self):
+        if self.planes.has_key(self.aa_str) == True:
+            # The current plane already exists in the dictionary
 
-            self.planes[aa_str]["num_msgs"] += 1
-            self.planes[aa_str]["last_seen"] = dt.datetime.now()
+            # If the plane has timed out, delete its old altimetry values
+            seconds_since_last_seen = (dt.datetime.now() - self.planes[self.aa_str]["last_seen"]).total_seconds()
+            if seconds_since_last_seen > PLANE_TIMEOUT_S:
+                self.reset_plane_altimetry(self.planes[self.aa_str])
+
+            self.planes[self.aa_str]["num_msgs"] += 1
+            self.planes[self.aa_str]["last_seen"] = dt.datetime.now()
             
         else:
-            # Create empty dictionary for this plane
-            self.planes[aa_str] = dict([])
-            self.planes[aa_str]["callsign"] = ""
-            self.reset_plane_altimetry(self.planes[aa_str])
+            # Create empty dictionary for the current plane
+            self.planes[self.aa_str] = dict([])
+            self.planes[self.aa_str]["callsign"] = ""
+            self.reset_plane_altimetry(self.planes[self.aa_str])
 
-            self.planes[aa_str]["num_msgs"] = 1
-            self.planes[aa_str]["last_seen"] = dt.datetime.now()
+            self.planes[self.aa_str]["num_msgs"] = 1
+            self.planes[self.aa_str]["last_seen"] = dt.datetime.now()
 
-            if len(self.planes) > NUM_PLANES_TO_TRACK:
-                # Delete oldest plane from dictionary
-                #
-                # Implement this
-                #
-                a = 1        
-
-        # print "Planes Dictionary ***********************"
-        # print self.planes
-        # for plane in self.planes:
-        #     print plane
+        # Check if any planes have timed out and if so remove them
+        # from the dictionary
+        for key in self.planes:
+            if (dt.datetime.now() - self.planes[key]["last_seen"]).total_seconds() > PLANE_TIMEOUT_S:
+                del self.planes[key]
 
 
     def reset_plane_altimetry(self, plane):
@@ -225,7 +220,6 @@ class decoder(gr.sync_block):
         plane["heading"] = np.NaN
         plane["lat"] = np.NaN
         plane["lon"] = np.NaN
-        # plane["cpr"] = np.ndarray((2,3))
         plane["cpr"] = [(np.NaN, np.NaN, dt.datetime.fromtimestamp(0)),(np.NaN, np.NaN, dt.datetime.fromtimestamp(0))]
 
 
@@ -235,7 +229,7 @@ class decoder(gr.sync_block):
         print "-------- -------- ----- ----- ---- ----------- ----------- ---- ----"
         # print "a6234b   ABC123__ 38000 375   -176 75.4444     34.898      71   10  "
 
-        for key in self.planes.keys():
+        for key in self.planes:
             print "%s   %s %s %s %s %s %s %s %s" % (key,
                     "{:8s}".format(self.planes[key]["callsign"]),
                     "{:5.0f}".format(self.planes[key]["alt"]),
@@ -411,7 +405,7 @@ class decoder(gr.sync_block):
                 callsign = callsign.replace("_","")
 
                 # Update planes dictionary
-                self.update_plane(self.aa_str)
+                self.update_plane()
                 self.planes[self.aa_str]["callsign"] = callsign
 
                 if self.print_level == "Brief":
@@ -453,7 +447,7 @@ class decoder(gr.sync_block):
                 lon_cpr = self.bin2dec(self.bits[71:71+17])
 
                 # Update planes dictionary
-                self.update_plane(self.aa_str)
+                self.update_plane()
                 self.planes[self.aa_str]["cpr"][frame] = (lat_cpr, lon_cpr, dt.datetime.now())
 
                 (lat_dec, lon_dec) = self.calculate_lat_lon(self.planes[self.aa_str]["cpr"])
@@ -555,7 +549,7 @@ class decoder(gr.sync_block):
                         vertical_rate *= -1
                     
                     # Update planes dictionary
-                    self.update_plane(self.aa_str)
+                    self.update_plane()
                     self.planes[self.aa_str]["speed"] = speed
                     self.planes[self.aa_str]["heading"] = heading
 
