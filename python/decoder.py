@@ -209,9 +209,10 @@ class decoder(gr.sync_block):
 
         # Check if any planes have timed out and if so remove them
         # from the dictionary
-        for key in self.planes:
-            if (dt.datetime.now() - self.planes[key]["last_seen"]).total_seconds() > PLANE_TIMEOUT_S:
-                del self.planes[key]
+        # TODO: Figure out a better way to do this
+        # for key in self.planes:
+        #     if (dt.datetime.now() - self.planes[key]["last_seen"]).total_seconds() > PLANE_TIMEOUT_S:
+        #         del self.planes[key]
 
 
     def reset_plane_altimetry(self, plane):
