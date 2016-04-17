@@ -386,251 +386,15 @@ class decoder(gr.sync_block):
     # http://adsb-decode-guide.readthedocs.org/en/latest/introduction.html
     def decode_message(self):
         if self.df == 17:
-            # Type Code, 5 bits
-            self.tc = self.bin2dec(self.bits[32:32+5])
-            
-            if self.print_level == "Verbose":
-                print "TC\t%d" % (self.tc)
-
-            ### Aircraft Indentification ###
-            if self.tc in range(1,5):
-                # Grab callsign using character LUT
-                callsign = ""
-                
-                for ii in range(0,8):
-                    # There are 8 characters in the callsign, each is represented using
-                    # 6 bits
-                    callsign += CALLSIGN_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
-
-                callsign = callsign.replace("#","")
-                callsign = callsign.replace("_","")
-
-                # Update planes dictionary
-                self.update_plane()
-                self.planes[self.aa_str]["callsign"] = callsign
-
-                if self.print_level == "Brief":
-                    self.print_planes()
-                elif self.print_level == "Verbose":
-                    print "Callsign\t%s" % (callsign)
-
-                if self.log_csv == True:
-                    self.write_plane_to_csv()
-
-                if self.log_db == True:
-                    self.write_plane_to_db()
-
-            ### Surface Position ###
-            elif self.tc in range(5,9):
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-            
-            ### Airborne Position (Baro Altitude) ###
-            elif self.tc in range(9,19):
-                # Surveillance Status, 2 bits
-                ss = self.bin2dec(self.bits[37:37+2])
-
-                # NIC Supplement-B, 1 bit
-                nic_sb = self.bits[39]
-
-                # Altitude, 12 bits
-                alt_bits = self.bits[40:40+12]
-
-                # Time, 1 bit
-                time = self.bits[52]
-
-                # CPR Odd/Even Frame Flag, 1 bit
-                frame = self.bits[53]
-
-                # Latitude in CPR Format, 17 bits
-                lat_cpr = self.bin2dec(self.bits[54:54+17])
-
-                # Longitude in CPR Format, 17 bits
-                lon_cpr = self.bin2dec(self.bits[71:71+17])
-
-                # Update planes dictionary
-                self.update_plane()
-                self.planes[self.aa_str]["cpr"][frame] = (lat_cpr, lon_cpr, dt.datetime.now())
-
-                (lat_dec, lon_dec) = self.calculate_lat_lon(self.planes[self.aa_str]["cpr"])
-                alt = self.calculate_altitude()
-
-                if lat_dec != np.NaN and lon_dec != np.NaN:
-                    self.planes[self.aa_str]["alt"] = alt
-                    self.planes[self.aa_str]["lat"] = lat_dec
-                    self.planes[self.aa_str]["lon"] = lon_dec
-
-                if self.print_level == "Brief":
-                    self.print_planes()
-                elif self.print_level == "Verbose":
-                    print "Airborne Position"
-                    print "Altitude\t%d ft" % (alt)
-                    print "Latitude\t%d" % (lat_dec)
-                    print "Longitude\t%d" % (lon_dec)
-
-                if self.log_csv == True:
-                    self.write_plane_to_csv()
-
-                if self.log_db == True:
-                    self.write_plane_to_db()
-
-            ### Airborne Velocities ###
-            elif self.tc in [19]:
-                # Sub Type, 3 bits
-                st = self.bin2dec(self.bits[37:37+3])
-
-                # Ground velocity subtype
-                if st in [1,2]:
-                    # Intent Change Flag, 1 bit
-                    ic = self.bits[40]
-
-                    # Reserved-A, 1 bit
-                    resv_a = self.bits[41]
-
-                    # Velocity Uncertainty (NAC), 3 bits
-                    nac = self.bin2dec(self.bits[42:42+3])
-
-                    # Velocity Sign East-West, 1 bit
-                    nac = self.bits[45]
-
-                    # Velocity Sign East-West, 1 bit
-                    s_ew = self.bits[45]
-
-                    # Velocity East-West, 10 bits
-                    v_ew = self.bin2dec(self.bits[46:46+10])
-
-                    # Velocity Sign North-South, 1 bit
-                    s_ns = self.bits[56]
-
-                    # Velocity North-South, 10 bits
-                    v_ns = self.bin2dec(self.bits[57:57+10])
-
-                    # Vertical Rate Source, 1 bit
-                    vr_src = self.bits[67]
-
-                    # Vertical Rate Sign, 1 bit
-                    s_vr = self.bits[68]
-
-                    # Vertical Rate, 9 bits
-                    vr = self.bin2dec(self.bits[69:69+9])
-                    
-                    # Reserved-B, 2 bits
-                    resv_b = self.bin2dec(self.bits[78:78+2])
-
-                    # Difference from Baro Altitude and GNSS Height (HAE) Sign, 1 bit
-                    s_diff = self.bits[80]
-
-                    # Difference from Baro Altitude and GNSS Height (HAE), 7 bits
-                    diff = self.bits[81:81+7]
-
-                    # Velocity West to East
-                    velocity_we = (v_ew - 1)
-                    # s_ew = 0, flying West ot East
-                    # s_ew = 1, flying East to West
-                    if s_ew == 1:
-                        velocity_we *= -1 # Flip direction
-
-                    # Velocity South to North
-                    velocity_sn = (v_ns - 1)
-                    # s_ns = 0, flying South to North
-                    # s_ns = 1, flying North to South
-                    if s_ns == 1:
-                        velocity_sn *= -1 # Flip direction
-
-                    # Speed (knots)
-                    speed = np.sqrt(velocity_sn**2 + velocity_we**2)
-                    
-                    # Heading (degrees)
-                    heading = np.arctan2(velocity_sn,velocity_we)*360.0/(2.0*np.pi)
-                    
-                    # Vertical Rate (ft/min)
-                    vertical_rate = (vr - 1)*64
-                    # s_vr = 0, ascending
-                    # s_vr = 1, descending
-                    if s_vr == 1:   
-                        vertical_rate *= -1
-                    
-                    # Update planes dictionary
-                    self.update_plane()
-                    self.planes[self.aa_str]["speed"] = speed
-                    self.planes[self.aa_str]["heading"] = heading
-
-                    if self.print_level == "Brief":
-                        self.print_planes()
-                    elif self.print_level == "Verbose":
-                        print "Ground Velocity"
-                        print "Velocity W-E\t%1.2f knots" % (velocity_we)
-                        print "Velocity S-N\t%1.2f knots" % (velocity_sn)
-                        print "Speed\t\t%1.2f knots" % (speed)
-                        print "Heading\t\t%1.1f deg" % (heading)
-                        print "Vertical Rate\t%d ft/min" % (vertical_rate)
-                        if vr_src == 0:
-                            print "Baro-pressure altitude change rate"
-                        elif vr_src == 1:
-                            print "Geometric altitude change rate"
-                        else:
-                            print "Unknown vertical rate source"
-        
-                    if self.log_csv == True:
-                        self.write_plane_to_csv()
-
-                    if self.log_db == True:
-                        self.write_plane_to_db()
-
-                # Airborne velocity subtype
-                elif st in [3,4]:                
-                    if self.print_level == "Verbose":
-                        print "Air Velocity"
-
-                else:
-                    print "DF %d TC %d ST %d Not yet implemented" % (self.df, self.tc, self.st)
-
-            ### Airborne Position (GNSS Height) ###
-            elif self.tc in range(20,23):
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-            ### Test Message ###
-            elif self.tc in [23]:
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-            ### Surface System Status ###
-            elif self.tc in [24]:
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-            ### Reserved ###
-            elif self.tc in range(25,28):
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-            ### Extended Squitter A/C Status ###
-            elif self.tc in [28]:
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-            ### Target State and Status (V.2) ###
-            elif self.tc in [29]:
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-            ### Reserved ###
-            elif self.tc in [30]:
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-            ### Aircraft Operation Status ###
-            elif self.tc in [31]:
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
-            else:
-                print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
-
+            self.decode_adsb_message()
 
         elif self.df == 18 and self.ca in [0,1,6]:
-            # Type Code, 5 bits
-            self.tc = self.bin2dec(self.bits[32:32+5])
-
-            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+            self.decode_adsb_message()
+            print "***** DF %d CA %d spotted in the wild *****" % (self.df, self.ca)
 
         elif self.df == 19 and self.ca == 0:
-            # Type Code, 5 bits
-            self.tc = self.bin2dec(self.bits[32:32+5])
-
-            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+            self.decode_adsb_message()
+            print "***** DF %d CA %d spotted in the wild *****" % (self.df, self.ca)
 
         # if self.df == 11:
         #     print "Acq squitter"        
@@ -646,6 +410,241 @@ class decoder(gr.sync_block):
         #     print "Aircraft operational status"
         # else:
         #     print "Unknown DF"
+
+
+    def decode_adsb_message(self):
+        # Type Code, 5 bits
+        self.tc = self.bin2dec(self.bits[32:32+5])
+        
+        if self.print_level == "Verbose":
+            print "TC\t%d" % (self.tc)
+
+        ### Aircraft Indentification ###
+        if self.tc in range(1,5):
+            # Grab callsign using character LUT
+            callsign = ""
+            
+            for ii in range(0,8):
+                # There are 8 characters in the callsign, each is represented using
+                # 6 bits
+                callsign += CALLSIGN_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
+
+            callsign = callsign.replace("#","")
+            callsign = callsign.replace("_","")
+
+            # Update planes dictionary
+            self.update_plane()
+            self.planes[self.aa_str]["callsign"] = callsign
+
+            if self.print_level == "Brief":
+                self.print_planes()
+            elif self.print_level == "Verbose":
+                print "Callsign\t%s" % (callsign)
+
+            if self.log_csv == True:
+                self.write_plane_to_csv()
+
+            if self.log_db == True:
+                self.write_plane_to_db()
+
+        ### Surface Position ###
+        elif self.tc in range(5,9):
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+        
+        ### Airborne Position (Baro Altitude) ###
+        elif self.tc in range(9,19):
+            # Surveillance Status, 2 bits
+            ss = self.bin2dec(self.bits[37:37+2])
+
+            # NIC Supplement-B, 1 bit
+            nic_sb = self.bits[39]
+
+            # Altitude, 12 bits
+            alt_bits = self.bits[40:40+12]
+
+            # Time, 1 bit
+            time = self.bits[52]
+
+            # CPR Odd/Even Frame Flag, 1 bit
+            frame = self.bits[53]
+
+            # Latitude in CPR Format, 17 bits
+            lat_cpr = self.bin2dec(self.bits[54:54+17])
+
+            # Longitude in CPR Format, 17 bits
+            lon_cpr = self.bin2dec(self.bits[71:71+17])
+
+            # Update planes dictionary
+            self.update_plane()
+            self.planes[self.aa_str]["cpr"][frame] = (lat_cpr, lon_cpr, dt.datetime.now())
+
+            (lat_dec, lon_dec) = self.calculate_lat_lon(self.planes[self.aa_str]["cpr"])
+            alt = self.calculate_altitude()
+
+            if lat_dec != np.NaN and lon_dec != np.NaN:
+                self.planes[self.aa_str]["alt"] = alt
+                self.planes[self.aa_str]["lat"] = lat_dec
+                self.planes[self.aa_str]["lon"] = lon_dec
+
+            if self.print_level == "Brief":
+                self.print_planes()
+            elif self.print_level == "Verbose":
+                print "Airborne Position"
+                print "Altitude\t%d ft" % (alt)
+                print "Latitude\t%d" % (lat_dec)
+                print "Longitude\t%d" % (lon_dec)
+
+            if self.log_csv == True:
+                self.write_plane_to_csv()
+
+            if self.log_db == True:
+                self.write_plane_to_db()
+
+        ### Airborne Velocities ###
+        elif self.tc in [19]:
+            # Sub Type, 3 bits
+            st = self.bin2dec(self.bits[37:37+3])
+
+            # Ground velocity subtype
+            if st in [1,2]:
+                # Intent Change Flag, 1 bit
+                ic = self.bits[40]
+
+                # Reserved-A, 1 bit
+                resv_a = self.bits[41]
+
+                # Velocity Uncertainty (NAC), 3 bits
+                nac = self.bin2dec(self.bits[42:42+3])
+
+                # Velocity Sign East-West, 1 bit
+                nac = self.bits[45]
+
+                # Velocity Sign East-West, 1 bit
+                s_ew = self.bits[45]
+
+                # Velocity East-West, 10 bits
+                v_ew = self.bin2dec(self.bits[46:46+10])
+
+                # Velocity Sign North-South, 1 bit
+                s_ns = self.bits[56]
+
+                # Velocity North-South, 10 bits
+                v_ns = self.bin2dec(self.bits[57:57+10])
+
+                # Vertical Rate Source, 1 bit
+                vr_src = self.bits[67]
+
+                # Vertical Rate Sign, 1 bit
+                s_vr = self.bits[68]
+
+                # Vertical Rate, 9 bits
+                vr = self.bin2dec(self.bits[69:69+9])
+                
+                # Reserved-B, 2 bits
+                resv_b = self.bin2dec(self.bits[78:78+2])
+
+                # Difference from Baro Altitude and GNSS Height (HAE) Sign, 1 bit
+                s_diff = self.bits[80]
+
+                # Difference from Baro Altitude and GNSS Height (HAE), 7 bits
+                diff = self.bits[81:81+7]
+
+                # Velocity West to East
+                velocity_we = (v_ew - 1)
+                # s_ew = 0, flying West ot East
+                # s_ew = 1, flying East to West
+                if s_ew == 1:
+                    velocity_we *= -1 # Flip direction
+
+                # Velocity South to North
+                velocity_sn = (v_ns - 1)
+                # s_ns = 0, flying South to North
+                # s_ns = 1, flying North to South
+                if s_ns == 1:
+                    velocity_sn *= -1 # Flip direction
+
+                # Speed (knots)
+                speed = np.sqrt(velocity_sn**2 + velocity_we**2)
+                
+                # Heading (degrees)
+                heading = np.arctan2(velocity_sn,velocity_we)*360.0/(2.0*np.pi)
+                
+                # Vertical Rate (ft/min)
+                vertical_rate = (vr - 1)*64
+                # s_vr = 0, ascending
+                # s_vr = 1, descending
+                if s_vr == 1:   
+                    vertical_rate *= -1
+                
+                # Update planes dictionary
+                self.update_plane()
+                self.planes[self.aa_str]["speed"] = speed
+                self.planes[self.aa_str]["heading"] = heading
+
+                if self.print_level == "Brief":
+                    self.print_planes()
+                elif self.print_level == "Verbose":
+                    print "Ground Velocity"
+                    print "Velocity W-E\t%1.2f knots" % (velocity_we)
+                    print "Velocity S-N\t%1.2f knots" % (velocity_sn)
+                    print "Speed\t\t%1.2f knots" % (speed)
+                    print "Heading\t\t%1.1f deg" % (heading)
+                    print "Vertical Rate\t%d ft/min" % (vertical_rate)
+                    if vr_src == 0:
+                        print "Baro-pressure altitude change rate"
+                    elif vr_src == 1:
+                        print "Geometric altitude change rate"
+                    else:
+                        print "Unknown vertical rate source"
+    
+                if self.log_csv == True:
+                    self.write_plane_to_csv()
+
+                if self.log_db == True:
+                    self.write_plane_to_db()
+
+            # Airborne velocity subtype
+            elif st in [3,4]:                
+                if self.print_level == "Verbose":
+                    print "Air Velocity"
+
+            else:
+                print "DF %d TC %d ST %d Not yet implemented" % (self.df, self.tc, self.st)
+
+        ### Airborne Position (GNSS Height) ###
+        elif self.tc in range(20,23):
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+        ### Test Message ###
+        elif self.tc in [23]:
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+        ### Surface System Status ###
+        elif self.tc in [24]:
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+        ### Reserved ###
+        elif self.tc in range(25,28):
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+        ### Extended Squitter A/C Status ###
+        elif self.tc in [28]:
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+        ### Target State and Status (V.2) ###
+        elif self.tc in [29]:
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+        ### Reserved ###
+        elif self.tc in [30]:
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+        ### Aircraft Operation Status ###
+        elif self.tc in [31]:
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
+
+        else:
+            print "DF %d TC %d Not yet implemented" % (self.df, self.tc)
 
 
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf
