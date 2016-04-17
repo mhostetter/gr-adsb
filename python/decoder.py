@@ -181,7 +181,6 @@ class decoder(gr.sync_block):
         self.me = 0
         self.pi = 0
         self.tc = 0
-        self.callsign = ""
 
 
     def bin2dec(self, bits):
@@ -401,21 +400,24 @@ class decoder(gr.sync_block):
             ### Aircraft Indentification ###
             if self.tc in range(1,5):
                 # Grab callsign using character LUT
-                self.callsign = ""
+                callsign = ""
                 
                 for ii in range(0,8):
                     # There are 8 characters in the callsign, each is represented using
                     # 6 bits
-                    self.callsign += CALLSIGN_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
+                    callsign += CALLSIGN_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
+
+                callsign = callsign.replace("#","")
+                callsign = callsign.replace("_","")
 
                 # Update planes dictionary
                 self.update_plane(self.aa_str)
-                self.planes[self.aa_str]["callsign"] = self.callsign
+                self.planes[self.aa_str]["callsign"] = callsign
 
                 if self.print_level == "Brief":
                     self.print_planes()
                 elif self.print_level == "Verbose":
-                    print "Callsign\t%s" % (self.callsign)
+                    print "Callsign\t%s" % (callsign)
 
                 if self.log_csv == True:
                     self.write_plane_to_csv()
