@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Adsb Rx
-# Generated: Sun Apr 17 00:03:45 2016
+# Generated: Sun Apr 17 13:19:10 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -17,6 +17,7 @@ if __name__ == '__main__':
             print "Warning: failed to XInitThreads()"
 
 from PyQt4 import Qt
+from gnuradio import analog
 from gnuradio import blocks
 from gnuradio import eng_notation
 from gnuradio import gr
@@ -63,11 +64,19 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.if_gain = if_gain = 32
         self.fs_mhz = fs_mhz = 4
         self.fc_mhz = fc_mhz = 1090
+        self.burst_thresh = burst_thresh = 0.005
         self.bb_gain = bb_gain = 16
 
         ##################################################
         # Blocks
         ##################################################
+        self._burst_thresh_tool_bar = Qt.QToolBar(self)
+        self._burst_thresh_tool_bar.addWidget(Qt.QLabel("Burst Threshold"+": "))
+        self._burst_thresh_line_edit = Qt.QLineEdit(str(self.burst_thresh))
+        self._burst_thresh_tool_bar.addWidget(self._burst_thresh_line_edit)
+        self._burst_thresh_line_edit.returnPressed.connect(
+        	lambda: self.set_burst_thresh(eng_notation.str_to_num(str(self._burst_thresh_line_edit.text().toAscii()))))
+        self.top_layout.addWidget(self._burst_thresh_tool_bar)
         self.qtgui_waterfall_sink_x_0 = qtgui.waterfall_sink_c(
         	8192, #size
         	firdes.WIN_BLACKMAN_hARRIS, #wintype
@@ -108,7 +117,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         	int(fs_mhz*150), #size
         	int(fs_mhz*1e6), #samp_rate
         	"", #name
-        	1 #number of inputs
+        	2 #number of inputs
         )
         self.qtgui_time_sink_x_0.set_update_time(0.1)
         self.qtgui_time_sink_x_0.set_y_axis(0, 0.25)
@@ -138,7 +147,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
                   1.0, 1.0, 1.0, 1.0, 1.0]
         
-        for i in xrange(1):
+        for i in xrange(2):
             if len(labels[i]) == 0:
                 self.qtgui_time_sink_x_0.set_line_label(i, "Data {0}".format(i))
             else:
@@ -166,7 +175,8 @@ class adsb_rx(gr.top_block, Qt.QWidget):
           
         self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float*1)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
-        self.adsb_framer_0_0 = adsb.framer(fs_mhz*1e6, 0.005)
+        self.analog_const_source_x_0 = analog.sig_source_f(0, analog.GR_CONST_WAVE, 0, 0, burst_thresh)
+        self.adsb_framer_0_0 = adsb.framer(fs_mhz*1e6, burst_thresh)
         self.adsb_decoder_0 = adsb.decoder(fs_mhz*1e6, "None", "Brief", True, "/home/matt/adsb.csv", False, "/home/matt/adsb.sqlite")
 
         ##################################################
@@ -175,6 +185,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.connect((self.adsb_decoder_0, 0), (self.blocks_null_sink_0, 0))    
         self.connect((self.adsb_decoder_0, 0), (self.qtgui_time_sink_x_0, 0))    
         self.connect((self.adsb_framer_0_0, 0), (self.adsb_decoder_0, 0))    
+        self.connect((self.analog_const_source_x_0, 0), (self.qtgui_time_sink_x_0, 1))    
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.adsb_framer_0_0, 0))    
         self.connect((self.osmosdr_source_0, 0), (self.blocks_complex_to_mag_squared_0, 0))    
         self.connect((self.osmosdr_source_0, 0), (self.qtgui_waterfall_sink_x_0, 0))    
@@ -204,17 +215,25 @@ class adsb_rx(gr.top_block, Qt.QWidget):
 
     def set_fs_mhz(self, fs_mhz):
         self.fs_mhz = fs_mhz
-        self.qtgui_time_sink_x_0.set_samp_rate(int(self.fs_mhz*1e6))
-        self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc_mhz*1e6, self.fs_mhz*1e6)
         self.osmosdr_source_0.set_sample_rate(self.fs_mhz*1e6)
+        self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc_mhz*1e6, self.fs_mhz*1e6)
+        self.qtgui_time_sink_x_0.set_samp_rate(int(self.fs_mhz*1e6))
 
     def get_fc_mhz(self):
         return self.fc_mhz
 
     def set_fc_mhz(self, fc_mhz):
         self.fc_mhz = fc_mhz
-        self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc_mhz*1e6, self.fs_mhz*1e6)
         self.osmosdr_source_0.set_center_freq(self.fc_mhz*1e6, 0)
+        self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc_mhz*1e6, self.fs_mhz*1e6)
+
+    def get_burst_thresh(self):
+        return self.burst_thresh
+
+    def set_burst_thresh(self, burst_thresh):
+        self.burst_thresh = burst_thresh
+        Qt.QMetaObject.invokeMethod(self._burst_thresh_line_edit, "setText", Qt.Q_ARG("QString", eng_notation.num_to_str(self.burst_thresh)))
+        self.analog_const_source_x_0.set_offset(self.burst_thresh)
 
     def get_bb_gain(self):
         return self.bb_gain
