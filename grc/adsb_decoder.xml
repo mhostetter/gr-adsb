@@ -36,7 +36,7 @@
   <param>
     <name>Print Level</name>
     <key>print_level</key>
-    <value>"Verbose"</value>
+    <value>"Brief"</value>
     <type>enum</type>
     <option>
       <name>None</name>

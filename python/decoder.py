@@ -27,6 +27,7 @@ import csv
 
 NUM_BITS                = 112
 NUM_PLANES_TO_TRACK     = 50
+CPR_TIMEOUT_S           = 30 # Seconds consider CPR-encoded lat/lon info invalid
 PLANE_TIMEOUT_S         = 5*60
 CALLSIGN_LUT            = "#ABCDEFGHIJKLMNOPQRSTUVWXYZ#####_###############0123456789######"
 
@@ -174,7 +175,7 @@ class decoder(gr.sync_block):
 
     def update_plane(self, aa_str):
         if self.planes.has_key(aa_str) == True:
-            seconds_since_last_seen = (dt.datetime.now() - self.planes[aa_str]["last_seen"]).seconds
+            seconds_since_last_seen = (dt.datetime.now() - self.planes[aa_str]["last_seen"]).total_seconds()
             if seconds_since_last_seen > PLANE_TIMEOUT_S:
                 # If the plane has timed out, delete its old altimetry values
                 self.reset_plane_altimetry(self.planes[aa_str])
@@ -210,8 +211,8 @@ class decoder(gr.sync_block):
         plane["heading"] = np.NaN
         plane["lat"] = np.NaN
         plane["lon"] = np.NaN
-        plane["cpr"] = np.ndarray((2,3))
-
+        # plane["cpr"] = np.ndarray((2,3))
+        plane["cpr"] = [(np.NaN, np.NaN, dt.datetime.fromtimestamp(0)),(np.NaN, np.NaN, dt.datetime.fromtimestamp(0))]
 
     def print_planes(self):
         print "\n\n"
@@ -228,7 +229,7 @@ class decoder(gr.sync_block):
                     "{:11.7f}".format(self.planes[key]["lat"]),
                     "{:11.7f}".format(self.planes[key]["lon"]),
                     "{:4d}".format(self.planes[key]["num_msgs"]),
-                    "{:4d}".format((dt.datetime.now() - self.planes[key]["last_seen"]).seconds)
+                    "{:4.0f}".format((dt.datetime.now() - self.planes[key]["last_seen"]).total_seconds())
                 )
 
 
@@ -400,14 +401,15 @@ class decoder(gr.sync_block):
 
                 # Update planes dictionary
                 self.update_plane(self.aa_str)
-                self.planes[self.aa_str]["cpr"][frame] = (time, lat_cpr, lon_cpr)
+                self.planes[self.aa_str]["cpr"][frame] = (lat_cpr, lon_cpr, dt.datetime.now())
 
-                (lat_dec, lon_dec) = self.calculate_lat_lon()
+                (lat_dec, lon_dec) = self.calculate_lat_lon(self.planes[self.aa_str]["cpr"])
                 alt = self.calculate_altitude()
 
-                self.planes[self.aa_str]["alt"] = alt
-                self.planes[self.aa_str]["lat"] = lat_dec
-                self.planes[self.aa_str]["lat"] = lat_dec
+                if lat_dec != np.NaN and lon_dec != np.NaN:
+                    self.planes[self.aa_str]["alt"] = alt
+                    self.planes[self.aa_str]["lat"] = lat_dec
+                    self.planes[self.aa_str]["lon"] = lon_dec
 
                 if self.print_level == "Brief":
                     self.print_planes()
@@ -591,9 +593,71 @@ class decoder(gr.sync_block):
 
 
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf
-    def calculate_lat_lon(self):
-        lat_dec = 0.0
-        lon_dec = 0.0
+    def calculate_lat_lon(self, cpr):
+        # If the even and odd frame data is still valid, calculatte the
+        # latitude and longitude
+        if (dt.datetime.now() - cpr[0][2]).total_seconds() < CPR_TIMEOUT_S and (dt.datetime.now() - cpr[1][2]).total_seconds() < CPR_TIMEOUT_S:
+            # Get fractional lat/lon for the even and odd frame
+            # Even frame
+            lat_cpr_even = float(cpr[0][0])/131072
+            lon_cpr_even = float(cpr[0][1])/131072
+
+            # Odd frame
+            lat_cpr_odd = float(cpr[1][0])/131072
+            lon_cpr_odd = float(cpr[1][1])/131072
+
+            # Calculate the latitude index
+            j = int(np.floor(59*lat_cpr_even - 60*lat_cpr_odd + 0.5))
+
+            lat_even = 360.0/60*((j % 60) + lat_cpr_even)
+            if lat_even >= 270:
+                lat_even -= 360
+
+            lat_odd = 360.0/59*((j % 59) + lat_cpr_odd)
+            if lat_odd >= 270:
+                lat_odd -= 360
+
+            nl_even_old = self.compute_cpr_nl(lat_even)
+            nl_odd_old = self.compute_cpr_nl(lat_odd)
+
+            nl_even = self.cpr_nl(lat_even)
+            nl_odd = self.cpr_nl(lat_odd)
+
+            if nl_even == nl_odd:
+                # Even/odd latitudes are in the same latitude zone, use the
+                # most recent latitude
+                if (cpr[0][2] - cpr[1][2]).total_seconds() > 0:
+                    # The even frame is more recent
+                    lat_dec = lat_even
+
+                    # Calculate longitude
+                    ni = self.cpr_n(lat_even, 0)
+                    m = int(np.floor(lon_cpr_even*(self.cpr_nl(lat_even)-1) - lon_cpr_odd*self.cpr_nl(lat_even) + 0.5))
+                    lon_dec = (360.0/ni)*((m % ni) + lon_cpr_even)
+                    if lon_dec >= 180.0:
+                        lon_dec -= 360.0
+
+                else:
+                    # The odd frame is more recent
+                    lat_dec = lat_odd
+
+                    # Calculate longitude
+                    ni = self.cpr_n(lat_odd, 1)
+                    m = int(np.floor(lon_cpr_even*(self.cpr_nl(lat_odd)-1) - lon_cpr_odd*self.cpr_nl(lat_odd) + 0.5))
+                    lon_dec = (360.0/ni)*((m % ni) + lon_cpr_odd)
+                    if lon_dec >= 180.0:
+                        lon_dec -= 360.0
+
+            else:
+                # Even/odd latitudes are not in the same latitude zones, wait
+                # for more data
+                lat_dec = np.NaN
+                lon_dec = np.NaN
+
+        else:
+            lat_dec = np.NaN
+            lon_dec = np.NaN
+
         return (lat_dec, lon_dec)
 
 
@@ -622,3 +686,144 @@ class decoder(gr.sync_block):
 
         return alt
 
+
+
+    def cpr_n(self, lat, frame):
+        # frame = 0, even frame
+        # frame = 1, odd frame
+        n = self.cpr_nl(lat) - frame;
+
+        if n > 1:
+            return n
+        else:
+            return 1
+
+
+    def compute_cpr_nl(self, lat):
+        NZ = 60.0
+        # TODO: Might need to tweak this equation
+        return int(2.0*np.pi/(np.arccos(1.0 - (1.0-np.cos(np.pi/(2.0*NZ)))/(np.cos(2.0*np.pi*abs(lat)/180.0)**2))))
+
+
+    def cpr_nl(self, lat):
+        if lat < 0:
+            lat = -lat
+        
+        if lat < 10.47047130:
+            return 59
+        elif lat < 14.82817437:
+            return 58
+        elif lat < 18.18626357:
+            return 57
+        elif lat < 21.02939493:
+            return 56
+        elif lat < 23.54504487:
+            return 55
+        elif lat < 25.82924707:
+            return 54
+        elif lat < 27.93898710:
+            return 53
+        elif lat < 29.91135686:
+            return 52
+        elif lat < 31.77209708:
+            return 51
+        elif lat < 33.53993436:
+            return 50
+        elif lat < 35.22899598:
+            return 49
+        elif lat < 36.85025108:
+            return 48
+        elif lat < 38.41241892:
+            return 47
+        elif lat < 39.92256684:
+            return 46
+        elif lat < 41.38651832:
+            return 45
+        elif lat < 42.80914012:
+            return 44
+        elif lat < 44.19454951:
+            return 43
+        elif lat < 45.54626723:
+            return 42
+        elif lat < 46.86733252:
+            return 41
+        elif lat < 48.16039128:
+            return 40
+        elif lat < 49.42776439:
+            return 39
+        elif lat < 50.67150166:
+            return 38
+        elif lat < 51.89342469:
+            return 37
+        elif lat < 53.09516153:
+            return 36
+        elif lat < 54.27817472:
+            return 35
+        elif lat < 55.44378444:
+            return 34
+        elif lat < 56.59318756:
+            return 33
+        elif lat < 57.72747354:
+            return 32
+        elif lat < 58.84763776:
+            return 31
+        elif lat < 59.95459277:
+            return 30
+        elif lat < 61.04917774:
+            return 29
+        elif lat < 62.13216659:
+            return 28
+        elif lat < 63.20427479:
+            return 27
+        elif lat < 64.26616523:
+            return 26
+        elif lat < 65.31845310:
+            return 25
+        elif lat < 66.36171008:
+            return 24
+        elif lat < 67.39646774:
+            return 23
+        elif lat < 68.42322022:
+            return 22
+        elif lat < 69.44242631:
+            return 21
+        elif lat < 70.45451075:
+            return 20
+        elif lat < 71.45986473:
+            return 19
+        elif lat < 72.45884545:
+            return 18
+        elif lat < 73.45177442:
+            return 17
+        elif lat < 74.43893416:
+            return 16
+        elif lat < 75.42056257:
+            return 15
+        elif lat < 76.39684391:
+            return 14
+        elif lat < 77.36789461:
+            return 13
+        elif lat < 78.33374083:
+            return 12
+        elif lat < 79.29428225:
+            return 11
+        elif lat < 80.24923213:
+            return 10
+        elif lat < 81.19801349:
+            return 9
+        elif lat < 82.13956981:
+            return 8
+        elif lat < 83.07199445:
+            return 7
+        elif lat < 83.99173563:
+            return 6
+        elif lat < 84.89166191:
+            return 5
+        elif lat < 85.75541621:
+            return 4
+        elif lat < 86.53536998:
+            return 3
+        elif lat < 87.00000000:
+            return 2
+        else:
+            return 1
