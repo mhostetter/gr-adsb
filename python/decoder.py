@@ -216,30 +216,33 @@ class decoder(gr.sync_block):
 
 
     def reset_plane_altimetry(self, plane):
-        plane["alt"] = np.NaN
+        plane["altitude"] = np.NaN
         plane["speed"] = np.NaN
         plane["heading"] = np.NaN
-        plane["lat"] = np.NaN
-        plane["lon"] = np.NaN
+        plane["vertical_rate"] = np.NaN
+        plane["latitude"] = np.NaN
+        plane["longitude"] = np.NaN
         plane["cpr"] = [(np.NaN, np.NaN, dt.datetime.fromtimestamp(0)),(np.NaN, np.NaN, dt.datetime.fromtimestamp(0))]
 
 
     def print_planes(self):
         print "\n\n"
-        print "Aircarft Callsign Alt   Speed Hdng Lat         Lon         Msgs Secs"
-        print "-------- -------- ----- ----- ---- ----------- ----------- ---- ----"
-        # print "a6234b   ABC123__ 38000 375   -176 75.4444     34.898      71   10  "
+        print " ICAO  Callsign  Alt  Climb Speed Hdng  Latitude    Longitude  Msgs Age"
+        print "                 (ft) (ft/m) (kn) (deg)                             (s)"
+        print "------ -------- ----- ----- ----- ---- ----------- ----------- ---- ---"
+        # print "a6234b ABC123__ 38000  1200 375   -176 75.4444     34.898      71   10  "
 
         for key in self.planes:
-            print "%s   %s %s %s %s %s %s %s %s" % (key,
+            print "%s %s %s %s %s %s %s %s %s %s" % (key,
                     "{:8s}".format(self.planes[key]["callsign"]),
-                    "{:5.0f}".format(self.planes[key]["alt"]),
+                    "{:5.0f}".format(self.planes[key]["altitude"]),
+                    "{:5.0f}".format(self.planes[key]["vertical_rate"]),
                     "{:5.0f}".format(self.planes[key]["speed"]),
                     "{:4.0f}".format(self.planes[key]["heading"]),
-                    "{:11.7f}".format(self.planes[key]["lat"]),
-                    "{:11.7f}".format(self.planes[key]["lon"]),
+                    "{:11.7f}".format(self.planes[key]["latitude"]),
+                    "{:11.7f}".format(self.planes[key]["longitude"]),
                     "{:4d}".format(self.planes[key]["num_msgs"]),
-                    "{:4.0f}".format((dt.datetime.now() - self.planes[key]["last_seen"]).total_seconds())
+                    "{:3.0f}".format((dt.datetime.now() - self.planes[key]["last_seen"]).total_seconds())
                 )
 
 
@@ -247,11 +250,11 @@ class decoder(gr.sync_block):
         # Write current plane to CSV file
         self.wr_csv.writerow((self.aa_str,
                     "{:8s}".format(self.planes[self.aa_str]["callsign"]),
-                    "{:5.0f}".format(self.planes[self.aa_str]["alt"]),
+                    "{:5.0f}".format(self.planes[self.aa_str]["altitude"]),
                     "{:5.0f}".format(self.planes[self.aa_str]["speed"]),
                     "{:4.0f}".format(self.planes[self.aa_str]["heading"]),
-                    "{:11.7f}".format(self.planes[self.aa_str]["lat"]),
-                    "{:11.7f}".format(self.planes[self.aa_str]["lon"]),
+                    "{:11.7f}".format(self.planes[self.aa_str]["latitude"]),
+                    "{:11.7f}".format(self.planes[self.aa_str]["longitude"]),
                     "{:4d}".format(self.planes[self.aa_str]["num_msgs"]),
                     "{:4.0f}".format((dt.datetime.now() - self.planes[self.aa_str]["last_seen"]).total_seconds()))
                 )
@@ -262,11 +265,11 @@ class decoder(gr.sync_block):
         print "TODO: Need to implement this"
         # self.wr_csv.writerow((self.aa_str,
         #             "{:8s}".format(self.planes[self.aa_str]["callsign"]),
-        #             "{:5.0f}".format(self.planes[self.aa_str]["alt"]),
+        #             "{:5.0f}".format(self.planes[self.aa_str]["altitude"]),
         #             "{:5.0f}".format(self.planes[self.aa_str]["speed"]),
         #             "{:4.0f}".format(self.planes[self.aa_str]["heading"]),
-        #             "{:11.7f}".format(self.planes[self.aa_str]["lat"]),
-        #             "{:11.7f}".format(self.planes[self.aa_str]["lon"]),
+        #             "{:11.7f}".format(self.planes[self.aa_str]["latitude"]),
+        #             "{:11.7f}".format(self.planes[self.aa_str]["longitude"]),
         #             "{:4d}".format(self.planes[self.aa_str]["num_msgs"]),
         #             "{:4.0f}".format((dt.datetime.now() - self.planes[self.aa_str]["last_seen"]).total_seconds()))
         #         )
@@ -482,9 +485,9 @@ class decoder(gr.sync_block):
             alt = self.calculate_altitude()
 
             if lat_dec != np.NaN and lon_dec != np.NaN:
-                self.planes[self.aa_str]["alt"] = alt
-                self.planes[self.aa_str]["lat"] = lat_dec
-                self.planes[self.aa_str]["lon"] = lon_dec
+                self.planes[self.aa_str]["altitude"] = alt
+                self.planes[self.aa_str]["latitude"] = lat_dec
+                self.planes[self.aa_str]["longitude"] = lon_dec
 
             if self.print_level == "Brief":
                 self.print_planes()
@@ -580,6 +583,7 @@ class decoder(gr.sync_block):
                 self.update_plane()
                 self.planes[self.aa_str]["speed"] = speed
                 self.planes[self.aa_str]["heading"] = heading
+                self.planes[self.aa_str]["vertical_rate"] = vertical_rate
 
                 if self.print_level == "Brief":
                     self.print_planes()
