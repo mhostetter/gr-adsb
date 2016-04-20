@@ -369,7 +369,7 @@ class decoder(gr.sync_block):
 
             if ap == crc:
                 print "Parity passed ***********************"
-                print " PI  ", pi
+                print " AP  ", ap
                 print " CRC ", crc
                 return 1 # Parity passed
             else:
@@ -397,6 +397,7 @@ class decoder(gr.sync_block):
                 return 1 # Parity passed
             else:
                 print "DF 17 (please work)"
+                print "SNR ", self.snr
                 print "Parity failed :( :( :( :( :( :( :( :( :( "
                 print " PI  ", pi
                 print " CRC ", crc
@@ -569,8 +570,16 @@ class decoder(gr.sync_block):
         # Type Code, 5 bits
         tc = self.bin2dec(self.bits[32:32+5])
 
+        ## Airborne/Surface Position ###
+        if tc in [0]:
+            # Message, 3 bits
+            me = self.bits[0:self.payload_length]
+            print "ME"
+            print me
+            sort(me)
+
         ### Aircraft Indentification ###
-        if tc in range(1,5):
+        elif tc in range(1,5):
             # Grab callsign using character LUT
             callsign = ""
             
