@@ -64,8 +64,7 @@ class decoder(gr.sync_block):
         # Initialize plane dictionary
         self.plane_dict = dict([])
 
-        self.df_count = np.zeros(32, dtype=int)
-        print self.df_count
+        # self.df_count = np.zeros(32, dtype=int)
 
         # Reset packet values
         self.reset()
@@ -185,11 +184,8 @@ class decoder(gr.sync_block):
 
     def reset(self):
         self.df = 0
-        ca = 0
-        self.aa = 0
-        self.me = 0
+        self.payload_length = 0
         self.pi = 0
-        tc = 0
 
 
     def bin2dec(self, bits):
@@ -295,13 +291,12 @@ class decoder(gr.sync_block):
         # Downlink Format, 5 bits
         self.df = self.bin2dec(self.bits[0:0+5])
 
-        # Increment the seen counter if there's a high probability the DF
-        # is error free
-        if self.snr > 12:
-            self.df_count[self.df] += 1
-
-        print "DF count"
-        print self.df_count
+        # # Increment the seen counter if there's a high probability the DF
+        # # is error free
+        # if self.snr > 12:
+        #     self.df_count[self.df] += 1
+        #     print "DF count"
+        #     print self.df_count
 
         if self.print_level == "Verbose":
             print "\n\n"
@@ -313,12 +308,12 @@ class decoder(gr.sync_block):
     def check_parity(self):
         if self.df in [0,4,5,11]:
             # 56 bit payload
-            payload_length = 56
+            self.payload_length = 56
 
             # Parity/Interrogator ID, 24 bits
             self.pi = self.bin2dec(self.bits[32:32+24])
 
-            self.crc = self.compute_crc(payload_length)
+            self.crc = self.compute_crc()
 
             print "DF %d Not yet implemented" % (self.df)
 
@@ -331,16 +326,16 @@ class decoder(gr.sync_block):
                 print "Parity failed"
                 print " PI  ", self.pi
                 print " CRC ", self.crc
-                return self.correct_errors(payload_length)
+                return self.correct_errors()
 
         elif self.df in [16,17,18,19,20,21]:
             # 112 bit payload
-            payload_length = 112
+            self.payload_length = 112
 
             # Parity/Interrogator ID, 24 bits
             self.pi = self.bin2dec(self.bits[88:88+24])
 
-            self.crc = self.compute_crc(payload_length)
+            self.crc = self.compute_crc()
 
             # if self.print_level == "Verbose":
                 # print "pi\t", self.pi
@@ -353,7 +348,7 @@ class decoder(gr.sync_block):
                 print "Parity failed"
                 print " PI  ", self.pi
                 print " CRC ", self.crc
-                return self.correct_errors(payload_length)
+                return self.correct_errors()
 
         else:
             # Unsupported downlink format
@@ -363,9 +358,9 @@ class decoder(gr.sync_block):
 
     # http://www.radarspotters.eu/forum/index.php?topic=5617.msg41293#msg41293
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1994/022_CRC_calculations_for_Mode_S.pdf
-    def compute_crc(self, payload_length):
+    def compute_crc(self):
         num_crc_bits = 24 # For all payload lengths
-        num_data_bits = payload_length - num_crc_bits
+        num_data_bits = self.payload_length - num_crc_bits
 
         data = self.bits[0:num_data_bits]
         data = np.append(data, np.zeros(num_crc_bits, dtype=int))
@@ -388,7 +383,7 @@ class decoder(gr.sync_block):
         return crc
 
 
-    def correct_errors(self, payload_length):
+    def correct_errors(self):
         if self.error_corr == "None":
             return 0 # Didn't attempt to make the parity pass
 
@@ -398,7 +393,7 @@ class decoder(gr.sync_block):
             abc = sorted(enumerate(abs(self.bit_confidence)), key=lambda x:x[1])
             self.bits[abc[0][0]] ^= 1
 
-            crc = self.compute_crc(payload_length)
+            crc = self.compute_crc()
 
             if self.pi == crc:
                 print "*************** Parity now passes *********************"
@@ -409,7 +404,7 @@ class decoder(gr.sync_block):
         elif self.error_corr == "Brute Force":
             for ii in range(0,pow(2,5)):
                 # Flip bit
-                crc = self.compute_crc(payload_length)
+                crc = self.compute_crc(self.payload_length)
                 if self.pi == crc:
                     return 1
                 else:
@@ -450,11 +445,11 @@ class decoder(gr.sync_block):
                 print "AA\t%d" % (self.aa)
             
             # All CA types contain ADS-B messages
-            self.decode_adsb_message()
+            self.decode_adsb_me()
 
-        # ADS-B Extended Squitter/Non-transponder
+        # ADS-B Extended Squitter from a Non Mode-S transponder
         elif self.df == 18:
-            # Capability, 3 bits
+            # CF Field, 3 bits
             cf = self.bin2dec(self.bits[5:5+3])
             
             # Address Announced (ICAO Address) 24 bits
@@ -468,11 +463,19 @@ class decoder(gr.sync_block):
             print "***** DF %d CF %d spotted in the wild *****" % (self.df, cf)
 
             if cf in [0,1,6]:
-                self.decode_adsb_message()
+                if cf == 1:
+                    print "Look into this. The AA is not the ICAO address."
+                self.decode_adsb_me()
+            elif cf in [2,3,5]:
+                self.decode_tisb_me()
+            elif cf in [4]:
+                print "TIS-B and ADS-B Management Message"
+            elif cf in [6]:
+                print "ADS-B Message Rebroadcast"
 
         # Military Extended Squitter
         elif self.df == 19:
-            # Capability, 3 bits
+            # Application Field, 3 bits
             af = self.bin2dec(self.bits[5:5+3])
             
             # Address Announced (ICAO Address) 24 bits
@@ -486,7 +489,9 @@ class decoder(gr.sync_block):
             print "***** DF %d AF %d spotted in the wild *****" % (self.df, af)
 
             if af in [0]:
-                self.decode_adsb_message()
+                self.decode_adsb_me()
+            elif af in [1,2,3,4,5,6,7]:
+                print "Reserved for Miliatry Use"
 
         # elif self.df == 28:
         #     print "Emergency/priority status"
@@ -496,7 +501,7 @@ class decoder(gr.sync_block):
         #     print "Unknown DF"
 
 
-    def decode_adsb_message(self):
+    def decode_adsb_me(self):
         # Type Code, 5 bits
         tc = self.bin2dec(self.bits[32:32+5])
 
@@ -727,6 +732,11 @@ class decoder(gr.sync_block):
 
         else:
             print "DF %d TC %d Not yet implemented" % (self.df, tc)
+
+
+    def decode_tisb_me(self):
+        # TO BE IMPLEMENTED
+        return
 
 
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf
