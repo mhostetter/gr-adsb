@@ -320,17 +320,20 @@ class decoder(gr.sync_block):
             crc_bits ^= self.aa_bits
             crc = self.bin2dec(crc_bits)
 
-            print "DF %d Not yet implemented" % (self.df)
+            if self.print_level == "Verbose":
+                print "DF %d Not yet implemented" % (self.df)
 
             if ap == crc:
-                print "Parity passed ***********************"
-                print " AP  ", ap
-                print " CRC ", crc
+                if self.print_level == "Verbose":
+                    print "Parity passed ***********************"
+                    print " AP  ", ap
+                    print " CRC ", crc
                 return 1 # Parity passed
             else:
-                print "Parity failed"
-                print " AP  ", ap
-                print " CRC ", crc
+                if self.print_level == "Verbose":
+                    print "Parity failed"
+                    print " AP  ", ap
+                    print " CRC ", crc
                 return self.correct_errors()
 
         elif self.df in [11]:
@@ -343,18 +346,21 @@ class decoder(gr.sync_block):
             crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)            
             crc = self.bin2dec(crc_bits)
 
-            print "DF %d Not yet implemented" % (self.df)
+            if self.print_level == "Verbose":
+                print "DF %d Not yet implemented" % (self.df)
 
             if pi == crc:
-                print "Parity passed ***********************"
-                print " PI  ", pi
-                print " CRC ", crc
+                if self.print_level == "Verbose":
+                    print "Parity passed ***********************"
+                    print " PI  ", pi
+                    print " CRC ", crc
                 return 1 # Parity passed
             else:
-                print "Parity failed"
-                print " PI  ", pi
-                print " CRC ", crc
-                return self.correct_errors()
+                if self.print_level == "Verbose":
+                    print "Parity failed"
+                    print " PI  ", pi
+                    print " CRC ", crc
+                    return self.correct_errors()
 
         elif self.df in [16,20,21,24]:
             # 112 bit payload
@@ -368,14 +374,16 @@ class decoder(gr.sync_block):
             crc = self.bin2dec(crc_bits)
 
             if ap == crc:
-                print "Parity passed ***********************"
-                print " AP  ", ap
-                print " CRC ", crc
+                if self.print_level == "Verbose":
+                    print "Parity passed ***********************"
+                    print " AP  ", ap
+                    print " CRC ", crc
                 return 1 # Parity passed
             else:
-                print "Parity failed"
-                print " AP  ", ap
-                print " CRC ", crc
+                if self.print_level == "Verbose":
+                    print "Parity failed"
+                    print " AP  ", ap
+                    print " CRC ", crc
                 return self.correct_errors()
 
         elif self.df in [17,18,19]:
