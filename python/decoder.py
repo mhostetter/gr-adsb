@@ -367,16 +367,9 @@ class decoder(gr.sync_block):
             crc_bits ^= self.aa_bits
             crc = self.bin2dec(crc_bits)
 
-            # if self.print_level == "Verbose":
-                # print "pi\t", pi
-                # print "crc\t", crc
-                # print "delta\t", pi - crc
-
-            print "DF %d playaaaaaa" % (self.df)
-
             if ap == crc:
                 print "Parity passed ***********************"
-                print " AP  ", ap
+                print " PI  ", pi
                 print " CRC ", crc
                 return 1 # Parity passed
             else:
@@ -401,12 +394,10 @@ class decoder(gr.sync_block):
                 # print "delta\t", pi - crc
 
             if pi == crc:
-                print "Parity passed ***********************"
-                print " PI  ", pi
-                print " CRC ", crc
                 return 1 # Parity passed
             else:
-                print "Parity failed"
+                print "DF 17 (please work)"
+                print "Parity failed :( :( :( :( :( :( :( :( :( "
                 print " PI  ", pi
                 print " CRC ", crc
                 return self.correct_errors()
@@ -485,7 +476,21 @@ class decoder(gr.sync_block):
 
             if self.print_level == "Verbose":
                 print "CA\t%d" % (ca)
-                print "AA\t%d" % (self.aa)
+                print "AA\t%s" % (self.aa_str)
+
+            # Update planes dictionary
+            self.update_plane()
+
+            if self.print_level == "Brief":
+                self.print_planes()
+            elif self.print_level == "Verbose":
+                print "All-Call Reply"
+            
+            if self.log_csv == True:
+                self.write_plane_to_csv()
+
+            if self.log_db == True:
+                self.write_plane_to_db()
 
         # ADS-B Extended Squitter
         elif self.df == 17:
@@ -499,7 +504,7 @@ class decoder(gr.sync_block):
             
             if self.print_level == "Verbose":
                 print "CA\t%d" % (ca)
-                print "AA\t%d" % (self.aa)
+                print "AA\t%s" % (self.aa_str)
             
             # All CA types contain ADS-B messages
             self.decode_adsb_me()
@@ -516,7 +521,7 @@ class decoder(gr.sync_block):
             
             if self.print_level == "Verbose":
                 print "CF\t%d" % (cf)
-                print "AA\t%d" % (self.aa)
+                print "AA\t%s" % (self.aa_str)
             
             print "***** DF %d CF %d spotted in the wild *****" % (self.df, cf)
 
@@ -543,7 +548,7 @@ class decoder(gr.sync_block):
             
             if self.print_level == "Verbose":
                 print "AF\t%d" % (af)
-                print "AA\t%d" % (self.aa)
+                print "AA\t%s" % (self.aa_str)
             
             print "***** DF %d AF %d spotted in the wild *****" % (self.df, af)
 
