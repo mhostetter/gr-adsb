@@ -63,8 +63,10 @@ class decoder(gr.sync_block):
 
         # Initialize plane dictionary
         self.plane_dict = dict([])
-
         # self.df_count = np.zeros(32, dtype=int)
+
+        # CRC polynomial (0xFFFA048) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 + x^11 + x^12 + x^14 + x^21 + x^24
+        self.crc_poly = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1])
 
         # Reset packet values
         self.reset()
@@ -150,7 +152,9 @@ class decoder(gr.sync_block):
                 # Decode the header (common) part of the packet
                 self.decode_header()
 
-                if self.check_parity() == 1:
+                parity_passed = self.check_parity()
+
+                if parity_passed == 1:
                     # If parity check passes, then decode the message contents
                     self.decode_message()
 
@@ -185,7 +189,6 @@ class decoder(gr.sync_block):
     def reset(self):
         self.df = 0
         self.payload_length = 0
-        self.pi = 0
 
 
     def bin2dec(self, bits):
@@ -306,48 +309,106 @@ class decoder(gr.sync_block):
 
     # http://jetvision.de/sbs/adsb/crc.htm
     def check_parity(self):
-        if self.df in [0,4,5,11]:
+        if self.df in [0,4,5]:
+            # 56 bit payload
+            self.payload_length = 56
+
+            # Address/Parity, 24 bits
+            ap = self.bin2dec(self.bits[32:32+24])
+
+            crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)            
+            crc_bits ^= self.aa_bits
+            crc = self.bin2dec(crc_bits)
+
+            print "DF %d Not yet implemented" % (self.df)
+
+            if ap == crc:
+                print "Parity passed ***********************"
+                print " AP  ", ap
+                print " CRC ", crc
+                return 1 # Parity passed
+            else:
+                print "Parity failed"
+                print " AP  ", ap
+                print " CRC ", crc
+                return self.correct_errors()
+
+        elif self.df in [11]:
             # 56 bit payload
             self.payload_length = 56
 
             # Parity/Interrogator ID, 24 bits
-            self.pi = self.bin2dec(self.bits[32:32+24])
+            pi = self.bin2dec(self.bits[32:32+24])
 
-            self.crc = self.compute_crc()
+            crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)            
+            crc = self.bin2dec(crc_bits)
 
             print "DF %d Not yet implemented" % (self.df)
 
-            if self.pi == self.crc:
-                print "Parity passed"
-                print " PI  ", self.pi
-                print " CRC ", self.crc
+            if pi == crc:
+                print "Parity passed ***********************"
+                print " PI  ", pi
+                print " CRC ", crc
                 return 1 # Parity passed
             else:
                 print "Parity failed"
-                print " PI  ", self.pi
-                print " CRC ", self.crc
+                print " PI  ", pi
+                print " CRC ", crc
                 return self.correct_errors()
 
-        elif self.df in [16,17,18,19,20,21]:
+        elif self.df in [16,20,21,24]:
+            # 112 bit payload
+            self.payload_length = 112
+
+            # Address/Parity, 24 bits
+            ap = self.bin2dec(self.bits[88:88+24])
+
+            crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)            
+            crc_bits ^= self.aa_bits
+            crc = self.bin2dec(crc_bits)
+
+            # if self.print_level == "Verbose":
+                # print "pi\t", pi
+                # print "crc\t", crc
+                # print "delta\t", pi - crc
+
+            print "DF %d playaaaaaa" % (self.df)
+
+            if ap == crc:
+                print "Parity passed ***********************"
+                print " AP  ", ap
+                print " CRC ", crc
+                return 1 # Parity passed
+            else:
+                print "Parity failed"
+                print " AP  ", ap
+                print " CRC ", crc
+                return self.correct_errors()
+
+        elif self.df in [17,18,19]:
             # 112 bit payload
             self.payload_length = 112
 
             # Parity/Interrogator ID, 24 bits
-            self.pi = self.bin2dec(self.bits[88:88+24])
+            pi = self.bin2dec(self.bits[88:88+24])
 
-            self.crc = self.compute_crc()
+            crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)
+            crc = self.bin2dec(crc_bits)
 
             # if self.print_level == "Verbose":
-                # print "pi\t", self.pi
-                # print "crc\t", self.crc
-                # print "delta\t", self.pi - self.crc
+                # print "pi\t", pi
+                # print "crc\t", crc
+                # print "delta\t", pi - crc
 
-            if self.pi == self.crc:
+            if pi == crc:
+                print "Parity passed ***********************"
+                print " PI  ", pi
+                print " CRC ", crc
                 return 1 # Parity passed
             else:
                 print "Parity failed"
-                print " PI  ", self.pi
-                print " CRC ", self.crc
+                print " PI  ", pi
+                print " CRC ", crc
                 return self.correct_errors()
 
         else:
@@ -358,16 +419,14 @@ class decoder(gr.sync_block):
 
     # http://www.radarspotters.eu/forum/index.php?topic=5617.msg41293#msg41293
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1994/022_CRC_calculations_for_Mode_S.pdf
-    def compute_crc(self):
-        num_crc_bits = 24 # For all payload lengths
-        num_data_bits = self.payload_length - num_crc_bits
+    def compute_crc(self, data, poly):
+        num_data_bits = len(data)
+        num_crc_bits = len(poly)-1
 
-        data = self.bits[0:num_data_bits]
+        # Multiply the data by x^(num_crc_bits), which equates to a 
+        # left shift operation or appending zeros
         data = np.append(data, np.zeros(num_crc_bits, dtype=int))
 
-        # CRC polynomial (0xFFFA048) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 + x^11 + x^12 + x^14 + x^21 + x^24
-        poly = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1])
-        
         for ii in range(0,num_data_bits):
             if data[ii] == 1:
                 # XOR the data with the CRC polynomial
@@ -375,10 +434,8 @@ class decoder(gr.sync_block):
                 # in GF(2)
                 data[ii:ii+num_crc_bits+1] ^= poly
 
-        # print "crc bits"
-        # print data[num_data_bits:num_data_bits+num_crc_bits]
 
-        crc = self.bin2dec(data[num_data_bits:num_data_bits+num_crc_bits])
+        crc = data[num_data_bits:num_data_bits+num_crc_bits]
 
         return crc
 
@@ -404,7 +461,7 @@ class decoder(gr.sync_block):
         elif self.error_corr == "Brute Force":
             for ii in range(0,pow(2,5)):
                 # Flip bit
-                crc = self.compute_crc(self.payload_length)
+                crc = self.compute_crc()
                 if self.pi == crc:
                     return 1
                 else:
@@ -418,13 +475,12 @@ class decoder(gr.sync_block):
     def decode_message(self):
         # All-Call Reply
         if self.df == 11:
-            print "All-Call Reply"
-    
             # Capability, 3 bits
             ca = self.bin2dec(self.bits[5:5+3])
             
             # Address Announced (ICAO Address) 24 bits
-            self.aa = self.bin2dec(self.bits[8:8+24])
+            self.aa_bits = self.bits[8:8+24]
+            self.aa = self.bin2dec(self.aa_bits)
             self.aa_str = "%06x" % (self.aa)
 
             if self.print_level == "Verbose":
@@ -437,7 +493,8 @@ class decoder(gr.sync_block):
             ca = self.bin2dec(self.bits[5:5+3])
             
             # Address Announced (ICAO Address) 24 bits
-            self.aa = self.bin2dec(self.bits[8:8+24])
+            self.aa_bits = self.bits[8:8+24]
+            self.aa = self.bin2dec(self.aa_bits)
             self.aa_str = "%06x" % (self.aa)
             
             if self.print_level == "Verbose":
@@ -453,7 +510,8 @@ class decoder(gr.sync_block):
             cf = self.bin2dec(self.bits[5:5+3])
             
             # Address Announced (ICAO Address) 24 bits
-            self.aa = self.bin2dec(self.bits[8:8+24])
+            self.aa_bits = self.bits[8:8+24]
+            self.aa = self.bin2dec(self.aa_bits)
             self.aa_str = "%06x" % (self.aa)
             
             if self.print_level == "Verbose":
@@ -479,7 +537,8 @@ class decoder(gr.sync_block):
             af = self.bin2dec(self.bits[5:5+3])
             
             # Address Announced (ICAO Address) 24 bits
-            self.aa = self.bin2dec(self.bits[8:8+24])
+            self.aa_bits = self.bits[8:8+24]
+            self.aa = self.bin2dec(self.aa_bits)
             self.aa_str = "%06x" % (self.aa)
             
             if self.print_level == "Verbose":
