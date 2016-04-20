@@ -19,7 +19,7 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import numpy
+import numpy as np
 from gnuradio import gr
 import pmt
 import math
@@ -31,14 +31,14 @@ class framer(gr.sync_block):
     def __init__(self, fs, burst_thresh):
         gr.sync_block.__init__(self,
             name="ADS-B Framer",
-            in_sig=[numpy.float32],
-            out_sig=[numpy.float32])
+            in_sig=[np.float32],
+            out_sig=[np.float32])
 
         # Calculate the samples/symbol
         # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
         # required fs is 2 Msps
         self.sps = fs/(1e6) 
-        if (self.sps - numpy.floor(self.sps)) > 0:
+        if (self.sps - np.floor(self.sps)) > 0:
             print "Warning: ADS-B Framer is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
@@ -74,8 +74,8 @@ class framer(gr.sync_block):
         # the threshold value
         # NOTE: Add the last sample from the previous work() call to the 
         # beginning of this block of samples
-        in0_pulses = numpy.zeros(len(in0)+1, dtype=int)
-        in0_pulses[numpy.insert(in0, 0, self.prev_in0) >= self.burst_thresh] = 1
+        in0_pulses = np.zeros(len(in0)+1, dtype=int)
+        in0_pulses[np.insert(in0, 0, self.prev_in0) >= self.burst_thresh] = 1
 
         # Set prev_in0 for the next work() call
         self.prev_in0 = in0[-1]
@@ -84,8 +84,8 @@ class framer(gr.sync_block):
         # +1 = rising edge, -1 = falling edge
         in0_transitions = in0_pulses[1:] - in0_pulses[:-1]
 
-        in0_rise_edge_idxs = numpy.nonzero(in0_transitions == 1)[0]
-        in0_fall_edge_idxs = numpy.nonzero(in0_transitions == -1)[0]
+        in0_rise_edge_idxs = np.nonzero(in0_transitions == 1)[0]
+        in0_fall_edge_idxs = np.nonzero(in0_transitions == -1)[0]
 
         # Make sure there is one and only one falling edge for each rising edge
         if len(in0_rise_edge_idxs) > 0 and len(in0_fall_edge_idxs) > 0:
@@ -93,7 +93,7 @@ class framer(gr.sync_block):
             # to the same pulse
             if in0_fall_edge_idxs[0] - in0_rise_edge_idxs[0] < 0:
                 # The first falling edge comes before the first rising edge, so remove it
-                in0_fall_edge_idxs = numpy.delete(in0_fall_edge_idxs, 0)
+                in0_fall_edge_idxs = np.delete(in0_fall_edge_idxs, 0)
 
             if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) > 0:
                 # If there are more rising edges than falling edges, then
@@ -101,13 +101,13 @@ class framer(gr.sync_block):
                 # NOTE: There technically can only possibly be 1 extra rising edge, if 
                 # there are more, something went terribly wrong
                 if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) == 1:
-                    in0_rise_edge_idxs = numpy.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs)-1)
+                    in0_rise_edge_idxs = np.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs)-1)
                 else:
                     print "Oh no, this shouldn't be happening..."
 
         # Find the index of the center of each pulses
         if len(in0_rise_edge_idxs) > 0:
-            pulse_idxs = numpy.mean((in0_fall_edge_idxs,in0_rise_edge_idxs),axis=0).astype(int)
+            pulse_idxs = np.mean((in0_fall_edge_idxs,in0_rise_edge_idxs),axis=0).astype(int)
         else:
             pulse_idxs = []
 
@@ -138,11 +138,11 @@ class framer(gr.sync_block):
                     amps = in0[pulse_idx:(pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
 
                     # Set a pulse to 1 if it's greater than 1/2 the amplitude of the detected pulse
-                    pulses = numpy.zeros(len(self.preamble_pulses), dtype=int)
+                    pulses = np.zeros(len(self.preamble_pulses), dtype=int)
                     pulses[amps > in0[pulse_idx]/2] = 1
 
                     # Count how many "pulses" or 1/2 symbols match the preamble "pulses"
-                    corr_matches = numpy.sum(pulses == self.preamble_pulses)
+                    corr_matches = np.sum(pulses == self.preamble_pulses)
 
                     # Only assert preamble found if all the 1/2 symbols match
                     if corr_matches == len(self.preamble_pulses):
@@ -152,7 +152,7 @@ class framer(gr.sync_block):
                         # NOTE: The median of a Rayleigh distributed random variable is 1.6 dB
                         # less than the average.  So add 1.6 dB to get a more accurate power
                         # SNR.
-                        snr = 10.0*math.log(float(in0[pulse_idx]/numpy.median(in0[0:pulse_idx])),10) + 1.6
+                        snr = 10.0*math.log(float(in0[pulse_idx]/np.median(in0[0:pulse_idx])),10) + 1.6
                         
                         # Calculate when this burst will end so we don't have to trigger
                         # off of all the "pulses" in this packet
