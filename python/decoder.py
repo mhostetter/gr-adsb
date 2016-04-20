@@ -373,7 +373,7 @@ class decoder(gr.sync_block):
                 # XOR the data with the CRC polynomial
                 # NOTE: The data polynomial and CRC polynomial are Galois Fields
                 # in GF(2)
-                data[ii:ii+num_crc_bits+1] = (data[ii:ii+num_crc_bits+1] + poly) % 2
+                data[ii:ii+num_crc_bits+1] ^= poly
 
         # print "crc bits"
         # print data[num_data_bits:num_data_bits+num_crc_bits]
