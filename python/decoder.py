@@ -22,7 +22,8 @@
 import numpy as np
 from gnuradio import gr
 import pmt
-import datetime as dt
+import time
+import calendar
 import os
 import csv
 
@@ -76,9 +77,8 @@ class decoder(gr.sync_block):
 
         # Initialize CSV file
         if self.log_csv == True:
-            self.fp_csv = open(self.csv_filename, "a")
-            self.wr_csv = csv.writer(self.fp_csv)
-            self.wr_csv.writerow(("Aircraft ID", "Callsign", "Altitude (ft)", "Speed (kn)", "Heading (deg", "Latitude", "Longitude", "Message Count", "Time Since Seen (s)"))
+            self.csv_writer = csv.writer(open(self.csv_filename, "a"))
+            self.csv_writer.writerow(("Date/Time", "Timestamp", "ICAO Address", "Callsign", "Altitude (ft)", "Speed (kn)", "Heading (deg)", "Latitude", "Longitude", "Message Count", "Time Since Seen (s)"))
 
         # Initialize database
         if self.log_db == True:
@@ -95,7 +95,7 @@ class decoder(gr.sync_block):
         print "  Log to Database:     %s" % (self.log_db)
         if self.log_db == True:
             print "    Database Filename: %s" % (self.db_filename)
-            
+
 
     def work(self, input_items, output_items):
         in0 = input_items[0]
@@ -200,12 +200,14 @@ class decoder(gr.sync_block):
             # The current plane already exists in the dictionary
 
             # If the plane has timed out, delete its old altimetry values
-            seconds_since_last_seen = (dt.datetime.now() - self.plane_dict[self.aa_str]["last_seen"]).total_seconds()
+            seconds_since_last_seen = (calendar.timegm(time.gmtime()) - self.plane_dict[self.aa_str]["last_seen"])
             if seconds_since_last_seen > PLANE_TIMEOUT_S:
                 self.reset_plane_altimetry(self.plane_dict[self.aa_str])
 
             self.plane_dict[self.aa_str]["num_msgs"] += 1
-            self.plane_dict[self.aa_str]["last_seen"] = dt.datetime.now()
+            # self.plane_dict[self.aa_str]["last_seen"] = calendar.timegm(time.gmtime())
+            self.plane_dict[self.aa_str]["last_seen"] = calendar.timegm(time.gmtime())
+            
             
         else:
             # Create empty dictionary for the current plane
@@ -214,13 +216,14 @@ class decoder(gr.sync_block):
             self.reset_plane_altimetry(self.plane_dict[self.aa_str])
 
             self.plane_dict[self.aa_str]["num_msgs"] = 1
-            self.plane_dict[self.aa_str]["last_seen"] = dt.datetime.now()
+            # self.plane_dict[self.aa_str]["last_seen"] = calendar.timegm(time.gmtime())
+            self.plane_dict[self.aa_str]["last_seen"] = calendar.timegm(time.gmtime())
 
         # Check if any planes have timed out and if so remove them
         # from the dictionary
         # TODO: Figure out a better way to do this
         # for key in self.plane_dict:
-        #     if (dt.datetime.now() - self.plane_dict[key]["last_seen"]).total_seconds() > PLANE_TIMEOUT_S:
+        #     if (calendar.timegm(time.gmtime()) - self.plane_dict[key]["last_seen"]) > PLANE_TIMEOUT_S:
         #         del self.plane_dict[key]
 
 
@@ -231,19 +234,21 @@ class decoder(gr.sync_block):
         plane["vertical_rate"] = np.NaN
         plane["latitude"] = np.NaN
         plane["longitude"] = np.NaN
-        plane["cpr"] = [(np.NaN, np.NaN, dt.datetime.fromtimestamp(0)),(np.NaN, np.NaN, dt.datetime.fromtimestamp(0))]
+        # plane["cpr"] = [(np.NaN, np.NaN, dt.datetime.fromtimestamp(0)),(np.NaN, np.NaN, dt.datetime.fromtimestamp(0))]
+        plane["cpr"] = [(np.NaN, np.NaN, np.NaN),(np.NaN, np.NaN, np.NaN)]
 
 
     def print_planes(self):
         # os.system("clear")
-        print "\n\n"
+        # print "\n\n"
         print " ICAO  Callsign  Alt  Climb Speed Hdng  Latitude    Longitude  Msgs Age"
         print "                 (ft) (ft/m) (kn) (deg)                             (s)"
         print "------ -------- ----- ----- ----- ---- ----------- ----------- ---- ---"
         # print "a6234b ABC123__ 38000  1200 375   -176 75.4444     34.898      71   10  "
 
         for key in self.plane_dict:
-            print "%s %s %s %s %s %s %s %s %s %s" % (key,
+            print "%s %s %s %s %s %s %s %s %s %s" % (
+                    key,
                     "{:8s}".format(self.plane_dict[key]["callsign"]),
                     "{:5.0f}".format(self.plane_dict[key]["altitude"]),
                     "{:5.0f}".format(self.plane_dict[key]["vertical_rate"]),
@@ -252,37 +257,30 @@ class decoder(gr.sync_block):
                     "{:11.7f}".format(self.plane_dict[key]["latitude"]),
                     "{:11.7f}".format(self.plane_dict[key]["longitude"]),
                     "{:4d}".format(self.plane_dict[key]["num_msgs"]),
-                    "{:3.0f}".format((dt.datetime.now() - self.plane_dict[key]["last_seen"]).total_seconds())
-                )
+                    "{:3.0f}".format(calendar.timegm(time.gmtime()) - self.plane_dict[key]["last_seen"]
+                ))
 
 
     def write_plane_to_csv(self):
         # Write current plane to CSV file
-        self.wr_csv.writerow((self.aa_str,
-                    "{:8s}".format(self.plane_dict[self.aa_str]["callsign"]),
-                    "{:5.0f}".format(self.plane_dict[self.aa_str]["altitude"]),
-                    "{:5.0f}".format(self.plane_dict[self.aa_str]["speed"]),
-                    "{:4.0f}".format(self.plane_dict[self.aa_str]["heading"]),
-                    "{:11.7f}".format(self.plane_dict[self.aa_str]["latitude"]),
-                    "{:11.7f}".format(self.plane_dict[self.aa_str]["longitude"]),
-                    "{:4d}".format(self.plane_dict[self.aa_str]["num_msgs"]),
-                    "{:4.0f}".format((dt.datetime.now() - self.plane_dict[self.aa_str]["last_seen"]).total_seconds()))
-                )
+        self.csv_writer.writerow((
+                    time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
+                    self.plane_dict[self.aa_str]["last_seen"],
+                    self.aa_str,
+                    self.plane_dict[self.aa_str]["callsign"],
+                    self.plane_dict[self.aa_str]["altitude"],
+                    self.plane_dict[self.aa_str]["speed"],
+                    self.plane_dict[self.aa_str]["heading"],
+                    self.plane_dict[self.aa_str]["latitude"],
+                    self.plane_dict[self.aa_str]["longitude"],
+                    self.plane_dict[self.aa_str]["num_msgs"],
+                    (calendar.timegm(time.gmtime()) - self.plane_dict[self.aa_str]["last_seen"])
+                ))
 
 
     def write_plane_to_db(self):
         # Write current plane to database
         print "TODO: Need to implement this"
-        # self.wr_csv.writerow((self.aa_str,
-        #             "{:8s}".format(self.plane_dict[self.aa_str]["callsign"]),
-        #             "{:5.0f}".format(self.plane_dict[self.aa_str]["altitude"]),
-        #             "{:5.0f}".format(self.plane_dict[self.aa_str]["speed"]),
-        #             "{:4.0f}".format(self.plane_dict[self.aa_str]["heading"]),
-        #             "{:11.7f}".format(self.plane_dict[self.aa_str]["latitude"]),
-        #             "{:11.7f}".format(self.plane_dict[self.aa_str]["longitude"]),
-        #             "{:4d}".format(self.plane_dict[self.aa_str]["num_msgs"]),
-        #             "{:4.0f}".format((dt.datetime.now() - self.plane_dict[self.aa_str]["last_seen"]).total_seconds()))
-        #         )
 
 
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
@@ -630,10 +628,10 @@ class decoder(gr.sync_block):
             alt_bits = self.bits[40:40+12]
 
             # Time, 1 bit
-            time = self.bits[52]
+            time_bit = self.bits[52]
 
             # CPR Odd/Even Frame Flag, 1 bit
-            frame = self.bits[53]
+            frame_bit = self.bits[53]
 
             # Latitude in CPR Format, 17 bits
             lat_cpr = self.bin2dec(self.bits[54:54+17])
@@ -643,7 +641,7 @@ class decoder(gr.sync_block):
 
             # Update planes dictionary
             self.update_plane()
-            self.plane_dict[self.aa_str]["cpr"][frame] = (lat_cpr, lon_cpr, dt.datetime.now())
+            self.plane_dict[self.aa_str]["cpr"][frame_bit] = (lat_cpr, lon_cpr, calendar.timegm(time.gmtime()))
 
             (lat_dec, lon_dec) = self.calculate_lat_lon(self.plane_dict[self.aa_str]["cpr"])
             alt = self.calculate_altitude()
@@ -827,7 +825,7 @@ class decoder(gr.sync_block):
         lat_dec = np.NaN
         lon_dec = np.NaN
 
-        if (dt.datetime.now() - cpr[0][2]).total_seconds() < CPR_TIMEOUT_S and (dt.datetime.now() - cpr[1][2]).total_seconds() < CPR_TIMEOUT_S:
+        if (calendar.timegm(time.gmtime()) - cpr[0][2]) < CPR_TIMEOUT_S and (calendar.timegm(time.gmtime()) - cpr[1][2]) < CPR_TIMEOUT_S:
             # Get fractional lat/lon for the even and odd frame
             # Even frame
             lat_cpr_even = float(cpr[0][0])/131072
@@ -857,7 +855,7 @@ class decoder(gr.sync_block):
             if nl_even == nl_odd:
                 # Even/odd latitudes are in the same latitude zone, use the
                 # most recent latitude
-                if (cpr[0][2] - cpr[1][2]).total_seconds() > 0:
+                if (cpr[0][2] - cpr[1][2]) > 0:
                     # The even frame is more recent
                     lat_dec = lat_even
 
