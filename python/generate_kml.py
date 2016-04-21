@@ -22,9 +22,15 @@
 import numpy as np
 import argparse
 import csv
-import xml
+import time
+import calendar
+import xml.etree.ElementTree as ET
 
 plane_dict = dict()
+
+# http://www.colourlovers.com, Papeterie Haute Ville
+colors = [0x113f8c, 0x61ae24, 0xd70060, 0x01a4a4, 0xd0d102, 0xe54028, 0x00a1cb, 0x32742c, 0xf18d05, 0x616161]
+
 
 def csv_to_kml(csv_filename, kml_filename):
     # Read CSV and populate plane dictionary
@@ -51,7 +57,8 @@ def csv_to_kml(csv_filename, kml_filename):
         add_to_dictionary(time_str, timestamp, icao, callsign, alt, speed, heading, lat, lon)
 
     # Process dictionary and write KML
-    write_kml()
+    write_kml(kml_filename)
+
 
 def sqlite_to_kml(db_filename, kml_filename):
     print "To be implemented"
@@ -81,11 +88,64 @@ def add_to_dictionary(time_str, timestamp, icao, callsign, alt, speed, heading, 
                 plane_dict[icao]["heading"][-1][ii] = plane_dict[icao]["heading"][-2][ii]
 
 
-def write_kml():
-    print "To be implemented"
+def write_kml(kml_filename):
+    kml = ET.Element("kml")
+    file = ET.Comment(text="Automatically generated using generate_kml.py from the gr-adsb GNU Radio Module.")
+
+    Document = ET.SubElement(kml, "Document")
+    
+    name = ET.SubElement(Document, "name")
+    name.text = "ADS-B Data"
+    
+    Snippet = ET.SubElement(Document, "Snippet")
+    Snippet.text = "Created on %s" % ("Fill this in")
+
+    Folder = ET.SubElement(Document, "Folder")
+    
+    name = ET.SubElement(Folder, "name")
+    name.text = "Planes"
+
+    # Add planes
+    for key in plane_dict:
+        Placemark = ET.SubElement(Folder, "Placemark")
+        name = ET.SubElement(Placemark, "name")
+        name.text = "%s : %s" % (key, plane_dict[key]["callsign"])
+
+        gx_Track = ET.SubElement(Placemark, "gx_Track")
+
+        for ii in range(0,len(plane_dict[key]["time"])):
+            lon = plane_dict[key]["position"][ii][0]
+            lat = plane_dict[key]["position"][ii][0]
+            alt = plane_dict[key]["position"][ii][0]
+
+            if np.isnan(lon) == False and np.isnan(lat) == False and np.isnan(alt) == False:
+                when = ET.Element("when")
+                when.text = plane_dict[key]["time"][ii][1]
+
+                gx_coord = ET.Element("gx_coord")
+                gx_coord.text = "%s %s %s" % (
+                            "{:12.8f}".format(lon),
+                            "{:12.8f}".format(lat),
+                            "{:6.1f}".format(alt),
+                        )
+
+                gx_Track.append(when)
+                gx_Track.append(gx_coord)
+
+
+    # ET.ElementTree.write(file, encoding="us-ascii", xml_declaration=True, default_namespace=None, method="xml")
+
+    # ET.dump(kml)
+    # print ET.tostring(kml, pretty_print=True)
+    xml_str = ET.tostring(kml)
+
+    file = open(kml_filename, "w")
+    file.write(xml_str)
+    file.close()
 
 
 if __name__ == "__main__":
+    # Set up the command-line arguments
     parser = argparse.ArgumentParser(description="Generate a Google Earth KML file from logged ADS-B data.")
     parser.add_argument("--type", metavar="type", type=str, nargs="+", help="The input file type (csv, sqlite)")
     parser.add_argument("--file", metavar="file", type=str, nargs="+", help="The input filename")
@@ -93,16 +153,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print args.type
-    print args.file
-
     if args.type[0] == "csv":
         print "Reading from CSV file %s" % (args.file[0])
-        csv_to_kml(args.file[0], args.kml_file[0])
+        csv_to_kml(args.file[0], args.kml_file)
 
     elif args.type[0] == "sqlite":
         print "Reading from SQLite database %s" % (args.file[0])
-        sqlite_to_kml(args.file[0], args.kml_file[0])
+        sqlite_to_kml(args.file[0], args.kml_file)
 
     else:
         print "Invalid argument %s" % (args.type[0])
