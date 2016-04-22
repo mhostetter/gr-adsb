@@ -22,7 +22,6 @@
 import numpy as np
 from gnuradio import gr
 import pmt
-import math
 
 class framer(gr.sync_block):
     """
@@ -152,8 +151,12 @@ class framer(gr.sync_block):
                         # NOTE: The median of a Rayleigh distributed random variable is 1.6 dB
                         # less than the average.  So add 1.6 dB to get a more accurate power
                         # SNR.
-                        snr = 10.0*math.log(float(in0[pulse_idx]/np.median(in0[0:pulse_idx])),10) + 1.6
-                        
+                        num_noise_samples = 100
+                        if pulse_idx < num_noise_samples:
+                            snr = 10.0*np.log10(in0[pulse_idx]/np.median(in0[0:pulse_idx])) + 1.6
+                        else:
+                            snr = 10.0*np.log10(in0[pulse_idx]/np.median(in0[pulse_idx-100:pulse_idx])) + 1.6
+                                                
                         # Calculate when this burst will end so we don't have to trigger
                         # off of all the "pulses" in this packet
                         # NOTE: Assume the shorter 56 bit packet because we don't yet know
