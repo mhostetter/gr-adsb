@@ -450,7 +450,7 @@ class decoder(gr.sync_block):
 
         else:
             return 0
-        
+
 
     # http://adsb-decode-guide.readthedocs.org/en/latest/introduction.html
     def decode_message(self):
@@ -459,52 +459,8 @@ class decoder(gr.sync_block):
             if self.print_level == "Verbose":
                 print "DF %d = Short Air-Air Surveillance (ACAS)" % (self.df)
 
-            # Vertical Status, 1 bit
-            vs = self.bits[5]
+            self.decode_acas()
 
-            # Cross-Link Capability (spare), 6 bits
-            cc = self.bin2dec(self.bits[6:6+6])
-
-            # Reply Information, 4 bits 
-            ri = self.bin2dec(self.bits[13:13+4])
-
-            # Altitude Code, 13 bits
-            ac = self.bin2dec(self.bits[19:19+13])
-
-            # M-bit, 1 bit
-            m_bit = self.bits[25]
-            if m_bit == 1:
-                print "Reading is in metric units"
-
-            else:
-                print "Reading is in standard units"
-                
-                # Q-bit, 1 bit
-                q_bit = self.bits[47]
-                
-                print "Q bit is %d" % (q_bit)
-                
-                if q_bit == 0:
-                    # Q-bit = 0, altitude is encoded in multiples of 100 ft
-                    multiplier = 100
-                    alt_dec = 0
-
-                else:
-                    # Q-bit = 1, altitude is encoded in multiples of 25 ft
-                    multiplier = 25
-            
-                    # Remove the Q-bit and M-bit from the altitude bits to calculate the altitude
-                    alt_dec = self.bin2dec(np.delete(self.bits[19:19+13], [7, 9]))
-
-                # Altitude in ft
-                alt = alt_dec*multiplier - 1000
-
-            if self.print_level == "Verbose":
-                print "VS\t%d" % (vs)
-                print "RI\t%s" % (ri)
-                print "AC\t%s" % (ac)
-                print "Altitude\t%d ft" % (alt)
-        
         # (3.1.2.6.5) Surveillance Altitude Reply
         if self.df == 4:
             if self.print_level == "Verbose":
@@ -554,25 +510,17 @@ class decoder(gr.sync_block):
                 print "All-Call Reply"
             
             if self.log_csv == True:
-                self.write_plane_to_csv()
+                self.write_plane_to_csv(self.aa_str)
 
             if self.log_db == True:
-                self.write_plane_to_db()
+                self.write_plane_to_db(self.aa_str)
 
-        # Long Air-Air Surveillance (ACAS)
+        # (3.1.2.8.3) Long Air-Air Surveillance (ACAS)
         if self.df == 16:
             if self.print_level == "Verbose":
                 print "DF %d = Long Air-Air Surveillance (ACAS)" % (self.df)
 
-            vs = self.bin2dec(self.bits[5])
-            ri = self.bin2dec(self.bits[13:13+4])
-            ac = self.bin2dec(self.bits[19:19+13])
-            ac = self.bin2dec(self.bits[19:19+13])
-
-            if self.print_level == "Verbose":
-                print "VS\t%d" % (vs)
-                print "RI\t%s" % (ri)
-                print "AC\t%s" % (ac)
+            self.decode_acas()
 
         # ADS-B Extended Squitter
         elif self.df == 17:
@@ -677,6 +625,70 @@ class decoder(gr.sync_block):
         #     print "Unknown DF"
 
 
+    def decode_acas(self):
+        # Vertical Status, 1 bit
+        vs = self.bits[5]
+
+        # Short-only parameters
+        if self.df == 0:
+            # Cross-Link Capability, 1 bits
+            cc = self.bits[6]
+
+        # Reply Information, 4 bits 
+        ri = self.bin2dec(self.bits[13:13+4])
+
+        # Altitude Code, 13 bits
+        ac = self.bin2dec(self.bits[19:19+13])
+
+        m_bit = self.bits[25]
+        if m_bit == 1:
+            if self.print_level == "Verbose":
+                print "Reading is in metric units"
+
+        else:
+            if self.print_level == "Verbose":
+                print "Reading is in standard units"
+
+            q_bit = self.bits[47]
+            if q_bit == 0:
+                # Q-bit = 0, altitude is encoded in multiples of 100 ft
+                multiplier = 100
+                alt = 0
+
+            else:
+                # Q-bit = 1, altitude is encoded in multiples of 25 ft
+                multiplier = 25
+        
+                # Remove the Q-bit and M-bit from the altitude bits to calculate the altitude
+                alt = self.bin2dec(np.delete(self.bits[19:19+13], [7, 9]))
+
+            # Altitude in ft
+            alt = alt*multiplier - 1000
+
+        # Long-only parametes
+        if self.df == 16:
+            # (4.3.8.4.2.4)
+            mv_bits = self.bits[32:32+56]
+
+            vds1 = self.bin2dec(self.bits[32:32+4])
+            vds2 = self.bin2dec(self.bits[36:36+4])
+
+            if self.print_level == "Verbose":
+                print "VDS1 %d" % (vds1)
+                print "VDS2 %D" % (vds2)
+
+            # if vds1 == 3 and vds2 == 0:
+
+
+        if self.print_level == "Verbose":
+            print "VS\t%d" % (vs)
+            print "RI\t%s" % (ri)
+            print "AC\t%s" % (ac)
+            print "Altitude\t%d ft" % (alt)
+        
+
+
+
     def decode_adsb_me(self):
         # Type Code, 5 bits
         tc = self.bin2dec(self.bits[32:32+5])
@@ -712,10 +724,10 @@ class decoder(gr.sync_block):
                 print "Callsign\t%s" % (callsign)
 
             if self.log_csv == True:
-                self.write_plane_to_csv()
+                self.write_plane_to_csv(self.aa_str)
 
             if self.log_db == True:
-                self.write_plane_to_db()
+                self.write_plane_to_csv(self.aa_str)
 
         ### Surface Position ###
         elif tc in range(5,9):
@@ -765,10 +777,10 @@ class decoder(gr.sync_block):
                 print "Longitude\t%f" % (lon_dec)
 
             if self.log_csv == True:
-                self.write_plane_to_csv()
+                self.write_plane_to_csv(self.aa_str)
 
             if self.log_db == True:
-                self.write_plane_to_db()
+                self.write_plane_to_csv(self.aa_str)
 
         ### Airborne Velocities ###
         elif tc in [19]:
@@ -869,10 +881,10 @@ class decoder(gr.sync_block):
                         print "Unknown vertical rate source"
     
                 if self.log_csv == True:
-                    self.write_plane_to_csv()
+                    self.write_plane_to_csv(self.aa_str)
 
                 if self.log_db == True:
-                    self.write_plane_to_db()
+                    self.write_plane_to_csv(self.aa_str)
 
             # Airborne velocity subtype
             elif st in [3,4]:                
