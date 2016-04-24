@@ -241,21 +241,60 @@ class decoder(gr.sync_block):
         print " ICAO  Callsign  Alt  Climb Speed Hdng  Latitude    Longitude  Msgs Age"
         print "                 (ft) (ft/m) (kn) (deg)                             (s)"
         print "------ -------- ----- ----- ----- ---- ----------- ----------- ---- ---"
-        # print "a6234b ABC123__ 38000  1200 375   -176 75.4444     34.898      71   10  "
 
         for key in self.plane_dict:
+            icao = "{:6s}".format(key)
+
+            if self.plane_dict[key]["callsign"] != "":
+                callsign = "{:8s}".format(self.plane_dict[key]["callsign"])
+            else:
+                callsign = " "*8
+
+            if np.isnan(self.plane_dict[key]["altitude"]) == False:
+                altitude = "{:5.0f}".format(self.plane_dict[key]["altitude"])
+            else:
+                altitude = " "*5
+
+            if np.isnan(self.plane_dict[key]["vertical_rate"]) == False:
+                vertical_rate = "{:5.0f}".format(self.plane_dict[key]["vertical_rate"])
+            else:
+                vertical_rate = " "*5
+
+            if np.isnan(self.plane_dict[key]["speed"]) == False:
+                speed = "{:5.0f}".format(self.plane_dict[key]["speed"])
+            else:
+                speed = " "*5
+
+            if np.isnan(self.plane_dict[key]["heading"]) == False:
+                heading = "{:4.0f}".format(self.plane_dict[key]["heading"])
+            else:
+                heading = " "*4
+
+            if np.isnan(self.plane_dict[key]["latitude"]) == False:
+                latitude = "{:11.7f}".format(self.plane_dict[key]["latitude"])
+            else:
+                latitude = " "*11
+
+            if np.isnan(self.plane_dict[key]["longitude"]) == False:
+                longitude = "{:11.7f}".format(self.plane_dict[key]["longitude"])
+            else:
+                longitude = " "*11
+
+            num_msgs = "{:4d}".format(self.plane_dict[key]["num_msgs"])
+            age = "{:3.0f}".format(calendar.timegm(time.gmtime()) - self.plane_dict[key]["last_seen"])
+
             print "%s %s %s %s %s %s %s %s %s %s" % (
-                    key,
-                    "{:8s}".format(self.plane_dict[key]["callsign"]),
-                    "{:5.0f}".format(self.plane_dict[key]["altitude"]),
-                    "{:5.0f}".format(self.plane_dict[key]["vertical_rate"]),
-                    "{:5.0f}".format(self.plane_dict[key]["speed"]),
-                    "{:4.0f}".format(self.plane_dict[key]["heading"]),
-                    "{:11.7f}".format(self.plane_dict[key]["latitude"]),
-                    "{:11.7f}".format(self.plane_dict[key]["longitude"]),
-                    "{:4d}".format(self.plane_dict[key]["num_msgs"]),
-                    "{:3.0f}".format(calendar.timegm(time.gmtime()) - self.plane_dict[key]["last_seen"]
-                ))
+                    icao,
+                    callsign,
+                    altitude,
+                    vertical_rate,
+                    speed,
+                    heading,
+                    latitude,
+                    longitude,
+                    num_msgs,
+                    age
+                )
 
 
     def write_plane_to_csv(self, aa_str):
