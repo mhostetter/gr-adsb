@@ -233,8 +233,8 @@ class decoder(gr.sync_block):
 
 
     def print_planes(self):
-        # os.system("clear")
-        print "\n\n"
+        os.system("clear")
+        # print "\n\n"
         print " ICAO  Callsign  Alt  Climb Speed Hdng  Latitude    Longitude  Msgs Age"
         print "                 (ft) (ft/m) (kn) (deg)                             (s)"
         print "------ -------- ----- ----- ----- ---- ----------- ----------- ---- ---"
@@ -448,18 +448,71 @@ class decoder(gr.sync_block):
 
     # http://adsb-decode-guide.readthedocs.org/en/latest/introduction.html
     def decode_message(self):
-        # (3.1.2.8.2) Short Air-Air Surveillance (ACAS)
-        if self.df == 0:
+        # DF = 0  (3.1.2.8.2) Short Air-Air Surveillance (ACAS)
+        # DF = 16 (3.1.2.8.3) Long Air-Air Surveillance (ACAS)
+        if self.df in [0,16]:
             if self.print_level == "Verbose":
-                print "Short Air-Air Surveillance (DF %d)" % (self.df)
+                if self.df == 0:
+                    print "Short Air-Air Surveillance (DF %d)" % (self.df)
+                elif self.df == 16:
+                    print "Long Air-Air Surveillance (DF %d)" % (self.df)
 
-            self.decode_acas()
+            # Vertical Status, 1 bit
+            vs = self.bits[5]
 
-        # (3.1.2.6.5) Surveillance Altitude Reply
-        if self.df == 4:
+            # Short-only parameters
+            if self.df == 0:
+                # Cross-Link Capability, 1 bits
+                cc = self.bits[6]
+
+            # Reply Information, 4 bits 
+            ri = self.bin2dec(self.bits[13:13+4])
+
+            # Altitude Code, 13 bits
+            alt = self.decode_ac()
+
+            # Long-only parametes
+            if self.df == 16:
+                # (4.3.8.4.2.4)
+                mv_bits = self.bits[32:32+56]
+
+                vds1 = self.bin2dec(self.bits[32:32+4])
+                vds2 = self.bin2dec(self.bits[36:36+4])
+
+                if self.print_level == "Verbose":
+                    print "VDS1  %d" % (vds1)
+                    print "VDS2  %d" % (vds2)
+
+                # if vds1 == 3 and vds2 == 0:
+
+            # Update planes dictionary
+            self.update_plane(self.aa_str)
+            if alt != -1:
+                # If the altitude is not invalid, log it
+                self.plane_dict[self.aa_str]["altitude"] = alt        
+
+            if self.print_level == "Brief":
+                self.print_planes()
             if self.print_level == "Verbose":
-                print "Surveillance Altitude Reply (DF %d)" % (self.df)
+                print "VS    %d" % (vs)
+                print "RI    %s" % (ri)
+                print "Altitude:     %d ft" % (alt)
 
+            if self.log_csv == True:
+                self.write_plane_to_csv(self.aa_str)
+
+            if self.log_db == True:
+                self.write_plane_to_db(self.aa_str)
+
+        # DF = 4 (3.1.2.6.5) Surveillance Altitude Reply
+        # DF = 5 (3.1.2.6.7) Surveillance Identity Reply
+        if self.df in [4,5]:
+            if self.print_level == "Verbose":
+                if self.df == 4:
+                    print "Surveillance Altitude Reply (DF %d)" % (self.df)
+                elif self.df == 5:
+                    print "Surveillance Identity Reply (DF %d)" % (self.df)
+            
             # Flight Status, 3 bits
             fs = self.bin2dec(self.bits[5:5+3])
             
@@ -469,16 +522,55 @@ class decoder(gr.sync_block):
             # Utility Message, 6 bits
             um = self.bin2dec(self.bits[13:13+6])
 
-            # Altitude Code, 13 bits
-            ac = self.bin2dec(self.bits[19:19+13])
-            
-            if self.print_level == "Verbose":
-                print "FS    %d" % (fs)
-                print "DR    %s" % (dr)
-                print "UM    %s" % (um)
-                print "AC    %s" % (ac)
+            if self.df == 4:
+                # Altitude Code, 13 bits
+                alt = self.decode_ac()
 
-        # All-Call Reply
+                # Update planes dictionary
+                self.update_plane(self.aa_str)
+                if alt != -1:
+                    # If the altitude is not invalid, log it
+                    self.plane_dict[self.aa_str]["altitude"] = alt        
+
+                if self.print_level == "Brief":
+                    self.print_planes()
+                if self.print_level == "Verbose":
+                    print "FS    %d" % (fs)
+                    print "DR    %s" % (dr)
+                    print "UM    %s" % (um)
+                    print "Altitude:     %d ft" % (alt)
+
+                if self.log_csv == True:
+                    self.write_plane_to_csv(self.aa_str)
+
+                if self.log_db == True:
+                    self.write_plane_to_db(self.aa_str)
+
+            elif self.df == 5:
+                # Identity Code, 13 bits
+                ident = self.bin2dec(self.bits[19:19+13])
+
+                # Update planes dictionary
+                self.update_plane(self.aa_str)
+                # if alt != -1:
+                #     # If the altitude is not invalid, log it
+                #     self.plane_dict[self.aa_str]["altitude"] = alt        
+
+                if self.print_level == "Brief":
+                    self.print_planes()
+                if self.print_level == "Verbose":
+                    print "FS    %d" % (fs)
+                    print "DR    %s" % (dr)
+                    print "UM    %s" % (um)
+                    print "Identity:     %d" % (ident)
+
+                if self.log_csv == True:
+                    self.write_plane_to_csv(self.aa_str)
+
+                if self.log_db == True:
+                    self.write_plane_to_db(self.aa_str)
+
+        # DF = 11 () All-Call Reply
         elif self.df == 11:
             if self.print_level == "Verbose":
                 print "All-Call Reply (DF %d)" % (self.df)
@@ -505,13 +597,6 @@ class decoder(gr.sync_block):
 
             if self.log_db == True:
                 self.write_plane_to_db(self.aa_str)
-
-        # (3.1.2.8.3) Long Air-Air Surveillance (ACAS)
-        if self.df == 16:
-            if self.print_level == "Verbose":
-                print "Long Air-Air Surveillance (DF %d)" % (self.df)
-
-            self.decode_acas()
 
         # ADS-B Extended Squitter
         elif self.df == 17:
@@ -616,56 +701,7 @@ class decoder(gr.sync_block):
         #     print "Unknown DF"
 
 
-    def decode_acas(self):
-        # Vertical Status, 1 bit
-        vs = self.bits[5]
-
-        # Short-only parameters
-        if self.df == 0:
-            # Cross-Link Capability, 1 bits
-            cc = self.bits[6]
-
-        # Reply Information, 4 bits 
-        ri = self.bin2dec(self.bits[13:13+4])
-
-        # Altitude Code, 13 bits
-        alt = self.decode_acas_ac()
-
-        # Long-only parametes
-        if self.df == 16:
-            # (4.3.8.4.2.4)
-            mv_bits = self.bits[32:32+56]
-
-            vds1 = self.bin2dec(self.bits[32:32+4])
-            vds2 = self.bin2dec(self.bits[36:36+4])
-
-            if self.print_level == "Verbose":
-                print "VDS1  %d" % (vds1)
-                print "VDS2  %d" % (vds2)
-
-            # if vds1 == 3 and vds2 == 0:
-
-        # Update planes dictionary
-        self.update_plane(self.aa_str)
-        if alt != -1:
-            # If the altitude is not invalid, log it
-            self.plane_dict[self.aa_str]["altitude"] = alt        
-
-        if self.print_level == "Brief":
-            self.print_planes()
-        if self.print_level == "Verbose":
-            print "VS    %d" % (vs)
-            print "RI    %s" % (ri)
-            print "Altitude:     %d ft" % (alt)
-
-        if self.log_csv == True:
-            self.write_plane_to_csv(self.aa_str)
-
-        if self.log_db == True:
-            self.write_plane_to_db(self.aa_str)
-
-
-    def decode_acas_ac(self):
+    def decode_ac(self):
         # (3.1.2.6.5.4) Decode altitude code
         alt_dec = self.bin2dec(self.bits[19:19+13])
 
@@ -1041,19 +1077,20 @@ class decoder(gr.sync_block):
         if q_bit == 0:
             # Q-bit = 0, altitude is encoded in multiples of 100 ft
             multiplier = 100
+            print "Is this happening ?????????????????????????????????????????????"
+            return -1
+
         else:
             # Q-bit = 1, altitude is encoded in multiples of 25 ft
             multiplier = 25
 
-        # Remove the Q-bit from the altitude bits to calculate the
-        # altitude
-        alt_bits = np.delete(alt_bits, 7)
-        alt_dec = self.bin2dec(alt_bits)
+            # Remove the Q-bit from the altitude bits to calculate the
+            # altitude
+            alt_bits = np.delete(alt_bits, 7)
+            altitude = self.bin2dec(alt_bits)
 
-        # Altitude in ft
-        alt = alt_dec*multiplier - 1000
-
-        return alt
+            # Altitude in ft
+            return altitude*multiplier - 1000
 
 
     def cpr_n(self, lat, frame):
