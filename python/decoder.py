@@ -792,7 +792,7 @@ class decoder(gr.sync_block):
                 self.write_plane_to_csv(self.aa_str)
 
             if self.log_db == True:
-                self.write_plane_to_csv(self.aa_str)
+                self.write_plane_to_db(self.aa_str)
 
         ### Surface Position ###
         elif tc in range(5,9):
@@ -845,7 +845,7 @@ class decoder(gr.sync_block):
                 self.write_plane_to_csv(self.aa_str)
 
             if self.log_db == True:
-                self.write_plane_to_csv(self.aa_str)
+                self.write_plane_to_db(self.aa_str)
 
         ### Airborne Velocities ###
         elif tc in [19]:
@@ -949,7 +949,7 @@ class decoder(gr.sync_block):
                     self.write_plane_to_csv(self.aa_str)
 
                 if self.log_db == True:
-                    self.write_plane_to_csv(self.aa_str)
+                    self.write_plane_to_db(self.aa_str)
 
             # Airborne velocity subtype
             elif st in [3,4]:                
