@@ -22,10 +22,11 @@
 import numpy as np
 from gnuradio import gr
 import pmt
+import os
 import time
 import calendar
-import os
 import csv
+import sqlite3
 
 NUM_BITS                = 112
 CPR_TIMEOUT_S           = 30 # Seconds consider CPR-encoded lat/lon info invalid
@@ -79,8 +80,10 @@ class decoder(gr.sync_block):
 
         # Initialize database
         if self.log_db == True:
-            print "TODO: Needs to be implemented"
-            # self.fp_db = open("/home/matt/adsb.sqlite", "w")
+            self.db_conn = sqlite3.connect(self.db_filename)
+            # cursor = self.db_conn.cursor()
+            # cursor.execute("CREATE TABLE msgs (datetime, timestamp, icao_addr, callsign, altitude, speed, heading, latitude, longitude, msg_count, age_s)")
+            # cursor.commit()
 
         print "\nInitialized ADS-B Decoder:"
         print "  Sampling Rate:       %1.2f Msps" % (fs/1e6)
@@ -272,10 +275,25 @@ class decoder(gr.sync_block):
                 ))
 
 
-    def write_plane_to_db(self):
+    def write_plane_to_db(self, aa_str):
         # Write current plane to database
-        print "TODO: Need to implement this"
-
+        print "Resolve conflicts with multithreading"
+        # cursor = self.db_conn.cursor()
+        # cursor.execute("INSERT INTO msgs (%s %d %s %s %f %f %f %f %f %d %d)" % (
+        #             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[aa_str]["last_seen"])),
+        #             self.plane_dict[aa_str]["last_seen"],
+        #             aa_str,
+        #             self.plane_dict[aa_str]["callsign"],
+        #             self.plane_dict[aa_str]["altitude"],
+        #             self.plane_dict[aa_str]["speed"],
+        #             self.plane_dict[aa_str]["heading"],
+        #             self.plane_dict[aa_str]["latitude"],
+        #             self.plane_dict[aa_str]["longitude"],
+        #             self.plane_dict[aa_str]["num_msgs"],
+        #             (calendar.timegm(time.gmtime()) - self.plane_dict[aa_str]["last_seen"])
+        #         ))
+        # cursor.commit()
+        
 
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
     # http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
