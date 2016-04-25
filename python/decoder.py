@@ -33,6 +33,56 @@ CPR_TIMEOUT_S           = 30 # Seconds consider CPR-encoded lat/lon info invalid
 PLANE_TIMEOUT_S         = 5*60
 CALLSIGN_LUT            = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ_____ _______________0123456789______"
 
+# Downlink Format, 5 bits
+DF_STR_LUT = (
+    "Short Air-Air Surveillance (ACAS)",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Surveillance Altitude Reply",
+    "Surveillance Identity Reply",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "All-Call Reply",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Long Air-Air Surveillance (ACAS)",
+    "Extended Squitter",
+    "Extended Squitter/Non-Transponder",
+    "Military Extended Squitter",
+    "Comm-B Altitude Reply",
+    "Comm-B Identity Reply",
+    "Reserved for Military Use",
+    "Reserved",
+    "Comm-D (ELM)",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+)
+
+# Capability, 3 bits
+# (3.1.2.5.2.2.1)
+CA_STR_LUT = (
+    "Level 1 Transponder / Cannot Set CA 7 / On Ground or In Air",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    ">= Level 2 Transponder / Can Set CA 7 / On Ground", 
+    ">= Level 2 Transponder / Can Set CA 7 / In Air",
+    ">= Level 2 Transponder / Can Set CA 7 / On Ground or In Air",
+    "DR != 0 or FS in [2,3,4,5] / On Ground or In Air",
+)
+
+
 class decoder(gr.sync_block):
     """
     docstring for block decoder
@@ -65,8 +115,7 @@ class decoder(gr.sync_block):
 
         # Initialize plane dictionary
         self.plane_dict = dict([])
-        # self.df_count = np.zeros(32, dtype=int)
-
+        
         # Reset packet values
         self.reset()
 
@@ -327,17 +376,11 @@ class decoder(gr.sync_block):
         # Downlink Format, 5 bits
         self.df = self.bin2dec(self.bits[0:0+5])
 
-        # # Increment the seen counter if there's a high probability the DF
-        # # is error free
-        # if self.snr > 12:
-        #     self.df_count[self.df] += 1
-        #     print "DF count"
-        #     print self.df_count
-
         if self.print_level == "Verbose":
             print "\n\n"
-            print "SNR   %1.2f dB" % (self.snr)
-            print "DF    %d" % (self.df)
+            print "----------------------------------------------------------------------"
+            print "SNR: %1.2f dB" % (self.snr)
+            print "DF: %d %s" % (self.df, DF_STR_LUT[self.df])
 
 
     # http://jetvision.de/sbs/adsb/crc.htm
@@ -363,15 +406,15 @@ class decoder(gr.sync_block):
 
             # If the ICAO address is in our plane dictionary,
             # then it's safe to assume the CRC passes
-            if self.plane_dict.has_key(self.aa_str) == True or self.aa == 0:
+            parity_passed = self.plane_dict.has_key(self.aa_str) == True
+
+            if parity_passed == True:
                 if self.print_level == "Verbose":
-                    print "Parity assumed to be good @@@@@@@@@@@@@@@@@@@@@@@"
-                    print "AA    %s" % (self.aa_str)
+                    print "Parity: Passed (Recognized AA from AP)"
                 return 1 # Parity passed
             else:
                 if self.print_level == "Verbose":
-                    print "Parity failed"
-                    print "AA    %s" % (self.aa_str)
+                    print "Parity: Failed (Unrecognized AA from AP)"
                 return 0 # Parity failed
 
         elif self.df in [11]:
@@ -384,14 +427,15 @@ class decoder(gr.sync_block):
             crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], crc_poly)            
             crc = self.bin2dec(crc_bits)
 
-            if pi == crc:
+            parity_passed = pi == crc
+
+            if parity_passed == True:
                 if self.print_level == "Verbose":
-                    print "Parity passed ***********************"
+                    print "Parity: Passed"
                 return 1 # Parity passed
             else:
                 if self.print_level == "Verbose":
-                    print "Parity failed"
-                    print "PI-CRC = %d" % (pi-crc)
+                    print "Parity: Failed (PI - CRC = %d)" % (pi-crc)
                 return 0 # Parity failed
 
         elif self.df in [16,20,21,24]:
@@ -412,15 +456,15 @@ class decoder(gr.sync_block):
 
             # If the ICAO address is in our plane dictionary,
             # then it's safe to assume the CRC passes
-            if self.plane_dict.has_key(self.aa_str) == True or self.aa == 0:
+            parity_passed = self.plane_dict.has_key(self.aa_str) == True
+
+            if parity_passed == True:
                 if self.print_level == "Verbose":
-                    print "Parity assumed to be good @@@@@@@@@@@@@@@@@@@@@@@"
-                    print "AA    %s" % (self.aa_str)
+                    print "Parity: Passed (Recognized AA from AP)"
                 return 1 # Parity passed
             else:
                 if self.print_level == "Verbose":
-                    print "Parity failed"
-                    print "AA    %s" % (self.aa_str)
+                    print "Parity: Failed (Unrecognized AA from AP)"
                 return 0 # Parity failed
 
         elif self.df in [17,18,19]:
@@ -433,14 +477,15 @@ class decoder(gr.sync_block):
             crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], crc_poly)
             crc = self.bin2dec(crc_bits)
 
-            if pi == crc:
+            parity_passed = pi == crc
+
+            if parity_passed == True:
                 if self.print_level == "Verbose":
-                    print "Parity passed"
+                    print "Parity: Passed"
                 return 1 # Parity passed
             else:
                 if self.print_level == "Verbose":
-                    print "Parity failed :( :( :( :( :( :( :( :( :( "
-                    print "PI-CRC = %d" % (pi-crc)
+                    print "Parity: Failed (PI - CRC = %d)" % (pi-crc)
                 return 0 # Parity failed
 
         else:
@@ -492,12 +537,6 @@ class decoder(gr.sync_block):
         # DF = 0  (3.1.2.8.2) Short Air-Air Surveillance (ACAS)
         # DF = 16 (3.1.2.8.3) Long Air-Air Surveillance (ACAS)
         if self.df in [0,16]:
-            if self.print_level == "Verbose":
-                if self.df == 0:
-                    print "Short Air-Air Surveillance (DF %d)" % (self.df)
-                elif self.df == 16:
-                    print "Long Air-Air Surveillance (DF %d)" % (self.df)
-
             # Vertical Status, 1 bit
             vs = self.bits[5]
 
@@ -557,12 +596,6 @@ class decoder(gr.sync_block):
         # DF = 4 (3.1.2.6.5) Surveillance Altitude Reply
         # DF = 5 (3.1.2.6.7) Surveillance Identity Reply
         if self.df in [4,5]:
-            if self.print_level == "Verbose":
-                if self.df == 4:
-                    print "Surveillance Altitude Reply (DF %d)" % (self.df)
-                elif self.df == 5:
-                    print "Surveillance Identity Reply (DF %d)" % (self.df)
-            
             # Flight Status, 3 bits
             fs = self.bin2dec(self.bits[5:5+3])
             
@@ -627,9 +660,6 @@ class decoder(gr.sync_block):
 
         # DF = 11 () All-Call Reply
         elif self.df == 11:
-            if self.print_level == "Verbose":
-                print "All-Call Reply (DF %d)" % (self.df)
-
             # Capability, 3 bits
             ca = self.bin2dec(self.bits[5:5+3])
             
@@ -652,9 +682,6 @@ class decoder(gr.sync_block):
 
         # ADS-B Extended Squitter
         elif self.df == 17:
-            if self.print_level == "Verbose":
-                print "ADS-B Extended Squitter (DF %d)" % (self.df)
-
             # Capability, 3 bits
             ca = self.bin2dec(self.bits[5:5+3])
             
@@ -672,9 +699,6 @@ class decoder(gr.sync_block):
 
         # ADS-B Extended Squitter from a Non Mode-S transponder
         elif self.df == 18:
-            if self.print_level == "Verbose":
-                print "ADS-B Extended Squitter for Non Mode-S Transponders (DF %d)" % (self.df)
-
             # CF Field, 3 bits
             cf = self.bin2dec(self.bits[5:5+3])
             
@@ -702,9 +726,6 @@ class decoder(gr.sync_block):
 
         # Military Extended Squitter
         elif self.df == 19:
-            if self.print_level == "Verbose":
-                print "Military Extended Squitter (DF %d)" % (self.df)
-
             # Application Field, 3 bits
             af = self.bin2dec(self.bits[5:5+3])
             
@@ -726,9 +747,6 @@ class decoder(gr.sync_block):
 
         # (3.1.2.6.6) Comm-B Altitude Reply
         elif self.df == 20:
-            if self.print_level == "Verbose":
-                print "Comm-B Altitude Reply (DF %d)" % (self.df)
-
             # Flight Status, 3 bits
             fs = self.bin2dec(self.bits[5:5+3])
             
