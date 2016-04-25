@@ -82,7 +82,7 @@ class decoder(gr.sync_block):
         if self.log_db == True:
             self.db_conn = sqlite3.connect(self.db_filename, check_same_thread=False)
             cursor = self.db_conn.cursor()
-            cursor.execute("CREATE TABLE IF NOT EXISTS msgs (datetime TEXT, timestamp INT, icao TEXT, callsign TEXT, altitude FLOAT, speed FLOAT, heading FLOAT, latitude FLOAT, longitude FLOAT)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS adsb (Datetime TEXT, DF INT, ICAO TEXT, Callsign TEXT, Altitude FLOAT, Speed FLOAT, Heading FLOAT, VerticalRate FLOAT, Latitude FLOAT, Longitude FLOAT, Timestamp INT)")
             self.db_conn.commit()
 
         print "\nInitialized ADS-B Decoder:"
@@ -541,11 +541,12 @@ class decoder(gr.sync_block):
 
                 if self.log_db == True:
                     cursor = self.db_conn.cursor()
-                    cursor.execute("""INSERT INTO msgs(datetime, timestamp, icao, altitude) VALUES ('%s', %d, '%s', %f)""" % (
+                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f)""" % (
                             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
-                            self.plane_dict[self.aa_str]["last_seen"],
+                            self.df,
                             self.aa_str,
-                            self.plane_dict[self.aa_str]["altitude"],
+                            self.plane_dict[self.aa_str]["last_seen"],
+                            self.plane_dict[self.aa_str]["altitude"]
                         ))
                     self.db_conn.commit()
 
@@ -587,6 +588,17 @@ class decoder(gr.sync_block):
 
                 if self.log_csv == True:
                     self.write_plane_to_csv(self.aa_str)
+
+                if self.log_db == True:
+                    cursor = self.db_conn.cursor()
+                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f);""" % (
+                            time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
+                            self.df,
+                            self.aa_str,
+                            self.plane_dict[self.aa_str]["last_seen"],
+                            self.plane_dict[self.aa_str]["altitude"]
+                        ))
+                    self.db_conn.commit()
 
             elif self.df == 5:
                 # Identity Code, 13 bits
@@ -728,7 +740,6 @@ class decoder(gr.sync_block):
             # Message Comm-B, 56 bits
             mb = self.bin2dec(self.bits[32:32+56])
 
-
         # elif self.df == 28:
         #     print "Emergency/priority status"
         # elif self.df == 31:
@@ -829,11 +840,12 @@ class decoder(gr.sync_block):
 
             if self.log_db == True:
                 cursor = self.db_conn.cursor()
-                cursor.execute("""INSERT INTO msgs(datetime, timestamp, icao, callsign) VALUES ('%s', %d, '%s', '%s')""" % (
+                cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Callsign) VALUES ('%s', %d, '%s', %d, '%s')""" % (
                         time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
-                        self.plane_dict[self.aa_str]["last_seen"],
+                        self.df,
                         self.aa_str,
-                        self.plane_dict[self.aa_str]["callsign"],
+                        self.plane_dict[self.aa_str]["last_seen"],
+                        self.plane_dict[self.aa_str]["callsign"]
                     ))
                 self.db_conn.commit()
 
@@ -872,7 +884,7 @@ class decoder(gr.sync_block):
             alt = self.calculate_altitude()
 
             self.plane_dict[self.aa_str]["altitude"] = alt
-            if lat != np.NaN and lon != np.NaN:
+            if np.isnan(lat) == False and np.isnan(lon) == False:
                 self.plane_dict[self.aa_str]["latitude"] = lat
                 self.plane_dict[self.aa_str]["longitude"] = lon
 
@@ -889,24 +901,24 @@ class decoder(gr.sync_block):
 
             if self.log_db == True:
                 cursor = self.db_conn.cursor()
-
-                if lat != np.NaN and lon != np.NaN:
-                    cursor.execute("""INSERT INTO msgs(datetime, timestamp, icao, altitude, latitude, longitude) VALUES ('%s', %d, '%s', %f, %f, %f)""" % (
+                if np.isnan(self.plane_dict[self.aa_str]["latitude"]) == False and np.isnan(self.plane_dict[self.aa_str]["latitude"]) == False:
+                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Altitude, Latitude, Longitude) VALUES ('%s', %d, '%s', %d, %f, %f, %f);""" % (
                             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
-                            self.plane_dict[self.aa_str]["last_seen"],
+                            self.df,
                             self.aa_str,
+                            self.plane_dict[self.aa_str]["last_seen"],
                             self.plane_dict[self.aa_str]["altitude"],
                             self.plane_dict[self.aa_str]["latitude"],
                             self.plane_dict[self.aa_str]["longitude"]
                         ))
                 else:
-                    cursor.execute("""INSERT INTO msgs(datetime, timestamp, icao, altitude) VALUES ('%s', %d, '%s', %f)""" % (
+                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f);""" % (
                             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
-                            self.plane_dict[self.aa_str]["last_seen"],
+                            self.df,
                             self.aa_str,
+                            self.plane_dict[self.aa_str]["last_seen"],
                             self.plane_dict[self.aa_str]["altitude"]
                         ))
-
                 self.db_conn.commit()
 
         ### Airborne Velocities ###
@@ -1009,6 +1021,19 @@ class decoder(gr.sync_block):
     
                 if self.log_csv == True:
                     self.write_plane_to_csv(self.aa_str)
+
+                if self.log_db == True:
+                    cursor = self.db_conn.cursor()
+                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Speed, Heading, VerticalRate) VALUES ('%s', %d, '%s', %d, %f, %f, %f);""" % (
+                            time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
+                            self.df,
+                            self.aa_str,
+                            self.plane_dict[self.aa_str]["last_seen"],
+                            self.plane_dict[self.aa_str]["speed"],
+                            self.plane_dict[self.aa_str]["heading"],
+                            self.plane_dict[self.aa_str]["vertical_rate"]
+                        ))
+                    self.db_conn.commit()
 
             # Airborne velocity subtype
             elif st in [3,4]:                
