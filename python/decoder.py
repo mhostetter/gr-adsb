@@ -70,9 +70,6 @@ class decoder(gr.sync_block):
         # Reset packet values
         self.reset()
 
-        # Propagate tags
-        self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
-
         # Initialize CSV file
         if self.log_csv == True:
             self.csv_writer = csv.writer(open(self.csv_filename, "a"))
@@ -85,6 +82,9 @@ class decoder(gr.sync_block):
             cursor = self.db_conn.cursor()
             cursor.execute("CREATE TABLE IF NOT EXISTS ADSB (Datetime TEXT, ICAO TEXT, DF INTEGER, Callsign TEXT, Latitude REAL, Longitude REAL, Altitude REAL, VerticalRate REAL, Speed REAL, Heading REAL, Timestamp INTEGER)")
             self.db_conn.commit()
+
+        # Propagate tags
+        self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
         print "\n"
         print "Initialized ADS-B Decoder:"
@@ -170,18 +170,20 @@ class decoder(gr.sync_block):
             if 0:
                 # Tag the 0 and 1 bits markers for debug
                 for ii in range(0,len(bit1_idxs)):
-                    self.add_item_tag(  0,
-                                        self.nitems_written(0)+bit1_idxs[ii],
-                                        pmt.to_pmt("bits"),
-                                        pmt.to_pmt((1, ii, float(self.bit_confidence[ii]))),    
-                                        pmt.to_pmt("decoder")
-                                    )
-                    self.add_item_tag(  0, 
-                                        self.nitems_written(0)+bit0_idxs[ii], 
-                                        pmt.to_pmt("bits"),
-                                        pmt.to_pmt((0, ii, float(self.bit_confidence[ii]))), 
-                                        pmt.to_pmt("decoder")
-                                    )
+                    self.add_item_tag(  
+                        0,
+                        self.nitems_written(0)+bit1_idxs[ii],
+                        pmt.to_pmt("bits"),
+                        pmt.to_pmt((1, ii, float(self.bit_confidence[ii]))),    
+                        pmt.to_pmt("decoder")
+                    )
+                    self.add_item_tag(  
+                        0, 
+                        self.nitems_written(0)+bit0_idxs[ii], 
+                        pmt.to_pmt("bits"),
+                        pmt.to_pmt((0, ii, float(self.bit_confidence[ii]))), 
+                        pmt.to_pmt("decoder")
+                    )
 
 
         out0[:] = in0
