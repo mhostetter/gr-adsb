@@ -54,8 +54,6 @@ class framer(gr.sync_block):
         # End of the last burst (56 bit message).  Don't look for preambles during a valid packet
         self.prev_eob_idx = -1
 
-        self.straddled_packet = 0
-
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
