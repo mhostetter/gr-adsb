@@ -81,8 +81,9 @@ class decoder(gr.sync_block):
         # Initialize database
         if self.log_db == True:
             self.db_conn = sqlite3.connect(self.db_filename, check_same_thread=False)
+            self.db_conn.text_factory = str
             cursor = self.db_conn.cursor()
-            cursor.execute("CREATE TABLE IF NOT EXISTS adsb (Datetime TEXT, DF INT, ICAO TEXT, Callsign TEXT, Altitude FLOAT, Speed FLOAT, Heading FLOAT, VerticalRate FLOAT, Latitude FLOAT, Longitude FLOAT, Timestamp INT)")
+            cursor.execute("CREATE TABLE IF NOT EXISTS ADSB (Datetime TEXT, ICAO TEXT, DF INTEGER, Callsign TEXT, Latitude REAL, Longitude REAL, Altitude REAL, VerticalRate REAL, Speed REAL, Heading REAL, Timestamp INTEGER)")
             self.db_conn.commit()
 
         print "\nInitialized ADS-B Decoder:"
@@ -541,7 +542,7 @@ class decoder(gr.sync_block):
 
                 if self.log_db == True:
                     cursor = self.db_conn.cursor()
-                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f)""" % (
+                    cursor.execute("""INSERT INTO ADSB (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f)""" % (
                             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                             self.df,
                             self.aa_str,
@@ -591,7 +592,7 @@ class decoder(gr.sync_block):
 
                 if self.log_db == True:
                     cursor = self.db_conn.cursor()
-                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f);""" % (
+                    cursor.execute("""INSERT INTO ADSB (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f);""" % (
                             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                             self.df,
                             self.aa_str,
@@ -840,7 +841,7 @@ class decoder(gr.sync_block):
 
             if self.log_db == True:
                 cursor = self.db_conn.cursor()
-                cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Callsign) VALUES ('%s', %d, '%s', %d, '%s')""" % (
+                cursor.execute("""INSERT INTO ADSB (Datetime, DF, ICAO, Timestamp, Callsign) VALUES ('%s', %d, '%s', %d, '%s')""" % (
                         time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                         self.df,
                         self.aa_str,
@@ -902,7 +903,7 @@ class decoder(gr.sync_block):
             if self.log_db == True:
                 cursor = self.db_conn.cursor()
                 if np.isnan(self.plane_dict[self.aa_str]["latitude"]) == False and np.isnan(self.plane_dict[self.aa_str]["latitude"]) == False:
-                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Altitude, Latitude, Longitude) VALUES ('%s', %d, '%s', %d, %f, %f, %f);""" % (
+                    cursor.execute("""INSERT INTO ADSB (Datetime, DF, ICAO, Timestamp, Altitude, Latitude, Longitude) VALUES ('%s', %d, '%s', %d, %f, %f, %f);""" % (
                             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                             self.df,
                             self.aa_str,
@@ -912,7 +913,7 @@ class decoder(gr.sync_block):
                             self.plane_dict[self.aa_str]["longitude"]
                         ))
                 else:
-                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f);""" % (
+                    cursor.execute("""INSERT INTO ADSB (Datetime, DF, ICAO, Timestamp, Altitude) VALUES ('%s', %d, '%s', %d, %f);""" % (
                             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                             self.df,
                             self.aa_str,
@@ -1024,7 +1025,7 @@ class decoder(gr.sync_block):
 
                 if self.log_db == True:
                     cursor = self.db_conn.cursor()
-                    cursor.execute("""INSERT INTO adsb (Datetime, DF, ICAO, Timestamp, Speed, Heading, VerticalRate) VALUES ('%s', %d, '%s', %d, %f, %f, %f);""" % (
+                    cursor.execute("""INSERT INTO ADSB (Datetime, DF, ICAO, Timestamp, Speed, Heading, VerticalRate) VALUES ('%s', %d, '%s', %d, %f, %f, %f);""" % (
                             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                             self.df,
                             self.aa_str,
