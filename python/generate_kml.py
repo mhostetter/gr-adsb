@@ -21,16 +21,16 @@
 
 import numpy as np
 import argparse
-import csv
 import time
 import calendar
+import csv
+import sqlite3
 import xml.etree.ElementTree as ET
 
 plane_dict = dict()
 
 # http://www.colourlovers.com, Papeterie Haute Ville
 colors = [0x113f8c, 0x61ae24, 0xd70060, 0x01a4a4, 0xd0d102, 0xe54028, 0x00a1cb, 0x32742c, 0xf18d05, 0x616161]
-
 
 def csv_to_kml(csv_filename, kml_filename):
     # Read CSV and populate plane dictionary
@@ -61,7 +61,36 @@ def csv_to_kml(csv_filename, kml_filename):
 
 
 def sqlite_to_kml(db_filename, kml_filename):
-    print "To be implemented"
+    # Read database and plot planes
+    conn = sqlite3.connect(db_filename)
+    conn.text_factory = str
+    c = conn.cursor()
+
+    c.execute("SELECT DISTINCT ICAO FROM ADSB;")
+    icao_tuples = c.fetchall()
+
+    for icao_tuple in icao_tuples:
+        icao = icao_tuple[0]
+        print "ICAO Address %s" % (icao)
+
+        c.execute("""SELECT DISTINCT Callsign FROM ADSB WHERE ICAO == "%s";""" % (icao))    
+        callsign_tuples = c.fetchall()
+
+        callsign = "?       "
+        for callsign_tuple in callsign_tuples:
+            if callsign_tuple[0] != None:
+                callsign = callsign_tuple[0]
+                break
+
+        print "Callsign %s" % (callsign)
+
+        c.execute("""SELECT Datetime,Latitude,Longitude,Altitude FROM ADSB WHERE ICAO == "%s" AND Latitude IS NOT NULL""" % (icao))    
+        location_tuples = c.fetchall()
+
+        for location_tuple in location_tuples:
+            print "%f, %f, %1.1f" % (location_tuple[2], location_tuple[1], location_tuple[3])
+
+        print "location_tuples", location_tuples
 
 
 def add_to_dictionary(time_str, timestamp, icao, callsign, alt, speed, heading, lat, lon):
