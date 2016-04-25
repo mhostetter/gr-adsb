@@ -59,7 +59,8 @@ class framer(gr.sync_block):
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
-        print "\nInitialized ADS-B Framer:"
+        print "\n"
+        print "Initialized ADS-B Framer:"
         print "  Sampling Rate:       %1.2f Msps" % (fs/1e6)
         print "  Samples Per Symbol:  %d" % (self.sps)
         print "  Burst Threshold:     %1.4f" % (self.burst_thresh)

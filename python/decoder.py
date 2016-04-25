@@ -86,7 +86,8 @@ class decoder(gr.sync_block):
             cursor.execute("CREATE TABLE IF NOT EXISTS ADSB (Datetime TEXT, ICAO TEXT, DF INTEGER, Callsign TEXT, Latitude REAL, Longitude REAL, Altitude REAL, VerticalRate REAL, Speed REAL, Heading REAL, Timestamp INTEGER)")
             self.db_conn.commit()
 
-        print "\nInitialized ADS-B Decoder:"
+        print "\n"
+        print "Initialized ADS-B Decoder:"
         print "  Sampling Rate:       %1.2f Msps" % (fs/1e6)
         print "  Samples Per Symbol:  %d" % (self.sps)
         print "  Print Level:         %s" % (self.print_level)
