@@ -30,8 +30,8 @@ import xml.etree.ElementTree as ET
 
 plane_dict = dict()
 
-# http://www.colourlovers.com, Papeterie Haute Ville
-COLOR_LUT = [0x113f8c, 0x61ae24, 0xd70060, 0x01a4a4, 0xd0d102, 0xe54028, 0x00a1cb, 0x32742c, 0xf18d05, 0x616161]
+# KML encodes the color as aabbggrr in hex (alpha, blue, green, red)
+COLOR_LUT = [0x5531ff, 0x42afff, 0x5eedff, 0x70f749, 0xfdae2d] # http://www.color-hex.com/color-palette/2193
 
 FT_PER_METER    = 3.28084
 
@@ -72,24 +72,18 @@ def sqlite_to_kml(db_filename, kml_filename):
     kml = ""
     kml += kml_header()
 
-    # kml += """<LookAt>"""
-    # kml += """<gx:TimeSpan>"""
-    # kml += """<begin>2010-05-28T02:02:09Z</begin>"""
-    # kml += """<end>2010-05-28T02:02:56Z</end>"""
-    # kml += """</gx:TimeSpan>"""
-    # kml += """</LookAt>"""
+    color_idx = -1
 
     c.execute("SELECT DISTINCT ICAO FROM ADSB;")
     icao_tuples = c.fetchall()
 
     for icao_tuple in icao_tuples:
+        # Look at each ICAO address individually
         icao = icao_tuple[0]
-        print "ICAO Address %s" % (icao)
-
-        c.execute("""SELECT DISTINCT Callsign FROM ADSB WHERE ICAO == "%s";""" % (icao))    
+        c.execute("""SELECT DISTINCT Callsign FROM ADSB WHERE ICAO == "%s" AND DF == 17;""" % (icao))    
         callsign_tuples = c.fetchall()
 
-        # Find the first non-zero callsign for the plane.  They should all be the same, 
+        # Find the first non-null callsign for the plane.  They should all be the same, 
         # so pick the first one and then quit.
         callsign = "?"
         for callsign_tuple in callsign_tuples:
@@ -97,29 +91,68 @@ def sqlite_to_kml(db_filename, kml_filename):
                 callsign = callsign_tuple[0]
                 break
 
-        kml += """\n<Placemark>"""
-        kml += """\n<name>%s</name>""" % (callsign)
-        kml += kml_style(COLOR_LUT[random.randrange(0,len(COLOR_LUT))], 8)
-        kml += """\n<gx:Track>"""
-        kml += """\n<altitudeMode>relativeToGround</altitudeMode>"""
-
-        c.execute("""SELECT Datetime,Latitude,Longitude,Altitude FROM ADSB WHERE ICAO == "%s" AND Latitude IS NOT NULL""" % (icao))    
+        # c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND Latitude IS NOT NULL AND DF == 17""" % (icao))
+        c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND DF == 17""" % (icao))
         location_tuples = c.fetchall()
 
-        for location_tuple in location_tuples:
-            kml += """\n<when>%s</when>""" % (location_tuple[0])
+        kml_when = ""
+        kml_coord = ""
+        kml_angles = ""
+
+        num_coords = 0
 
         for location_tuple in location_tuples:
-            # NOTE: KML expects the altitude in meters
-            kml += """\n<gx:coord>%1.8f %1.8f %1.1f</gx:coord>""" % (location_tuple[2], location_tuple[1], location_tuple[3]/FT_PER_METER)
+            kml_when += """\n<when>%s</when>""" % (location_tuple[0])
 
-        kml += """\n</gx:Track>"""
-        kml += """\n</Placemark>"""
+            if location_tuple[1] != None and location_tuple[2] != None and location_tuple[3] != None:
+                # NOTE: KML expects the altitude in meters
+                lon = location_tuple[2]
+                lat = location_tuple[1]
+                alt = location_tuple[3]/FT_PER_METER
+                kml_coord += """\n<gx:coord>%1.8f %1.8f %1.1f</gx:coord>""" % (lon, lat, alt)
+                num_coords += 1
+            else:
+                kml_coord += """\n<gx:coord></gx:coord>"""
+
+            if location_tuple[4] != None:
+                # Heading is specificed at 0 = North, 90 = East, 180 = South, 270 = West
+                hdng = -1*location_tuple[4] + 90.0
+                if hdng < 0:
+                    hdng += 360.0
+                kml_angles += """\n<gx:angles>%1.2f %1.2f %1.2f</gx:angles>""" % (hdng, 0.0, 0.0)
+            else:
+                kml_angles += """\n<gx:angles></gx:angles>"""
+
+        # Check if there is enough data to log this plane to the KML file
+        if num_coords >= 2:
+            kml += """\n<Placemark>"""
+            kml += """\n<name>%s</name>""" % (callsign)
+            color_idx = np.mod(color_idx + 1, len(COLOR_LUT))
+            kml += kml_style(0xDD, COLOR_LUT[color_idx], 6)
+            kml += """\n<gx:Track>"""
+            kml += """\n<altitudeMode>absolute</altitudeMode>"""
+            # kml += """\n<altitudeMode>relativeToGround</altitudeMode>"""
+            kml += """\n<extrude>1</extrude>"""
+            # kml += """\n<tesselate>1</tesselate>"""
+
+            kml += kml_when
+            kml += kml_coord
+            kml += kml_angles
+
+            kml += """\n<ExtendedData>"""
+            kml += """\n<Data>"""
+            kml += """\n<displayName>ICAO Address</displayName>"""
+            kml += """\n<value>%s</value>""" % (icao)
+            kml += """\n</Data>"""
+            kml += """\n</ExtendedData>"""
+            
+            kml += """\n</gx:Track>"""
+            kml += """\n</Placemark>"""
 
     
     kml += kml_footer()
 
-    print kml
+    # print kml
 
     f = open(kml_filename, "w")
     f.write(kml)
@@ -148,18 +181,19 @@ def kml_footer():
     return kml
 
 
-def kml_style(color, width):
+def kml_style(alpha, color, width):
     kml = ""
     kml += """\n<Style>"""
     kml += """\n<IconStyle>"""
     kml += """\n<Icon>"""
     if 1:
-        kml += """\n<href>http://earth.google.com/images/kml-icons/track-directional/track-0.png</href>"""
-        kml += """\n<href>/home/matt/repos/kml/plane5.png</href>"""
+        # kml += """\n<href>http://earth.google.com/images/kml-icons/track-directional/track-0.png</href>"""
+        kml += """\n<href>/home/matt/repos/kml/plane6.png</href>"""
     kml += """\n</Icon>"""
     kml += """\n</IconStyle>"""
     kml += """\n<LineStyle>"""
-    kml += """\n<color>99%06x</color>""" % (color)
+    # KML encodes the color as aabbggrr in hex (alpha, blue, green, red)
+    kml += """\n<color>%02x%06x</color>""" % (alpha, color)
     kml += """\n<width>%d</width>""" % (width)
     kml += """\n</LineStyle>"""
     kml += """\n</Style>"""
