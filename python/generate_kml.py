@@ -23,6 +23,7 @@ import numpy as np
 import argparse
 import time
 import calendar
+import random
 import csv
 import sqlite3
 import xml.etree.ElementTree as ET
@@ -30,7 +31,9 @@ import xml.etree.ElementTree as ET
 plane_dict = dict()
 
 # http://www.colourlovers.com, Papeterie Haute Ville
-colors = [0x113f8c, 0x61ae24, 0xd70060, 0x01a4a4, 0xd0d102, 0xe54028, 0x00a1cb, 0x32742c, 0xf18d05, 0x616161]
+COLOR_LUT = [0x113f8c, 0x61ae24, 0xd70060, 0x01a4a4, 0xd0d102, 0xe54028, 0x00a1cb, 0x32742c, 0xf18d05, 0x616161]
+
+FT_PER_METER    = 3.28084
 
 def csv_to_kml(csv_filename, kml_filename):
     # Read CSV and populate plane dictionary
@@ -66,6 +69,16 @@ def sqlite_to_kml(db_filename, kml_filename):
     conn.text_factory = str
     c = conn.cursor()
 
+    kml = ""
+    kml += kml_header()
+
+    # kml += """<LookAt>"""
+    # kml += """<gx:TimeSpan>"""
+    # kml += """<begin>2010-05-28T02:02:09Z</begin>"""
+    # kml += """<end>2010-05-28T02:02:56Z</end>"""
+    # kml += """</gx:TimeSpan>"""
+    # kml += """</LookAt>"""
+
     c.execute("SELECT DISTINCT ICAO FROM ADSB;")
     icao_tuples = c.fetchall()
 
@@ -76,21 +89,82 @@ def sqlite_to_kml(db_filename, kml_filename):
         c.execute("""SELECT DISTINCT Callsign FROM ADSB WHERE ICAO == "%s";""" % (icao))    
         callsign_tuples = c.fetchall()
 
-        callsign = "?       "
+        # Find the first non-zero callsign for the plane.  They should all be the same, 
+        # so pick the first one and then quit.
+        callsign = "?"
         for callsign_tuple in callsign_tuples:
             if callsign_tuple[0] != None:
                 callsign = callsign_tuple[0]
                 break
 
-        print "Callsign %s" % (callsign)
+        kml += """\n<Placemark>"""
+        kml += """\n<name>%s</name>""" % (callsign)
+        kml += kml_style(COLOR_LUT[random.randrange(0,len(COLOR_LUT))], 8)
+        kml += """\n<gx:Track>"""
+        kml += """\n<altitudeMode>relativeToGround</altitudeMode>"""
 
         c.execute("""SELECT Datetime,Latitude,Longitude,Altitude FROM ADSB WHERE ICAO == "%s" AND Latitude IS NOT NULL""" % (icao))    
         location_tuples = c.fetchall()
 
         for location_tuple in location_tuples:
-            print "%f, %f, %1.1f" % (location_tuple[2], location_tuple[1], location_tuple[3])
+            kml += """\n<when>%s</when>""" % (location_tuple[0])
 
-        print "location_tuples", location_tuples
+        for location_tuple in location_tuples:
+            # NOTE: KML expects the altitude in meters
+            kml += """\n<gx:coord>%1.8f %1.8f %1.1f</gx:coord>""" % (location_tuple[2], location_tuple[1], location_tuple[3]/FT_PER_METER)
+
+        kml += """\n</gx:Track>"""
+        kml += """\n</Placemark>"""
+
+    
+    kml += kml_footer()
+
+    print kml
+
+    f = open(kml_filename, "w")
+    f.write(kml)
+    f.close()
+
+
+def kml_header():
+    kml = ""
+    kml += """<?xml version="1.0" encoding="UTF-8"?>"""
+    kml += """\n<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">"""
+    kml += """\n<Document>"""
+    kml += """\n<name>ADS-B Plane Tracking</name>"""
+    kml += """\n<Snippet>Created %s</Snippet>""" % ("blah")
+    kml += """\n<Folder>"""
+    kml += """\n<name>Planes</name>"""
+    
+    return kml
+
+
+def kml_footer():
+    kml = ""
+    kml += """\n</Folder>"""
+    kml += """\n</Document>"""
+    kml += """\n</kml>"""
+
+    return kml
+
+
+def kml_style(color, width):
+    kml = ""
+    kml += """\n<Style>"""
+    kml += """\n<IconStyle>"""
+    kml += """\n<Icon>"""
+    if 1:
+        kml += """\n<href>http://earth.google.com/images/kml-icons/track-directional/track-0.png</href>"""
+        kml += """\n<href>/home/matt/repos/kml/plane5.png</href>"""
+    kml += """\n</Icon>"""
+    kml += """\n</IconStyle>"""
+    kml += """\n<LineStyle>"""
+    kml += """\n<color>99%06x</color>""" % (color)
+    kml += """\n<width>%d</width>""" % (width)
+    kml += """\n</LineStyle>"""
+    kml += """\n</Style>"""
+
+    return kml
 
 
 def add_to_dictionary(time_str, timestamp, icao, callsign, alt, speed, heading, lat, lon):
