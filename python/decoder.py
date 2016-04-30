@@ -32,7 +32,7 @@ NUM_BITS                    = 112
 CPR_TIMEOUT_S               = 30 # Seconds consider CPR-encoded lat/lon info invalid
 PLANE_TIMEOUT_S             = 1*60
 CALLSIGN_LUT                = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ_____ _______________0123456789______"
-INSERTS_PER_TRANSACTION     = 100
+INSERTS_PER_TRANSACTION     = 50
 
 # Downlink Format, 5 bits
 DF_STR_LUT = (
@@ -132,7 +132,7 @@ class decoder(gr.sync_block):
             # self.db_conn.isolation_level = None
 
             self.db_cursor = self.db_conn.cursor()
-            self.db_cursor.execute("CREATE TABLE IF NOT EXISTS ADSB (Datetime TEXT, ICAO TEXT, DF INTEGER, TC INTEGER, Callsign TEXT, Latitude REAL, Longitude REAL, Altitude REAL, VerticalRate REAL, Speed REAL, Heading REAL, Timestamp INTEGER)")
+            self.db_cursor.execute("CREATE TABLE IF NOT EXISTS ADSB (Datetime TEXT, ICAO TEXT, DF INTEGER, TC INTEGER, SNR REAL, Callsign TEXT, Latitude REAL, Longitude REAL, Altitude REAL, VerticalRate REAL, Speed REAL, Heading REAL, Timestamp INTEGER)")
             self.db_cursor.execute("PRAGMA journal_mode = WAL")
             self.db_cursor.execute("PRAGMA synchronous = NORMAL")
             self.db_conn.commit()
@@ -377,31 +377,34 @@ class decoder(gr.sync_block):
 
     def write_plane_to_db(self, aa_str, df, tc, log_type, log_tuple):
         if log_type == "Callsign":
-            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, Timestamp, Callsign) VALUES ('%s', '%s', %d, %d, %d, '%s')""" % (
+            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, SNR, Timestamp, Callsign) VALUES ('%s', '%s', %d, %d, %f, %d, '%s')""" % (
                 time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                 self.aa_str,
                 df,
                 tc,
+                self.snr,
                 self.plane_dict[self.aa_str]["last_seen"],
                 log_tuple[0]
             ))
         elif log_type == "Position":
-            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, Timestamp, Latitude, Longitude, Altitude) VALUES ('%s', '%s', %d, %d, %d, %f, %f, %f)""" % (
+            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, SNR, Timestamp, Latitude, Longitude, Altitude) VALUES ('%s', '%s', %d, %d, %f, %d, %f, %f, %f)""" % (
                 time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                 self.aa_str,
                 df,
                 tc,
+                self.snr,
                 self.plane_dict[self.aa_str]["last_seen"],
                 log_tuple[0],
                 log_tuple[1],
                 log_tuple[2]  
             ))
         elif log_type == "Heading":
-            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, Timestamp, Speed, Heading, VerticalRate) VALUES ('%s', '%s', %d, %d, %d, %f, %f, %f)""" % (
+            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, SNR, Timestamp, Speed, Heading, VerticalRate) VALUES ('%s', '%s', %d, %d, %f, %d, %f, %f, %f)""" % (
                 time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
                 self.aa_str,
                 df,
                 tc,
+                self.snr,
                 self.plane_dict[self.aa_str]["last_seen"],
                 log_tuple[0],
                 log_tuple[1],
@@ -410,8 +413,9 @@ class decoder(gr.sync_block):
 
         self.inserts += 1
 
-        if np.mod(self.inserts, INSERTS_PER_TRANSACTION) == 0:
+        if self.inserts > INSERTS_PER_TRANSACTION:
             self.db_conn.commit()
+            self.inserts = 0
             self.db_cursor.execute("BEGIN TRANSACTION")
 
 
