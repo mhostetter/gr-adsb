@@ -129,9 +129,9 @@ class decoder(gr.sync_block):
         if self.log_db == True:
             self.db_conn = sqlite3.connect(self.db_filename, check_same_thread=False)
             self.db_conn.text_factory = str
+            self.db_conn.isolation_level = None
 
             self.db_cursor = self.db_conn.cursor()
-            self.db_cursor.execute("BEGIN")
             self.db_cursor.execute("CREATE TABLE IF NOT EXISTS ADSB (Datetime TEXT, ICAO TEXT, DF INTEGER, TC INTEGER, Callsign TEXT, Latitude REAL, Longitude REAL, Altitude REAL, VerticalRate REAL, Speed REAL, Heading REAL, Timestamp INTEGER)")
             self.db_cursor.execute("PRAGMA journal_mode = WAL")
             self.db_cursor.execute("PRAGMA synchronous = NORMAL")
