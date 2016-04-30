@@ -23,8 +23,36 @@ A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependen
 
 
 ## Usage
-### GNU Radio Companion
-![GNU Radio Companion Example](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_rx.png)
+### GNU Radio
+There is an example GNU Radio Companion (.grc) file located at `/gr-adsb/examples/adsb_rx.grc`.  To use it, first open GNU Radio Companion `$ gnuradio-companion` and then open the .grc file.
+
+![GRC Example Flowgraph](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_rx.png)
+
+Example "Brief" output:
+```
+ ICAO  Callsign  Alt  Climb Speed Hdng  Latitude    Longitude  Msgs Age
+                 (ft) (ft/m) (kn) (deg)                             (s)
+------ -------- ----- ----- ----- ---- ----------- ----------- ---- ---
+a4da13 4349 60  16450  2240   360    9  39.0509491 -77.0292066   47  47
+a72bda          27225                                           459   0
+abe82c SWA3329  37000     0   481   39                            6 221
+a00ca4 FDX1273  36025     0   407 -157  39.6801034 -77.9697876  273   0
+a58a1b           1775                                             2   2
+a1c534          24975 -2816   471   31                            9 233
+a3cd6b          10575                                           542   0
+a022ee FDX1234  28075  4352   455 -168  38.7769900 -78.8369141  168  23
+a2dffe UAL1704   9725     0   307  -34  39.1294556 -78.0681909  114   0
+aa8af7          16800     0   431   34  39.2041533 -76.5144043   59 110
+a318ea          12075                                            27 257
+aaf111 DAL1436  10525 -1152   303   -3  39.4307230 -76.9674072  921  55
+ace5b6          16100                                             3   4
+a50e47          29600                                           427  13
+c00ec2          36975     0   413  103  37.9071614 -77.9345040  176   0
+a8f63b FDX1679  25700  2240   419  175  38.9744110 -78.4300829  455  39
+a8d62a FDX1630  34000     0   379  175  38.9746508 -78.4457397  126 234
+```
+Example "Verbose" Output:
+Insert stdout here.
 
 ### KML Generation
 Add image here.
