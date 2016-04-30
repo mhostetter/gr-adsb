@@ -31,7 +31,7 @@ import xml.etree.ElementTree as ET
 plane_dict = dict()
 
 # KML encodes the color as aabbggrr in hex (alpha, blue, green, red)
-COLOR_LUT = [0x5531ff, 0x42afff, 0x5eedff, 0x70f749, 0xfdae2d] # http://www.color-hex.com/color-palette/2193
+COLOR_LUT = [0x5531ff, 0x42afff, 0x5eedff, 0x70f749, 0xfdae2d, 0xe42ee8] # http://www.color-hex.com/color-palette/2193
 
 FT_PER_METER    = 3.28084
 
@@ -44,8 +44,6 @@ def sqlite_to_kml(db_filename, kml_filename):
 
     kml = ""
     kml += kml_header()
-
-    color_idx = -1
 
     c.execute("SELECT DISTINCT ICAO FROM ADSB;")
     icao_tuples = c.fetchall()
@@ -64,8 +62,8 @@ def sqlite_to_kml(db_filename, kml_filename):
                 callsign = callsign_tuple[0]
                 break
 
-        # c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND Latitude IS NOT NULL AND DF == 17""" % (icao))
-        c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND DF == 17""" % (icao))
+        c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND Latitude IS NOT NULL AND DF == 17""" % (icao))
+        # c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND DF == 17""" % (icao))
         location_tuples = c.fetchall()
 
         kml_when = ""
@@ -87,21 +85,20 @@ def sqlite_to_kml(db_filename, kml_filename):
             else:
                 kml_coord += """\n<gx:coord></gx:coord>"""
 
-            if location_tuple[4] != None:
-                # Heading is specificed at 0 = North, 90 = East, 180 = South, 270 = West
-                hdng = -1*location_tuple[4] + 90.0
-                if hdng < 0:
-                    hdng += 360.0
-                kml_angles += """\n<gx:angles>%1.2f %1.2f %1.2f</gx:angles>""" % (hdng, 0.0, 0.0)
-            else:
-                kml_angles += """\n<gx:angles></gx:angles>"""
+            # if location_tuple[4] != None:
+            #     # Heading is specificed at 0 = North, 90 = East, 180 = South, 270 = West
+            #     hdng = -1*location_tuple[4] + 90.0
+            #     if hdng < 0:
+            #         hdng += 360.0
+            #     kml_angles += """\n<gx:angles>%1.2f %1.2f %1.2f</gx:angles>""" % (hdng, 0.0, 0.0)
+            # else:
+            #     kml_angles += """\n<gx:angles></gx:angles>"""
 
         # Check if there is enough data to log this plane to the KML file
         if num_coords >= 2:
             kml += """\n<Placemark>"""
             kml += """\n<name>%s</name>""" % (callsign)
-            color_idx = np.mod(color_idx + 1, len(COLOR_LUT))
-            kml += kml_style(0xDD, COLOR_LUT[color_idx], 6)
+            kml += kml_style(0xDD, COLOR_LUT[random.randrange(0,len(COLOR_LUT))], 2)
             kml += """\n<gx:Track>"""
             kml += """\n<altitudeMode>absolute</altitudeMode>"""
             # kml += """\n<altitudeMode>relativeToGround</altitudeMode>"""
@@ -161,7 +158,8 @@ def kml_style(alpha, color, width):
     kml += """\n<Icon>"""
     if 1:
         # kml += """\n<href>http://earth.google.com/images/kml-icons/track-directional/track-0.png</href>"""
-        kml += """\n<href>/home/matt/repos/kml/plane6.png</href>"""
+        kml += """https://cdn4.iconfinder.com/data/icons/delivery-1-1/512/plane-128.png"""
+        # kml += """\n<href>plane1.png</href>"""
     kml += """\n</Icon>"""
     kml += """\n</IconStyle>"""
     kml += """\n<LineStyle>"""
