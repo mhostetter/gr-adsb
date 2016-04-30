@@ -77,12 +77,47 @@ CA_STR_LUT = (
     "Reserved",
     "Reserved",
     "Reserved",
-    ">= Level 2 Transponder / Can Set CA 7 / On Ground", 
-    ">= Level 2 Transponder / Can Set CA 7 / In Air",
-    ">= Level 2 Transponder / Can Set CA 7 / On Ground or In Air",
+    ">=Level 2 Transponder / Can Set CA 7 / On Ground", 
+    ">=Level 2 Transponder / Can Set CA 7 / In Air",
+    ">=Level 2 Transponder / Can Set CA 7 / On Ground or In Air",
     "DR != 0 or FS in [2,3,4,5] / On Ground or In Air",
 )
 
+# Type Code, 5 bits
+TC_STR_LUT = (
+    "No Position Information",
+    "Identification (Category Set D)",
+    "Identification (Category Set C)",
+    "Identification (Category Set B)",
+    "Identification (Category Set A)",
+    "Surface Position",
+    "Surface Position",
+    "Surface Position",
+    "Surface Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Velocity",
+    "Airborne Position",
+    "Airborne Position",
+    "Airborne Position",
+    "Reserved for Test Purposes",
+    "Reserved for Surface System Status",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Extended Squitter Aircraft Emergency Priority Status",
+    "Reserved",
+    "Reserved",
+    "Aircraft Operational Status",
+)
 
 class decoder(gr.sync_block):
     """
@@ -429,10 +464,10 @@ class decoder(gr.sync_block):
         self.df = self.bin2dec(self.bits[0:0+5])
 
         if self.print_level == "Verbose":
-            print "\n\n"
+            print "\n"
             print "----------------------------------------------------------------------"
-            print "SNR: %1.2f dB" % (self.snr)
-            print "DF: %d %s" % (self.df, DF_STR_LUT[self.df])
+            print "SNR:\t\t%1.2f dB" % (self.snr)
+            print "DF:\t\t%d %s" % (self.df, DF_STR_LUT[self.df])
 
 
     # http://jetvision.de/sbs/adsb/crc.htm
@@ -462,11 +497,12 @@ class decoder(gr.sync_block):
 
             if parity_passed == True:
                 if self.print_level == "Verbose":
-                    print "Parity: Passed (Recognized AA from AP)"
+                    print "Parity:\t\tPassed (Recognized AA from AP)"
+                    print "AA:\t\t%s" % (self.aa_str)
                 return 1 # Parity passed
             else:
                 if self.print_level == "Verbose":
-                    print "Parity: Failed (Unrecognized AA from AP)"
+                    print "Parity:\t\tFailed (Unrecognized AA from AP)"
                 return 0 # Parity failed
 
         elif self.df in [11]:
@@ -483,11 +519,11 @@ class decoder(gr.sync_block):
 
             if parity_passed == True:
                 if self.print_level == "Verbose":
-                    print "Parity: Passed"
+                    print "Parity:\t\tPassed"
                 return 1 # Parity passed
             else:
                 if self.print_level == "Verbose":
-                    print "Parity: Failed (PI - CRC = %d)" % (pi-crc)
+                    print "Parity:\t\tFailed (PI-CRC = %d)" % (pi-crc)
                 return 0 # Parity failed
 
         elif self.df in [16,20,21,24]:
@@ -512,11 +548,12 @@ class decoder(gr.sync_block):
 
             if parity_passed == True:
                 if self.print_level == "Verbose":
-                    print "Parity: Passed (Recognized AA from AP)"
+                    print "Parity:\t\tPassed (Recognized AA from AP)"
+                    print "AA:\t\t%s" % (self.aa_str)
                 return 1 # Parity passed
             else:
                 if self.print_level == "Verbose":
-                    print "Parity: Failed (Unrecognized AA from AP)"
+                    print "Parity:\t\tFailed (Unrecognized AA from AP)"
                 return 0 # Parity failed
 
         elif self.df in [17,18,19]:
@@ -533,11 +570,11 @@ class decoder(gr.sync_block):
 
             if parity_passed == True:
                 if self.print_level == "Verbose":
-                    print "Parity: Passed"
+                    print "Parity:\t\tPassed"
                 return 1 # Parity passed
             else:
                 if self.print_level == "Verbose":
-                    print "Parity: Failed (PI - CRC = %d)" % (pi-crc)
+                    print "Parity:\t\tFailed (PI-CRC = %d)" % (pi-crc)
                 return 0 # Parity failed
 
         else:
@@ -626,9 +663,9 @@ class decoder(gr.sync_block):
             if self.print_level == "Brief":
                 self.print_planes()
             if self.print_level == "Verbose":
-                print "VS    %d" % (vs)
-                print "RI    %s" % (ri)
-                print "Altitude:     %d ft" % (alt)
+                # print "VS    %d" % (vs)
+                # print "RI    %s" % (ri)
+                print "Altitude:\t%d ft" % (alt)
 
             if alt != -1:
                 if self.log_csv == True:
@@ -659,10 +696,10 @@ class decoder(gr.sync_block):
                 if self.print_level == "Brief":
                     self.print_planes()
                 if self.print_level == "Verbose":
-                    print "FS    %d" % (fs)
-                    print "DR    %s" % (dr)
-                    print "UM    %s" % (um)
-                    print "Altitude:     %d ft" % (alt)
+                    # print "FS    %d" % (fs)
+                    # print "DR    %s" % (dr)
+                    # print "UM    %s" % (um)
+                    print "Altitude:\t%d ft" % (alt)
 
                 if self.log_csv == True:
                     self.write_plane_to_csv(self.aa_str)
@@ -680,10 +717,10 @@ class decoder(gr.sync_block):
                 if self.print_level == "Brief":
                     self.print_planes()
                 if self.print_level == "Verbose":
-                    print "FS    %d" % (fs)
-                    print "DR    %s" % (dr)
-                    print "UM    %s" % (um)
-                    print "Identity:     %d" % (ident)
+                    # print "FS    %d" % (fs)
+                    # print "DR    %s" % (dr)
+                    # print "UM    %s" % (um)
+                    print "Identity:\t\t%d" % (ident)
 
                 if self.log_csv == True:
                     self.write_plane_to_csv(self.aa_str)
@@ -704,8 +741,8 @@ class decoder(gr.sync_block):
             if self.print_level == "Brief":
                 self.print_planes()
             elif self.print_level == "Verbose":
-                print "CA    %d" % (ca)
-                print "AA    %s" % (self.aa_str)
+                print "CA:\t\t%d %s" % (ca, CA_STR_LUT[ca])
+                print "AA:\t\t%s" % (self.aa_str)
             
             if self.log_csv == True:
                 self.write_plane_to_csv(self.aa_str)
@@ -721,8 +758,8 @@ class decoder(gr.sync_block):
             self.aa_str = "%06x" % (self.aa)
             
             if self.print_level == "Verbose":
-                print "CA    %d" % (ca)
-                print "AA    %s" % (self.aa_str)
+                print "CA:\t\t%d %s" % (ca, CA_STR_LUT[ca])
+                print "AA:\t\t%s" % (self.aa_str)
             
             # All CA types contain ADS-B messages
             self.decode_adsb_me()
@@ -738,8 +775,8 @@ class decoder(gr.sync_block):
             self.aa_str = "%06x" % (self.aa)
             
             if self.print_level == "Verbose":
-                print "CF    %d" % (cf)
-                print "AA    %s" % (self.aa_str)
+                print "CA:\t\t%d %s" % (ca, CA_STR_LUT[ca])
+                print "AA:\t\t%s" % (self.aa_str)
             
             print "***** DF %d CF %d spotted in the wild *****" % (self.df, cf)
 
@@ -765,8 +802,8 @@ class decoder(gr.sync_block):
             self.aa_str = "%06x" % (self.aa)
             
             if self.print_level == "Verbose":
-                print "AF    %d" % (af)
-                print "AA    %s" % (self.aa_str)
+                print "AF:\t\t%d %s" % (af, "")
+                print "AA:\t\t%s" % (self.aa_str)
 
             print "***** DF %d AF %d spotted in the wild *****" % (self.df, af)
 
@@ -810,7 +847,7 @@ class decoder(gr.sync_block):
             
             if m_bit == 0:
                 if self.print_level == "Verbose":
-                    print "Reading is in standard units"
+                    print "Units:\t\tStandard"
 
                 # Q-bit, 1 bit
                 q_bit = self.bits[27]
@@ -843,7 +880,7 @@ class decoder(gr.sync_block):
 
             else:
                 if self.print_level == "Verbose":
-                    print "Reading is in metric units"
+                    print "Units:\t\tMetric"
 
                 # Altitude in ft
                 return -1
@@ -857,13 +894,16 @@ class decoder(gr.sync_block):
         # Type Code, 5 bits
         tc = self.bin2dec(self.bits[32:32+5])
 
+        if self.print_level == "Verbose":
+            print "TC:\t\t%d %s" % (tc, TC_STR_LUT[tc])
+
         ## Airborne/Surface Position ###
         if tc in [0]:
             # Message, 3 bits
             me = self.bits[0:self.payload_length]
-            print "ME"
-            print me
-            sort(me) # Crash the program
+            # print "ME"
+            # print me
+            # sort(me) # Crash the program
 
         ### Aircraft Indentification ###
         elif tc in range(1,5):
@@ -894,8 +934,8 @@ class decoder(gr.sync_block):
                 self.write_plane_to_db(self.aa_str, self.df, tc, "Callsign", (callsign,))
 
         ### Surface Position ###
-        elif tc in range(5,9):
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # elif tc in range(5,9):
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
         
         ### Airborne Position (Baro Altitude) ###
         elif tc in range(9,19):
@@ -935,10 +975,9 @@ class decoder(gr.sync_block):
             if self.print_level == "Brief":
                 self.print_planes()
             elif self.print_level == "Verbose":
-                print "Airborne Position"
-                print "Altitude      %d ft" % (alt)
-                print "Latitude      %f" % (lat)
-                print "Longitude     %f" % (lon)
+                print "Altitude:\t%d ft" % (alt)
+                print "Latitude:\t%1.6f deg" % (lat)
+                print "Longitude:\t%1.6f deg" % (lon)
 
             if self.log_csv == True:
                 self.write_plane_to_csv(self.aa_str)
@@ -1032,12 +1071,9 @@ class decoder(gr.sync_block):
                 if self.print_level == "Brief":
                     self.print_planes()
                 elif self.print_level == "Verbose":
-                    print "Ground Velocity"
-                    print "Velocity N    %1.2f knots" % (velocity_sn)
-                    print "Velocity E    %1.2f knots" % (velocity_we)
-                    print "Speed         %1.2f knots" % (speed)
-                    print "Heading       %1.1f deg" % (heading)
-                    print "Vertical Rate %d ft/min" % (vertical_rate)
+                    print "Speed:\t\t%1.2f knots" % (speed)
+                    print "Heading:\t%1.1f deg" % (heading)
+                    print "Climb:\t\t%d ft/min" % (vertical_rate)
                     if vr_src == 0:
                         print "Baro-pressure altitude change rate"
                     elif vr_src == 1:
@@ -1052,47 +1088,47 @@ class decoder(gr.sync_block):
                     self.write_plane_to_db(self.aa_str, self.df, tc, "Heading", (speed, heading, vertical_rate))
 
             # Airborne velocity subtype
-            elif st in [3,4]:                
-                if self.print_level == "Verbose":
-                    print "Air Velocity"
+            # elif st in [3,4]:                
+            #     if self.print_level == "Verbose":
+            #         print "Air Velocity"
 
-            else:
-                print "DF %d TC %d ST %d Not yet implemented" % (self.df, tc, self.st)
+            # else:
+            #     print "DF %d TC %d ST %d Not yet implemented" % (self.df, tc, self.st)
 
-        ### Airborne Position (GNSS Height) ###
-        elif tc in range(20,23):
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # ### Airborne Position (GNSS Height) ###
+        # elif tc in range(20,23):
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
-        ### Test Message ###
-        elif tc in [23]:
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # ### Test Message ###
+        # elif tc in [23]:
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
-        ### Surface System Status ###
-        elif tc in [24]:
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # ### Surface System Status ###
+        # elif tc in [24]:
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
-        ### Reserved ###
-        elif tc in range(25,28):
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # ### Reserved ###
+        # elif tc in range(25,28):
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
-        ### Extended Squitter A/C Status ###
-        elif tc in [28]:
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # ### Extended Squitter A/C Status ###
+        # elif tc in [28]:
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
-        ### Target State and Status (V.2) ###
-        elif tc in [29]:
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # ### Target State and Status (V.2) ###
+        # elif tc in [29]:
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
-        ### Reserved ###
-        elif tc in [30]:
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # ### Reserved ###
+        # elif tc in [30]:
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
-        ### Aircraft Operation Status ###
-        elif tc in [31]:
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # ### Aircraft Operation Status ###
+        # elif tc in [31]:
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
-        else:
-            print "DF %d TC %d Not yet implemented" % (self.df, tc)
+        # else:
+        #     print "DF %d TC %d Not yet implemented" % (self.df, tc)
 
 
     def decode_tisb_me(self):
