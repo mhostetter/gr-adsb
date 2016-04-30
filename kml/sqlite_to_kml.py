@@ -62,8 +62,7 @@ def sqlite_to_kml(db_filename, kml_filename):
                 callsign = callsign_tuple[0]
                 break
 
-        c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND Latitude IS NOT NULL AND DF == 17""" % (icao))
-        # c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND DF == 17""" % (icao))
+        c.execute("""SELECT Datetime,Latitude,Longitude,Altitude,Heading FROM ADSB WHERE ICAO == "%s" AND Latitude IS NOT NULL""" % (icao))
         location_tuples = c.fetchall()
 
         kml_when = ""
@@ -102,7 +101,7 @@ def sqlite_to_kml(db_filename, kml_filename):
             kml += """\n<gx:Track>"""
             kml += """\n<altitudeMode>absolute</altitudeMode>"""
             # kml += """\n<altitudeMode>relativeToGround</altitudeMode>"""
-            kml += """\n<extrude>1</extrude>"""
+            # kml += """\n<extrude>1</extrude>"""
             # kml += """\n<tesselate>1</tesselate>"""
 
             kml += kml_when
@@ -156,17 +155,26 @@ def kml_style(alpha, color, width):
     kml += """\n<Style>"""
     kml += """\n<IconStyle>"""
     kml += """\n<Icon>"""
+    kml += """\n<scale>1.5</scale>"""
     if 1:
         # kml += """\n<href>http://earth.google.com/images/kml-icons/track-directional/track-0.png</href>"""
-        kml += """https://cdn4.iconfinder.com/data/icons/delivery-1-1/512/plane-128.png"""
+        # kml += """\nhttps://cdn4.iconfinder.com/data/icons/delivery-1-1/512/plane-128.png"""
+        kml += """\nhttp://www.iconsdb.com/icons/preview/white/airplane-7-xxl.png"""
         # kml += """\n<href>plane1.png</href>"""
     kml += """\n</Icon>"""
     kml += """\n</IconStyle>"""
+    kml += """\n<LabelStyle>"""
+    kml += """\n<scale>0.75</scale>"""
+    kml += """\n</LabelStyle>"""
     kml += """\n<LineStyle>"""
     # KML encodes the color as aabbggrr in hex (alpha, blue, green, red)
     kml += """\n<color>%02x%06x</color>""" % (alpha, color)
     kml += """\n<width>%d</width>""" % (width)
     kml += """\n</LineStyle>"""
+    # kml += """\n<PolyStyle>"""
+    # kml += """\n<color>00x%06x</color>""" % (color)
+    # kml += """\n<width>%d</width>""" % (width)
+    # kml += """\n</PolyStyle>"""
     kml += """\n</Style>"""
 
     return kml
