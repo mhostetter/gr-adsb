@@ -30,7 +30,7 @@ import sqlite3
 
 NUM_BITS                    = 112
 CPR_TIMEOUT_S               = 30 # Seconds consider CPR-encoded lat/lon info invalid
-PLANE_TIMEOUT_S             = 5*60
+PLANE_TIMEOUT_S             = 1*60
 CALLSIGN_LUT                = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ_____ _______________0123456789______"
 INSERTS_PER_TRANSACTION     = 100
 
@@ -129,7 +129,7 @@ class decoder(gr.sync_block):
         if self.log_db == True:
             self.db_conn = sqlite3.connect(self.db_filename, check_same_thread=False)
             self.db_conn.text_factory = str
-            self.db_conn.isolation_level = None
+            # self.db_conn.isolation_level = None
 
             self.db_cursor = self.db_conn.cursor()
             self.db_cursor.execute("CREATE TABLE IF NOT EXISTS ADSB (Datetime TEXT, ICAO TEXT, DF INTEGER, TC INTEGER, Callsign TEXT, Latitude REAL, Longitude REAL, Altitude REAL, VerticalRate REAL, Speed REAL, Heading REAL, Timestamp INTEGER)")
@@ -137,7 +137,7 @@ class decoder(gr.sync_block):
             self.db_cursor.execute("PRAGMA synchronous = NORMAL")
             self.db_conn.commit()
 
-            self.db_cursor.execute("BEGIN")
+            self.db_cursor.execute("BEGIN TRANSACTION")
             self.inserts = 0
 
         # Propagate tags
@@ -408,9 +408,12 @@ class decoder(gr.sync_block):
                 log_tuple[2]  
             ))
 
+        self.inserts += 1
+
         if np.mod(self.inserts, INSERTS_PER_TRANSACTION) == 0:
             self.db_conn.commit()
-            self.db_cursor.execute("BEGIN")
+            self.db_cursor.execute("BEGIN TRANSACTION")
+
 
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
     # http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
