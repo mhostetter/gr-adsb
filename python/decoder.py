@@ -270,8 +270,7 @@ class decoder(gr.sync_block):
 
             self.plane_dict[aa_str]["num_msgs"] += 1
             self.plane_dict[aa_str]["last_seen"] = calendar.timegm(time.gmtime())
-            
-            
+
         else:
             # Create empty dictionary for the current plane
             self.plane_dict[aa_str] = dict([])
@@ -283,9 +282,11 @@ class decoder(gr.sync_block):
 
         # Check if any planes have timed out and if so remove them
         # from the dictionary
-        # TODO: Figure out a better way to do this
+        for key in self.plane_dict.keys():
+            if (calendar.timegm(time.gmtime()) - self.plane_dict[key]["last_seen"]) > PLANE_TIMEOUT_S:
+                del self.plane_dict[key]
 
-
+            
     def reset_plane_altimetry(self, plane):
         plane["altitude"] = np.NaN
         plane["speed"] = np.NaN
