@@ -1,10 +1,8 @@
 # gr-adsb
-
 A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
 
 
 ## Features
-
 * Supports many SDRs through GNU Radio and OsmoSDR (USRP, RTL-SDR, HackRF, BladeRF, etc).
 * Supports various sample rates (2 Msps, 4 Msps, 6 Msps, etc).  Currently the sampling rate needs to be an integer multiple of 2*fsym or 2 Msps.
 * Decoding of messages:
@@ -25,12 +23,13 @@ A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependen
 
 
 ## Usage
+### GNU Radio Companion
+![GNU Radio Companion Example](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_rx.png)
 
-There is an example GNU Radio flowgraph located in `/examples/adsb_rx.grc`  You can open the flowgraph through GNU Radio Companion `$ gnuradio-companion`.
-
+### KML Generation
+Add image here.
 
 ## Installation
-
 GNU Radio is a dependency for gr-adsb.  I recommend installing GNU Radio through PyBOMBS, see https://github.com/gnuradio/pybombs.
 
 To build gr-adsb, follow this procedure.
