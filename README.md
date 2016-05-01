@@ -52,7 +52,57 @@ a8f63b FDX1679  25700  2240   419  175  38.9744110 -78.4300829  455  39
 a8d62a FDX1630  34000     0   379  175  38.9746508 -78.4457397  126 234
 ```
 Example "Verbose" Output:
-Insert stdout here.
+```
+----------------------------------------------------------------------
+SNR:            18.50 dB
+DF:             0 Short Air-Air Surveillance (ACAS)
+Parity:         Passed (Recognized AA from AP)
+AA:             a50e47
+Units:          Standard
+Altitude:       28800 ft
+
+----------------------------------------------------------------------
+SNR:            22.36 dB
+DF:             4 Surveillance Altitude Reply
+Parity:         Passed (Recognized AA from AP)
+AA:             a50e47
+FS:             0 No Alert, No SPI, In Air
+DR:             0 No Downlink Request
+IIS:            0
+IDS:            0 No Information
+Units:          Standard
+Altitude:       28800 ft
+
+----------------------------------------------------------------------
+SNR:            8.76 dB
+DF:             11 All-Call Reply
+Parity:         Passed
+CA:             5 Level >=2 Transponder, Can Set CA 7, In Air
+AA:             a72bda
+
+----------------------------------------------------------------------
+SNR:            12.92 dB
+DF:             17 Extended Squitter
+Parity:         Passed
+CA:             5 Level >=2 Transponder, Can Set CA 7, In Air
+AA:             a8f63b
+TC:             19 Airborne Velocity
+Speed:          367 kn
+Heading:        177 deg (W)
+Climb:          3136 ft/min
+Source:         Barometric Pressure Altitude Change Rate
+
+----------------------------------------------------------------------
+SNR:            16.79 dB
+DF:             17 Extended Squitter
+Parity:         Passed
+CA:             5 Level >=2 Transponder, Can Set CA 7, In Air
+AA:             aaf111
+TC:             11 Airborne Position
+Latitude:       39.4474182 N
+Longitude:      -77.4949314 E
+Altitude:       10775 ft
+```
 
 ### KML Generation
 Add image here.
