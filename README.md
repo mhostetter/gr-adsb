@@ -15,6 +15,7 @@ A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependen
   * DF 18: CF=0,1,6 ADS-B Extended Squitter from Non-Mode S Transponders
   * DF 19: AF=0 Military ADS-B Extended Squitter
   * DF 20: Comm-B Altitude Reply
+  * DF 21: Comm-B Identity Reply
 * "Brief" stdout printing.
 * "Verbose" stdout printing.
 * Logging to a CSV file.
