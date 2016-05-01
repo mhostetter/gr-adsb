@@ -33,6 +33,7 @@ CPR_TIMEOUT_S               = 30 # Seconds consider CPR-encoded lat/lon info inv
 PLANE_TIMEOUT_S             = 1*60
 CALLSIGN_LUT                = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ_____ _______________0123456789______"
 INSERTS_PER_TRANSACTION     = 50
+FT_PER_METER                = 3.28084
 
 # Downlink Format, 5 bits
 DF_STR_LUT = (
@@ -68,6 +69,41 @@ DF_STR_LUT = (
     "Reserved",
     "Reserved",
     "Reserved",
+)
+
+# (DF 0, 16) Vertical Status, 1 bit
+# (3.1.2.8.2.1)
+VS_STR_LUT = (
+    "In Air",
+    "On Ground",
+)
+
+# (DF 0, 16) Reply Information, 4 bits
+# (3.1.2.8.2.2)
+RI_STR_LUT = (
+    "Reply to Interr UF=0 AQ=0, No Operating ACAS",
+    "Reserved for ACAS",
+    "Reserved for ACAS",
+    "Reserved for ACAS",
+    "Reserved for ACAS",
+    "Reserved for ACAS",
+    "Reserved for ACAS",
+    "Reserved for ACAS",
+    "Reply to Interr UF=0 AQ=1, No Max Speed Available",
+    "Reply to Interr UF=0 AQ=1, max(v) < 75 kt",
+    "Reply to Interr UF=0 AQ=1, 75 < max(v) < 150 kt",
+    "Reply to Interr UF=0 AQ=1, 150 < max(v) < 300 kt",
+    "Reply to Interr UF=0 AQ=1, 300 < max(v) < 600 kt",
+    "Reply to Interr UF=0 AQ=1, 600 < max(v) < 1200 kt",
+    "Reply to Interr UF=0 AQ=1, max(v) > 1200 kt",
+    "Not Assigned",
+)
+
+# (DF 0) Cross-Link Capability, 1 bit
+# (3.1.2.8.2.3)
+CC_STR_LUT = (
+    "Does Not Support Cross-Link Capability",
+    "Does Support Cross-Link Capability",
 )
 
 # (DF 4, 20) Flight Status, 3 bits
@@ -338,6 +374,9 @@ class decoder(gr.sync_block):
                 self.decode_header()
 
                 parity_passed = self.check_parity()
+
+                if parity_passed == 0:
+                    parity_passed = self.correct_errors()
 
                 if parity_passed == 1:
                     # If parity check passes, then decode the message contents
@@ -747,7 +786,7 @@ class decoder(gr.sync_block):
 
     def correct_errors(self):
         if self.error_corr == "None":
-            return 0 # Didn't attempt to make the parity pass
+            return 0
 
         if self.error_corr == "Conservative":
             print "To be implemented"
@@ -769,21 +808,27 @@ class decoder(gr.sync_block):
             # Vertical Status, 1 bit
             vs = self.bits[5]
 
-            # Short-only parameters
-            if self.df == 0:
-                # Cross-Link Capability, 1 bits
-                cc = self.bits[6]
-
             # Reply Information, 4 bits 
             ri = self.bin2dec(self.bits[13:13+4])
 
             # Altitude Code, 13 bits
             alt = self.decode_ac13(self.bits[19:19+13])
 
-            # Long-only parametes
-            if self.df == 16:
+            if self.print_level == "Verbose":
+                print "VS:".ljust(16) + "%s" % (VS_STR_LUT[vs])
+                print "RI:".ljust(16) + "%s" % (RI_STR_LUT[ri])
+
+            if self.df == 0:
+                # Cross-Link Capability, 1 bits
+                cc = self.bits[6]
+
+                if self.print_level == "Verbose":
+                    print "CC:".ljust(16) + "%s" % (CC_STR_LUT[cc])
+
+            elif self.df == 16:
                 # (4.3.8.4.2.4)
-                mv_bits = self.bits[32:32+56]
+                # mv_bits = self.bits[32:32+56]
+                mv = self.decode_mv(self.bits[32:32+56])
 
                 vds1 = self.bin2dec(self.bits[32:32+4])
                 vds2 = self.bin2dec(self.bits[36:36+4])
@@ -791,6 +836,7 @@ class decoder(gr.sync_block):
                 if self.print_level == "Verbose":
                     print "VDS1:".ljust(16) + "%d" % (vds1)
                     print "VDS2:".ljust(16) + "%d" % (vds2)
+                    print "MV:".ljust(16) + "0x%x To be implemented" % (mv)
 
                 # if vds1 == 3 and vds2 == 0:
 
@@ -800,11 +846,7 @@ class decoder(gr.sync_block):
                 # If the altitude is not invalid, log it
                 self.plane_dict[self.aa_str]["altitude"] = alt        
 
-            if self.print_level == "Brief":
-                self.print_planes()
             if self.print_level == "Verbose":
-                # print "VS    %d" % (vs)
-                # print "RI    %s" % (ri)
                 print "Altitude:".ljust(16) + "%d ft" % (alt)
 
         # DF = 4 (3.1.2.6.5) Surveillance Altitude Reply
@@ -840,7 +882,7 @@ class decoder(gr.sync_block):
                     mb = self.decode_mb(self.bits[32:32+56])
 
                     if self.print_level == "Verbose":
-                        print "Comm-B:".ljust(16) + "0x%x To be implemented" % (mb)
+                        print "MB:".ljust(16) + "0x%x To be implemented" % (mb)
 
                 # Update planes dictionary
                 self.update_plane(self.aa_str)
@@ -866,7 +908,7 @@ class decoder(gr.sync_block):
                     mb = self.decode_mb(self.bits[32:32+56])
 
                     if self.print_level == "Verbose":
-                        print "Comm-B:".ljust(16) + "0x%x To be implemented" % (mb)
+                        print "MB:".ljust(16) + "0x%x To be implemented" % (mb)
 
         # DF = 11 (3.1.2.5.2.2) All-Call Reply
         elif self.df == 11:
@@ -976,25 +1018,24 @@ class decoder(gr.sync_block):
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf
     def decode_ac12(self, bits):
         # Q-bit, 1 bit
-        q_bit = self.bits[47]
+        q_bit = self.bits[7]
 
         if q_bit == 0:
             # Q-bit = 0, altitude is encoded in multiples of 100 ft
-            multiplier = 100
+            
             print "Is this happening ?????????????????????????????????????????????"
+            
             return -1
 
         else:
             # Q-bit = 1, altitude is encoded in multiples of 25 ft
-            multiplier = 25
 
             # Remove the Q-bit from the altitude bits to calculate the
             # altitude
-            bits = np.delete(bits, 7)
-            altitude = self.bin2dec(bits)
+            val = self.bin2dec(np.delete(bits, 7))
 
             # Altitude in ft
-            return altitude*multiplier - 1000
+            return val*25 - 1000
 
 
     # (3.1.2.6.5.4) Altitude Code, 13 bits        
@@ -1003,47 +1044,67 @@ class decoder(gr.sync_block):
 
         if alt_dec != 0:
             # M-bit, 1 bit
-            m_bit = self.bits[25]
-            
+            m_bit = self.bits[6]
+
             if m_bit == 0:
+                # The altitude reading is in feet
                 if self.print_level == "Verbose":
                     print "Units:".ljust(16) + "Standard"
 
                 # Q-bit, 1 bit
-                q_bit = self.bits[27]
+                q_bit = self.bits[8]
 
                 if q_bit == 0:
                     # (3.1.1.7.12.2.3)
+                    # Q-bit = 0, altitude is encoded in multiples of 100 ft
 
                     if self.print_level == "Verbose":
                         # To be implemented
                         print "This requires a huge LUT *************************************"
 
-                    # Q-bit = 0, altitude is encoded in multiples of 100 ft
-                    multiplier = 100
-                    altitude = 0
+                    c1 = self.bits[0]
+                    a1 = self.bits[1]
+                    c2 = self.bits[2]
+                    a2 = self.bits[3]
+                    c4 = self.bits[4]
+                    a4 = self.bits[5]
+                    b1 = self.bits[7]
+                    b2 = self.bits[9]
+                    d2 = self.bits[10]
+                    b4 = self.bits[11]
+                    d4 = self.bits[12]
+
+                    print "AltCode:".ljust(16) + "%d%d%d%d%d%d%d%d%d%d%d" % (d2,d4,a1,a2,a4,b1,b2,b4,c1,c2,c4)
 
                     # Altitude in ft
                     return -1
 
                 else:
                     # (3.1.2.6.5.4, Chapter 3 Appendix)
-
                     # Q-bit = 1, altitude is encoded in multiples of 25 ft
-                    multiplier = 25
-            
+                    
                     # Remove the Q-bit and M-bit from the altitude bits to calculate the altitude
-                    altitude = self.bin2dec(np.delete(self.bits[19:19+13], [7, 9]))
+                    val = self.bin2dec(np.delete(bits, [6, 8]))
 
                     # Altitude in ft
-                    return altitude*multiplier - 1000
+                    return val*25 - 1000
 
             else:
+                # The altitude reading is in meters
                 if self.print_level == "Verbose":
                     print "Units:".ljust(16) + "Metric"
 
+                # Remove the M-bit from the altitude bits to calculate the altitude
+                # val = self.bin2dec(np.delete(bits, [6, 12]))
+
+                # NOTE: Trial and error proved using the M=0 Q=1 scheme for M=1
+                # actually works.  Don't know why.
+
+                # Remove the Q-bit and M-bit from the altitude bits to calculate the altitude
+                val = self.bin2dec(np.delete(bits, [6, 8]))
+
                 # Altitude in ft
-                return -1
+                return val*25 - 1000
 
         else:
             # If all 13 altitude bits are 0, then the altitude field is invalid
