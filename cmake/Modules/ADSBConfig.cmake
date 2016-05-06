@@ -1,9 +1,9 @@
 INCLUDE(FindPkgConfig)
-PKG_CHECK_MODULES(PC_ADSB adsb)
+PKG_CHECK_MODULES(PC_ADSB ADSB)
 
 FIND_PATH(
     ADSB_INCLUDE_DIRS
-    NAMES adsb/api.h
+    NAMES ADSB/api.h
     HINTS $ENV{ADSB_DIR}/include
         ${PC_ADSB_INCLUDEDIR}
     PATHS ${CMAKE_INSTALL_PREFIX}/include
@@ -13,7 +13,7 @@ FIND_PATH(
 
 FIND_LIBRARY(
     ADSB_LIBRARIES
-    NAMES gnuradio-adsb
+    NAMES gnuradio-ADSB
     HINTS $ENV{ADSB_DIR}/lib
         ${PC_ADSB_LIBDIR}
     PATHS ${CMAKE_INSTALL_PREFIX}/lib

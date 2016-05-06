@@ -23,10 +23,10 @@ This is the GNU Radio ADSB module. Place your Python package
 description here (python/__init__.py).
 '''
 
-# import swig generated symbols into the adsb namespace
+# import swig generated symbols into the ADSB namespace
 try:
 	# this might fail if the module is python-only
-	from adsb_swig import *
+	from ADSB_swig import *
 except ImportError:
 	pass
 
