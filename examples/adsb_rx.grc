@@ -256,14 +256,14 @@
     </param>
   </block>
   <block>
-    <key>adsb_decoder</key>
+    <key>ADSB_decoder</key>
     <param>
       <key>alias</key>
       <value></value>
     </param>
     <param>
       <key>csv_filename</key>
-      <value>"/home/matt/adsb.csv"</value>
+      <value>""</value>
     </param>
     <param>
       <key>comment</key>
@@ -275,11 +275,11 @@
     </param>
     <param>
       <key>db_filename</key>
-      <value>"/home/matt/adsb.sqlite"</value>
+      <value>""</value>
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>True</value>
     </param>
     <param>
       <key>error_corr</key>
@@ -287,7 +287,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(664, 115)</value>
+      <value>(672, 115)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -295,7 +295,7 @@
     </param>
     <param>
       <key>id</key>
-      <value>adsb_decoder_0</value>
+      <value>ADSB_decoder_0</value>
     </param>
     <param>
       <key>log_csv</key>
@@ -303,7 +303,7 @@
     </param>
     <param>
       <key>log_db</key>
-      <value>True</value>
+      <value>False</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -323,7 +323,7 @@
     </param>
   </block>
   <block>
-    <key>adsb_framer</key>
+    <key>ADSB_framer</key>
     <param>
       <key>alias</key>
       <value></value>
@@ -342,11 +342,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>True</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(472, 155)</value>
+      <value>(488, 155)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -354,7 +354,7 @@
     </param>
     <param>
       <key>id</key>
-      <value>adsb_framer_0_0</value>
+      <value>ADSB_framer_0</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -2552,14 +2552,14 @@
     </param>
   </block>
   <connection>
-    <source_block_id>adsb_decoder_0</source_block_id>
+    <source_block_id>ADSB_decoder_0</source_block_id>
     <sink_block_id>qtgui_time_sink_x_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
   <connection>
-    <source_block_id>adsb_framer_0_0</source_block_id>
-    <sink_block_id>adsb_decoder_0</sink_block_id>
+    <source_block_id>ADSB_framer_0</source_block_id>
+    <sink_block_id>ADSB_decoder_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -2571,7 +2571,7 @@
   </connection>
   <connection>
     <source_block_id>blocks_complex_to_mag_squared_0</source_block_id>
-    <sink_block_id>adsb_framer_0_0</sink_block_id>
+    <sink_block_id>ADSB_framer_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
