@@ -60,9 +60,10 @@ class framer(gr.sync_block):
         # End of the last burst (56 bit message).  Don't look for preambles during a valid packet
         self.prev_eob_idx = -1
 
-        # Set history so we can check for a preamble at the very end of the
-        # input_items[0]
-        self.set_history(NUM_PREAMBLE_BITS*self.sps)
+        # Set history so we can check for a preambles that wrapped around the
+        # end of the previous work() call's input_items[0]
+        self.N_hist = NUM_PREAMBLE_BITS*self.sps
+        self.set_history(self.N_hist)
 
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
@@ -89,7 +90,7 @@ class framer(gr.sync_block):
         in0_pulses[np.insert(in0[0:N], 0, self.prev_in0) >= self.burst_thresh] = 1
 
         # Set prev_in0 for the next work() call
-        self.prev_in0 = in0[N]
+        self.prev_in0 = in0[N-1]
 
         # Subtract the previous pulse from the current pulse to get transitions
         # +1 = rising edge, -1 = falling edge
@@ -131,7 +132,7 @@ class framer(gr.sync_block):
                     if 0:
                         self.add_item_tag(  
                             0,
-                            self.nitems_written(0) + pulse_idx,
+                            (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
                             pmt.to_pmt("pulse"),
                             pmt.to_pmt("1"),    
                             pmt.to_pmt("framer")
@@ -172,7 +173,7 @@ class framer(gr.sync_block):
                         # Tag the start of the burst (preamble)
                         self.add_item_tag(  
                             0,
-                            self.nitems_written(0) + pulse_idx,
+                            (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
                             pmt.to_pmt("burst"),
                             pmt.to_pmt(("SOB", snr)),
                             pmt.to_pmt("framer")
@@ -183,5 +184,5 @@ class framer(gr.sync_block):
                 # Wrap the index so it's ready for the next work() call
                 self.prev_eob_idx -= N
 
-        out0[:] = in0[0:N]
+        out0[:] = in0[self.N_hist-1:]
         return N
