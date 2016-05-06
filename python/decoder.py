@@ -28,13 +28,6 @@ import calendar
 import csv
 import sqlite3
 
-NUM_BITS                    = 112
-CPR_TIMEOUT_S               = 30 # Seconds consider CPR-encoded lat/lon info invalid
-PLANE_TIMEOUT_S             = 1*60
-CALLSIGN_LUT                = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ_____ _______________0123456789______"
-INSERTS_PER_TRANSACTION     = 50
-FT_PER_METER                = 3.28084
-
 # Downlink Format, 5 bits
 DF_STR_LUT = (
     "Short Air-Air Surveillance (ACAS)",
@@ -254,6 +247,18 @@ T_STR_LUT = (
     "Synced to 0.2s UTC Epoch",
 )
 
+# (DF 17,18,19) Callsign, 48 bits (6 bits per character)
+# (3.1.2.9.1.2)
+CALLSIGN_CHAR_LUT = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ_____ _______________0123456789______"
+
+SYMBOL_RATE                 = 1e6 # symbols/second
+NUM_PREAMBLE_BITS           = 8
+MAX_NUM_BITS                = 112
+CPR_TIMEOUT_S               = 30 # Seconds consider CPR-encoded lat/lon info invalid
+PLANE_TIMEOUT_S             = 1*60
+INSERTS_PER_TRANSACTION     = 50
+FT_PER_METER                = 3.28084
+
 class decoder(gr.sync_block):
     """
     docstring for block decoder
@@ -267,7 +272,7 @@ class decoder(gr.sync_block):
         # Calculate the samples/symbol
         # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
         # required fs is 2 Msps
-        self.sps = fs/(1e6) 
+        self.sps = fs/SYMBOL_RATE
         if (self.sps - np.floor(self.sps)) > 0:
             print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
@@ -359,14 +364,14 @@ class decoder(gr.sync_block):
                 # the entire burst
 
                 # Grab the amplitudes where the "bit 1 pulse" should be
-                bit1_idxs = range(sob_idx, sob_idx+self.sps*NUM_BITS, self.sps)
+                bit1_idxs = range(sob_idx, sob_idx + self.sps*MAX_NUM_BITS, self.sps)
                 bit1_amps = in0[bit1_idxs]
 
                 # Grab the amplitudes where the "bit 0 pulse" should be
-                bit0_idxs = range(sob_idx+self.sps/2, sob_idx+self.sps*NUM_BITS+self.sps/2, self.sps)
+                bit0_idxs = range(sob_idx + self.sps/2, sob_idx + self.sps*MAX_NUM_BITS + self.sps/2, self.sps)
                 bit0_amps = in0[bit0_idxs]
 
-                self.bits = np.zeros(NUM_BITS, dtype=int)
+                self.bits = np.zeros(MAX_NUM_BITS, dtype=int)
                 self.bits[bit1_amps > bit0_amps] = 1
 
                 # Get a log-likelihood type function for probability of a
@@ -405,14 +410,14 @@ class decoder(gr.sync_block):
             if 0:
                 # Tag the 0 and 1 bits markers for debug
                 for ii in range(0,len(bit1_idxs)):
-                    self.add_item_tag(  
+                    self.add_item_tag(
                         0,
                         self.nitems_written(0)+bit1_idxs[ii],
                         pmt.to_pmt("bits"),
                         pmt.to_pmt((1, ii, float(self.bit_confidence[ii]))),    
                         pmt.to_pmt("decoder")
                     )
-                    self.add_item_tag(  
+                    self.add_item_tag(
                         0, 
                         self.nitems_written(0)+bit0_idxs[ii], 
                         pmt.to_pmt("bits"),
@@ -1150,7 +1155,7 @@ class decoder(gr.sync_block):
             for ii in range(0,8):
                 # There are 8 characters in the callsign, each is represented using
                 # 6 bits
-                callsign += CALLSIGN_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
+                callsign += CALLSIGN_CHAR_LUT[self.bin2dec(self.bits[40+ii*6:40+(ii+1)*6])]
 
             # Remove invalid characters
             callsign = callsign.replace("_","")
