@@ -690,6 +690,7 @@ class decoder(gr.sync_block):
             else:
                 if self.print_level == "Verbose":
                     print "CRC:".ljust(16) + "Failed (Unrecognized AA from AP)"
+                    print "AA:".ljust(16) + "%s" % (self.aa_str)
                 return 0
 
         elif self.df in [11]:
@@ -697,12 +698,23 @@ class decoder(gr.sync_block):
             self.payload_length = 56
 
             # Parity/Interrogator ID, 24 bits
-            pi = self.bin2dec(self.bits[32:32+24])
+            pi_bits = self.bits[32:32+24]
+            pi = self.bin2dec(pi_bits)
 
             crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], crc_poly)            
             crc = self.bin2dec(crc_bits)
 
-            parity_passed = pi == crc
+            # result_bits = pi_bits ^ crc_bits
+            # print "pi_bits", pi_bits
+            # print "crc_bits", crc_bits
+            # print "result_bits", result_bits
+            # parity_passed = (pi_bits[:7] == crc_bits[:7])
+
+            parity_passed = (pi == crc)
+
+            # 17 0s
+            # Code Label, 3 bits (3.1.2.5.2.1.3)
+            # Interrogator Code, 4 bits (3.1.2.5.2.1.2)
 
             if parity_passed == True:
                 if self.print_level == "Verbose":
@@ -741,6 +753,7 @@ class decoder(gr.sync_block):
             else:
                 if self.print_level == "Verbose":
                     print "CRC:".ljust(16) + "Failed (Unrecognized AA from AP)"
+                    print "AA:".ljust(16) + "%s" % (self.aa_str)
                 return 0
 
         elif self.df in [17,18,19]:
@@ -753,7 +766,7 @@ class decoder(gr.sync_block):
             crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], crc_poly)
             crc = self.bin2dec(crc_bits)
 
-            parity_passed = pi == crc
+            parity_passed = (pi == crc)
 
             if parity_passed == True:
                 if self.print_level == "Verbose":
@@ -1034,7 +1047,7 @@ class decoder(gr.sync_block):
             if self.print_level == "Verbose":
                 print "To be implemented"
                 print "Is this happening ?????????????????????????????????????????????"
-                        
+
             return -1
 
         else:
