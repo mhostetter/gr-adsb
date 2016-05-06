@@ -1,4 +1,4 @@
-# gr-adsb
+# gr-ADSB
 A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
 
 
@@ -25,9 +25,9 @@ A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependen
 
 ## Usage
 ### GNU Radio
-There is an example GNU Radio Companion (.grc) file located at `/gr-adsb/examples/adsb_rx.grc`.  To use it, first open GNU Radio Companion `$ gnuradio-companion` and then open the .grc file.
+There is an example GNU Radio Companion (.grc) file located at `/gr-ADSB/examples/adsb_rx.grc`.  To use it, first open GNU Radio Companion `$ gnuradio-companion` and then open the .grc file.
 
-![GRC Example Flowgraph](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_rx.png)
+![GRC Example Flowgraph](https://github.com/mhostetter/gr-ADSB/blob/master/docs/adsb_rx.png)
 
 Example "Brief" output:
 ```
@@ -116,11 +116,11 @@ Add image here.
 * Google Earth (optional)
 
 ## Installation
-GNU Radio is a dependency for gr-adsb.  I recommend installing GNU Radio through PyBOMBS, see https://github.com/gnuradio/pybombs.
+GNU Radio is a dependency for gr-ADSB.  I recommend installing GNU Radio through PyBOMBS, see https://github.com/gnuradio/pybombs.
 
-To build gr-adsb, follow this procedure.
+To build gr-ADSB, follow this procedure.
 
-1. `$ cd gr-adsb`
+1. `$ cd gr-ADSB`
 2. `$ mkdir build`
 3. `$ cd build`
 4. `$ cmake ../` or `$ cmake -DCMAKE_INSTALL_PREFIX=<path_to_install> ../`
