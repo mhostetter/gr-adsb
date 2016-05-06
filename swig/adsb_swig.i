@@ -5,7 +5,7 @@
 %include "gnuradio.i"			// the common stuff
 
 //load generated python docstrings
-%include "adsb_swig_doc.i"
+%include "ADSB_swig_doc.i"
 
 %{
 %}

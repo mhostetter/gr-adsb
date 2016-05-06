@@ -25,12 +25,12 @@
  * add them here.
  */
 
-#include "qa_adsb.h"
+#include "qa_ADSB.h"
 
 CppUnit::TestSuite *
-qa_adsb::suite()
+qa_ADSB::suite()
 {
-  CppUnit::TestSuite *s = new CppUnit::TestSuite("adsb");
+  CppUnit::TestSuite *s = new CppUnit::TestSuite("ADSB");
 
   return s;
 }

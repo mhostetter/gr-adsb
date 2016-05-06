@@ -20,10 +20,10 @@
 ########################################################################
 # Check if there is C++ code at all
 ########################################################################
-if(NOT adsb_sources)
+if(NOT ADSB_sources)
 	MESSAGE(STATUS "No C++ sources... skipping swig/")
 	return()
-endif(NOT adsb_sources)
+endif(NOT ADSB_sources)
 
 ########################################################################
 # Include swig generation macros
@@ -43,23 +43,23 @@ foreach(incdir ${GNURADIO_RUNTIME_INCLUDE_DIRS})
     list(APPEND GR_SWIG_INCLUDE_DIRS ${incdir}/gnuradio/swig)
 endforeach(incdir)
 
-set(GR_SWIG_LIBRARIES gnuradio-adsb)
-set(GR_SWIG_DOC_FILE ${CMAKE_CURRENT_BINARY_DIR}/adsb_swig_doc.i)
+set(GR_SWIG_LIBRARIES gnuradio-ADSB)
+set(GR_SWIG_DOC_FILE ${CMAKE_CURRENT_BINARY_DIR}/ADSB_swig_doc.i)
 set(GR_SWIG_DOC_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
-GR_SWIG_MAKE(adsb_swig adsb_swig.i)
+GR_SWIG_MAKE(ADSB_swig ADSB_swig.i)
 
 ########################################################################
 # Install the build swig module
 ########################################################################
-GR_SWIG_INSTALL(TARGETS adsb_swig DESTINATION ${GR_PYTHON_DIR}/adsb)
+GR_SWIG_INSTALL(TARGETS ADSB_swig DESTINATION ${GR_PYTHON_DIR}/ADSB)
 
 ########################################################################
 # Install swig .i files for development
 ########################################################################
 install(
     FILES
-    adsb_swig.i
-    ${CMAKE_CURRENT_BINARY_DIR}/adsb_swig_doc.i
-    DESTINATION ${GR_INCLUDE_DIR}/adsb/swig
+    ADSB_swig.i
+    ${CMAKE_CURRENT_BINARY_DIR}/ADSB_swig_doc.i
+    DESTINATION ${GR_INCLUDE_DIR}/ADSB/swig
 )
