@@ -23,6 +23,12 @@ import numpy as np
 from gnuradio import gr
 import pmt
 
+SYMBOL_RATE             = 1e6 # symbols/second
+NUM_PREAMBLE_BITS       = 8
+MIN_NUM_BITS            = 56
+NUM_PREAMBLE_PULSES     = NUM_PREAMBLE_BITS*2
+NUM_NOISE_SAMPLES       = 100
+
 class framer(gr.sync_block):
     """
     docstring for block framer
@@ -36,7 +42,7 @@ class framer(gr.sync_block):
         # Calculate the samples/symbol
         # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
         # required fs is 2 Msps
-        self.sps = fs/(1e6) 
+        self.sps = fs/SYMBOL_RATE
         if (self.sps - np.floor(self.sps)) > 0:
             print "Warning: ADS-B Framer is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
@@ -54,6 +60,10 @@ class framer(gr.sync_block):
         # End of the last burst (56 bit message).  Don't look for preambles during a valid packet
         self.prev_eob_idx = -1
 
+        # Set history so we can check for a preamble at the very end of the
+        # input_items[0]
+        self.set_history(NUM_PREAMBLE_BITS*self.sps)
+
         # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
@@ -68,15 +78,18 @@ class framer(gr.sync_block):
         in0 = input_items[0]
         out0 = output_items[0]
 
+        # Number of samples to process
+        N = len(output_items[0])
+
         # Create a binary array that represents when the input goes above
         # the threshold value. 1 = above threshold, 0 = below threshold
         # NOTE: Add the last sample from the previous work() call to the 
         # beginning of this block of samples
-        in0_pulses = np.zeros(len(in0)+1, dtype=int)
-        in0_pulses[np.insert(in0, 0, self.prev_in0) >= self.burst_thresh] = 1
+        in0_pulses = np.zeros(N+1, dtype=int)
+        in0_pulses[np.insert(in0[0:N], 0, self.prev_in0) >= self.burst_thresh] = 1
 
         # Set prev_in0 for the next work() call
-        self.prev_in0 = in0[-1]
+        self.prev_in0 = in0[N]
 
         # Subtract the previous pulse from the current pulse to get transitions
         # +1 = rising edge, -1 = falling edge
@@ -97,7 +110,7 @@ class framer(gr.sync_block):
                 # NOTE: There technically can only possibly be 1 extra rising edge, if 
                 # there are more, something went terribly wrong
                 if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) == 1:
-                    in0_rise_edge_idxs = np.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs)-1)
+                    in0_rise_edge_idxs = np.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs) - 1)
                 else:
                     print "Oh no, this shouldn't be happening..."
 
@@ -118,61 +131,57 @@ class framer(gr.sync_block):
                     if 0:
                         self.add_item_tag(  
                             0,
-                            self.nitems_written(0)+pulse_idx,
+                            self.nitems_written(0) + pulse_idx,
                             pmt.to_pmt("pulse"),
                             pmt.to_pmt("1"),    
                             pmt.to_pmt("framer")
                         )
 
-                    # If there are enough samples for the preamble to be completely contained 
-                    # in this set of samples, then check for a preamble correlation
-                    if pulse_idx + len(self.preamble_pulses)*self.sps < len(in0):
-                        # Starting at the center of the discovered pulse, find the amplitudes of each 
-                        # half symbol and then compare it to the preamble half symbols
-                        amps = in0[pulse_idx:(pulse_idx+len(self.preamble_pulses)*self.sps/2):(self.sps/2)]
+                    # Starting at the center of the discovered pulse, find the amplitudes of each 
+                    # half symbol and then compare it to the preamble half symbols
+                    amps = in0[pulse_idx:(pulse_idx + NUM_PREAMBLE_BITS*self.sps):(self.sps/2)]
 
-                        # Set a pulse to 1 if it's greater than 1/2 the amplitude of the detected pulse
-                        pulses = np.zeros(len(self.preamble_pulses), dtype=int)
-                        pulses[amps > in0[pulse_idx]/2] = 1
+                    # Set a pulse to 1 if it's greater than 1/2 the amplitude of the detected pulse
+                    pulses = np.zeros(NUM_PREAMBLE_PULSES, dtype=int)
+                    pulses[amps > in0[pulse_idx]/2] = 1
 
-                        # Count how many "pulses" or half symbols match the preamble "pulses"
-                        corr_matches = np.sum(pulses == self.preamble_pulses)
+                    # Count how many "pulses" or half symbols match the preamble "pulses"
+                    corr_matches = np.sum(pulses == self.preamble_pulses)
 
-                        # Only assert preamble found if all the 1/2 symbols match
-                        if corr_matches == len(self.preamble_pulses):
-                            # Found a preamble correlation
+                    # Only assert preamble found if all the 1/2 symbols match
+                    if corr_matches == NUM_PREAMBLE_PULSES:
+                        # Found a preamble correlation
 
-                            # Grad pulse SNR
-                            # NOTE: in0[] is already a power vector I^2 + Q^2, so to compute power
-                            # SNR we take 10*log10().
-                            # NOTE: The median of a Rayleigh distributed random variable is 1.6 dB
-                            # less than the average.  So add 1.6 dB to get a more accurate power
-                            # SNR.
-                            num_noise_samples = 100
-                            if pulse_idx < num_noise_samples:
-                                snr = 10.0*np.log10(in0[pulse_idx]/np.median(in0[0:pulse_idx])) + 1.6
-                            else:
-                                snr = 10.0*np.log10(in0[pulse_idx]/np.median(in0[pulse_idx-num_noise_samples:pulse_idx])) + 1.6
-                                                    
-                            # Calculate when this burst will end so we don't have to trigger
-                            # on all the "pulses" in this packet
-                            # NOTE: Assume the shorter 56 bit packet because we don't yet know
-                            # the packet length
-                            self.prev_eob_idx = pulse_idx + (8+56-1)*self.sps
+                        # Calculate burst SNR
+                        # NOTE: in0[] is already a power vector I^2 + Q^2, so to compute power
+                        # SNR we take 10*log10().
+                        # NOTE: The median of a Rayleigh distributed random variable is 1.6 dB
+                        # less than the average.  So add 1.6 dB to get a more accurate power
+                        # SNR.
+                        if pulse_idx < NUM_NOISE_SAMPLES:
+                            snr = 10.0*np.log10(in0[pulse_idx]/np.median(in0[0:pulse_idx])) + 1.6
+                        else:
+                            snr = 10.0*np.log10(in0[pulse_idx]/np.median(in0[(pulse_idx - NUM_NOISE_SAMPLES):pulse_idx])) + 1.6
 
-                            # Tag the start of the burst (preamble)
-                            self.add_item_tag(  
-                                0,
-                                self.nitems_written(0)+pulse_idx,
-                                pmt.to_pmt("burst"),
-                                pmt.to_pmt(("SOB", snr)),
-                                pmt.to_pmt("framer")
-                            )
+                        # Calculate when this burst will end so we don't have to trigger
+                        # on all the "pulses" in this packet
+                        # NOTE: Assume the shorter 56 bit packet because we don't yet know
+                        # the packet length
+                        self.prev_eob_idx = pulse_idx + (NUM_PREAMBLE_BITS + MIN_NUM_BITS - 1)*self.sps
+
+                        # Tag the start of the burst (preamble)
+                        self.add_item_tag(  
+                            0,
+                            self.nitems_written(0) + pulse_idx,
+                            pmt.to_pmt("burst"),
+                            pmt.to_pmt(("SOB", snr)),
+                            pmt.to_pmt("framer")
+                        )
 
             # Check if the end of this burst will be in the next work() call
-            if self.prev_eob_idx >= len(in0):
+            if self.prev_eob_idx >= N:
                 # Wrap the index so it's ready for the next work() call
-                self.prev_eob_idx -= len(in0)
+                self.prev_eob_idx -= N
 
-        out0[:] = in0
-        return len(output_items[0])
+        out0[:] = in0[0:N]
+        return N
