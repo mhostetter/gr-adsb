@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # 
-# Copyright 2016 <+YOU OR YOUR COMPANY+>.
+# Copyright 2016 Matt Hostetter.
 # 
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,8 +19,12 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-import numpy
+import numpy as np
 from gnuradio import gr
+import pmt
+
+SYMBOL_RATE                 = 1e6 # symbols/second
+MAX_NUM_BITS                = 112
 
 class demod(gr.sync_block):
     """
@@ -29,12 +33,121 @@ class demod(gr.sync_block):
     def __init__(self, fs):
         gr.sync_block.__init__(self,
             name="demod",
-            in_sig=[<+numpy.float+>],
-            out_sig=None)
+            in_sig=[np.float32],
+            out_sig=[np.float32])
+
+        # Calculate the samples/symbol
+        # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
+        # required fs is 2 Msps
+        self.sps = fs/SYMBOL_RATE
+        if (self.sps - np.floor(self.sps)) > 0:
+            print "Warning: ADS-B Demodulator is designed to operate on an integer number of samples per symbol"
+        self.sps = int(self.sps) # Set the samples/symbol to an integer
+
+        # Array of data bits
+        self.bits = []
+        self.bit_idx = 0
+        self.straddled_packet = 0
+
+        # Propagate tags
+        self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
+
+        # Add message port
+        self.message_port_register_out(pmt.to_pmt("bits"))
+
+        print "\n"
+        print "Initialized ADS-B Demodulator:"
+        print "  Sampling Rate:       %1.2f Msps" % (fs/1e6)
+        print "  Samples Per Symbol:  %d" % (self.sps)
+
+
+    def publish_bits(self):
+        meta = pmt.to_pmt(("snr", 10.5))
+        data = pmt.init_u8vector(len(self.bits), self.bits)
+
+        # Construct Protocol Data Unit
+        pdu = pmt.cons(meta, data)
+
+        # Publish message to message port
+        self.message_port_pub(pmt.to_pmt("bits"), pdu)
 
 
     def work(self, input_items, output_items):
         in0 = input_items[0]
-        # <+signal processing here+>
-        return len(input_items[0])
+        out0 = output_items[0]
+
+        # If there was a packet that straddled the previous block and this
+        # block, finish decoding it
+        if self.straddled_packet == 1:
+            self.straddled_packet = 0
+
+        # Get tags from ADS-B Framer block
+        tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt("burst"))
+
+        bit1_idxs = []
+        bit0_idxs = []
+
+        for tag in tags:
+            # Grab metadata for this tag
+            value = pmt.to_python(tag.value)
+            self.snr = value[1] # SNR in power dBs
+
+            # Calculate the SOB and EOB offsets            
+            sob_offset = tag.offset + (8)*self.sps # Start of burst index (middle of the "bit 1 pulse")
+            eob_offset = tag.offset + (8+112-1)*self.sps + self.sps/2 # End of burst index (middle of the "bit 0 pulse")
+
+            # Find the SOB and EOB indices in this block of samples
+            sob_idx = sob_offset - self.nitems_written(0)
+            eob_idx = eob_offset - self.nitems_written(0)
+
+            if eob_idx < len(input_items[0]):
+                # The packet is fully within this block of samples, so demod
+                # the entire burst
+
+                # Grab the amplitudes where the "bit 1 pulse" should be
+                bit1_idxs = range(sob_idx, sob_idx + self.sps*MAX_NUM_BITS, self.sps)
+                bit1_amps = in0[bit1_idxs]
+
+                # Grab the amplitudes where the "bit 0 pulse" should be
+                bit0_idxs = range(sob_idx + self.sps/2, sob_idx + self.sps*MAX_NUM_BITS + self.sps/2, self.sps)
+                bit0_amps = in0[bit0_idxs]
+
+                self.bits = np.zeros(MAX_NUM_BITS, dtype=int)
+                self.bits[bit1_amps > bit0_amps] = 1
+
+                # Get a log-likelihood type function for probability of a
+                # bit being a 0 or 1.  Confidence of 0 is equally liekly 0 or 1.
+                # Positive confidence levels are more likely 1 and negative values
+                # are more likely 0.
+                self.bit_confidence = 10.0*np.log10(bit1_amps/bit0_amps)
+
+                # Send PDU message to decoder
+                self.publish_bits()
+
+                if 1:
+                    # Tag the 0 and 1 bits markers for debug
+                    for ii in range(0,len(bit1_idxs)):
+                        self.add_item_tag(
+                            0,
+                            self.nitems_written(0)+bit1_idxs[ii],
+                            pmt.to_pmt("bits"),
+                            pmt.to_pmt((1, ii, float(self.bit_confidence[ii]))),    
+                            pmt.to_pmt("demod")
+                        )
+                        self.add_item_tag(
+                            0, 
+                            self.nitems_written(0)+bit0_idxs[ii], 
+                            pmt.to_pmt("bits"),
+                            pmt.to_pmt((0, ii, float(self.bit_confidence[ii]))), 
+                            pmt.to_pmt("demod")
+                        )
+
+            else:
+                # The packet is only partially contained in this block of
+                # samples, decode as much as possible
+                self.straddled_packet = 1
+                # print "Straddled packet"
+        
+        out0[:] = in0
+        return len(output_items[0])
 
