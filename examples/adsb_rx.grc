@@ -124,7 +124,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(560, 299)</value>
+      <value>(896, 387)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -167,11 +167,11 @@
     </param>
     <param>
       <key>id</key>
-      <value>fc_mhz</value>
+      <value>fc</value>
     </param>
     <param>
       <key>value</key>
-      <value>1090</value>
+      <value>1090e6</value>
     </param>
   </block>
   <block>
@@ -194,11 +194,11 @@
     </param>
     <param>
       <key>id</key>
-      <value>fs_mhz</value>
+      <value>fs</value>
     </param>
     <param>
       <key>value</key>
-      <value>4</value>
+      <value>4e6</value>
     </param>
   </block>
   <block>
@@ -287,7 +287,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(672, 115)</value>
+      <value>(896, 107)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -306,6 +306,41 @@
       <value>False</value>
     </param>
     <param>
+      <key>print_level</key>
+      <value>"Brief"</value>
+    </param>
+  </block>
+  <block>
+    <key>ADSB_demod</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(680, 153)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>ADSB_demod_0</value>
+    </param>
+    <param>
       <key>maxoutbuf</key>
       <value>0</value>
     </param>
@@ -314,12 +349,8 @@
       <value>0</value>
     </param>
     <param>
-      <key>print_level</key>
-      <value>"Brief"</value>
-    </param>
-    <param>
       <key>fs</key>
-      <value>fs_mhz*1e6</value>
+      <value>fs</value>
     </param>
   </block>
   <block>
@@ -366,7 +397,7 @@
     </param>
     <param>
       <key>fs</key>
-      <value>fs_mhz*1e6</value>
+      <value>fs</value>
     </param>
   </block>
   <block>
@@ -393,7 +424,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(928, 251)</value>
+      <value>(896, 331)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -487,7 +518,7 @@
     </param>
     <param>
       <key>freq0</key>
-      <value>fc_mhz*1e6</value>
+      <value>fc</value>
     </param>
     <param>
       <key>gain_mode0</key>
@@ -1859,7 +1890,7 @@
     </param>
     <param>
       <key>sample_rate</key>
-      <value>fs_mhz*1e6</value>
+      <value>fs</value>
     </param>
     <param>
       <key>sync</key>
@@ -1870,7 +1901,7 @@
     <key>qtgui_sink_x</key>
     <param>
       <key>bw</key>
-      <value>fs_mhz*1e6</value>
+      <value>fs</value>
     </param>
     <param>
       <key>alias</key>
@@ -1878,7 +1909,7 @@
     </param>
     <param>
       <key>fc</key>
-      <value>fc_mhz*1e6</value>
+      <value>fc</value>
     </param>
     <param>
       <key>freqchangevar</key>
@@ -2001,7 +2032,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(928, 163)</value>
+      <value>(896, 243)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -2273,11 +2304,11 @@
     </param>
     <param>
       <key>size</key>
-      <value>int(fs_mhz*150)</value>
+      <value>int(fs*150e-6)</value>
     </param>
     <param>
       <key>srate</key>
-      <value>int(fs_mhz*1e6)</value>
+      <value>int(fs)</value>
     </param>
     <param>
       <key>tr_chan</key>
@@ -2336,7 +2367,7 @@
     </param>
     <param>
       <key>bw</key>
-      <value>fs_mhz*1e6</value>
+      <value>fs</value>
     </param>
     <param>
       <key>alias</key>
@@ -2344,7 +2375,7 @@
     </param>
     <param>
       <key>fc</key>
-      <value>fc_mhz*1e6</value>
+      <value>fc</value>
     </param>
     <param>
       <key>comment</key>
@@ -2552,14 +2583,20 @@
     </param>
   </block>
   <connection>
-    <source_block_id>ADSB_decoder_0</source_block_id>
+    <source_block_id>ADSB_demod_0</source_block_id>
     <sink_block_id>qtgui_time_sink_x_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
   <connection>
-    <source_block_id>ADSB_framer_0</source_block_id>
+    <source_block_id>ADSB_demod_0</source_block_id>
     <sink_block_id>ADSB_decoder_0</sink_block_id>
+    <source_key>pkt</source_key>
+    <sink_key>pkt</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>ADSB_framer_0</source_block_id>
+    <sink_block_id>ADSB_demod_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
