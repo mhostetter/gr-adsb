@@ -4,17 +4,12 @@
   <key>ADSB_decoder</key>
   <category>ADS-B</category>
   <import>import ADSB</import>
-  <make>ADSB.decoder($fs, $error_corr, $print_level, $log_csv, $csv_filename, $log_db, $db_filename)</make>
+  <make>ADSB.decoder($error_corr, $print_level, $log_csv, $csv_filename, $log_db, $db_filename)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
        * key (makes the value accessible as $keyname, e.g. in the make node)
        * type -->
-  <param>
-    <name>Sampling Rate</name>
-    <key>fs</key>
-    <type>float</type>
-  </param>
   <param>
     <name>Error Correction</name>
     <key>error_corr</key>
@@ -98,8 +93,8 @@
        * vlen
        * optional (set to 1 for optional inputs) -->
   <sink>
-    <name>in</name>
-    <type>float</type>
+    <name>pkt</name>
+    <type>message</type>
   </sink>
 
   <!-- Make one 'source' node per output. Sub-nodes:
@@ -107,8 +102,4 @@
        * type
        * vlen
        * optional (set to 1 for optional inputs) -->
-  <source>
-    <name>out</name>
-    <type>float</type>
-  </source>
 </block>

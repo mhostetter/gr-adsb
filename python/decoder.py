@@ -251,8 +251,6 @@ T_STR_LUT = (
 # (3.1.2.9.1.2)
 CALLSIGN_CHAR_LUT = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ_____ _______________0123456789______"
 
-SYMBOL_RATE                 = 1e6 # symbols/second
-NUM_PREAMBLE_BITS           = 8
 MAX_NUM_BITS                = 112
 CPR_TIMEOUT_S               = 30 # Seconds consider CPR-encoded lat/lon info invalid
 PLANE_TIMEOUT_S             = 1*60
@@ -263,19 +261,11 @@ class decoder(gr.sync_block):
     """
     docstring for block decoder
     """
-    def __init__(self, fs, error_corr, print_level, log_csv, csv_filename, log_db, db_filename):
+    def __init__(self, error_corr, print_level, log_csv, csv_filename, log_db, db_filename):
         gr.sync_block.__init__(self,
             name="ADS-B Decoder",
-            in_sig=[np.float32],
-            out_sig=[np.float32])
-
-        # Calculate the samples/symbol
-        # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
-        # required fs is 2 Msps
-        self.sps = fs/SYMBOL_RATE
-        if (self.sps - np.floor(self.sps)) > 0:
-            print "Warning: ADS-B Decoder is designed to operate on an integer number of samples per symbol"
-        self.sps = int(self.sps) # Set the samples/symbol to an integer
+            in_sig=None,
+            out_sig=None)
 
         self.error_corr = error_corr
         self.print_level = print_level
@@ -283,11 +273,6 @@ class decoder(gr.sync_block):
         self.csv_filename = csv_filename
         self.log_db = log_db
         self.db_filename = db_filename
-
-        # Array of data bits
-        self.bits = []
-        self.bit_idx = 0
-        self.straddled_packet = 0
 
         # Initialize plane dictionary
         self.plane_dict = dict([])
@@ -315,13 +300,12 @@ class decoder(gr.sync_block):
             self.db_cursor.execute("BEGIN TRANSACTION")
             self.inserts = 0
 
-        # Propagate tags
-        self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
+        # Create a input message port and set message handler function
+        self.message_port_register_in(pmt.to_pmt("pkt"))
+        self.set_msg_handler(pmt.to_pmt("pkt"), self.decode_packet)
 
         print "\n"
         print "Initialized ADS-B Decoder:"
-        print "  Sampling Rate:       %1.2f Msps" % (fs/1e6)
-        print "  Samples Per Symbol:  %d" % (self.sps)
         print "  Print Level:         %s" % (self.print_level)
         print "  Log to CSV:          %s" % (self.log_csv)
         if self.log_csv == True:
@@ -331,103 +315,31 @@ class decoder(gr.sync_block):
             print "    Database Filename: %s" % (self.db_filename)
 
 
-    def work(self, input_items, output_items):
-        in0 = input_items[0]
-        out0 = output_items[0]
+    def decode_packet(self, msg):
+        # Reset decoder values before decoding next burst
+        self.reset()
 
-        # If there was a packet that straddled the previous block and this
-        # block, finish decoding it
-        if self.straddled_packet == 1:
-            self.straddled_packet = 0
+        # Grab packet PDU data
+        pkt_msg = pmt.to_python(msg)
+        self.snr = pkt_msg[0][1]
+        self.bits = pkt_msg[1]
 
-        # Get tags from ADS-B Framer block
-        tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt("burst"))
+        # Decode the header (common) part of the packet
+        self.decode_header()
 
-        bit1_idxs = []
-        bit0_idxs = []
+        parity_passed = self.check_parity()
 
-        for tag in tags:
-            # Grab metadata for this tag
-            value = pmt.to_python(tag.value)
-            self.snr = value[1] # SNR in power dBs
+        if parity_passed == 0:
+            parity_passed = self.correct_errors()
 
-            # Calculate the SOB and EOB offsets            
-            sob_offset = tag.offset + (8)*self.sps # Start of burst index (middle of the "bit 1 pulse")
-            eob_offset = tag.offset + (8+112-1)*self.sps + self.sps/2 # End of burst index (middle of the "bit 0 pulse")
+        if parity_passed == 1:
+            # If parity check passes, then decode the message contents
+            self.decode_message()
 
-            # Find the SOB and EOB indices in this block of samples
-            sob_idx = sob_offset - self.nitems_written(0)
-            eob_idx = eob_offset - self.nitems_written(0)
-
-            if eob_idx < len(input_items[0]):
-                # The packet is fully within this block of samples, so demod
-                # the entire burst
-
-                # Grab the amplitudes where the "bit 1 pulse" should be
-                bit1_idxs = range(sob_idx, sob_idx + self.sps*MAX_NUM_BITS, self.sps)
-                bit1_amps = in0[bit1_idxs]
-
-                # Grab the amplitudes where the "bit 0 pulse" should be
-                bit0_idxs = range(sob_idx + self.sps/2, sob_idx + self.sps*MAX_NUM_BITS + self.sps/2, self.sps)
-                bit0_amps = in0[bit0_idxs]
-
-                self.bits = np.zeros(MAX_NUM_BITS, dtype=int)
-                self.bits[bit1_amps > bit0_amps] = 1
-
-                # Get a log-likelihood type function for probability of a
-                # bit being a 0 or 1.  Confidence of 0 is equally liekly 0 or 1.
-                # Positive confidence levels are more likely 1 and negative values
-                # are more likely 0.
-                self.bit_confidence = 10.0*np.log10(bit1_amps/bit0_amps)
-
-                # Reset decoder values before decoding next burst
-                self.reset()
-
-                # Decode the header (common) part of the packet
-                self.decode_header()
-
-                parity_passed = self.check_parity()
-
-                if parity_passed == 0:
-                    parity_passed = self.correct_errors()
-
-                if parity_passed == 1:
-                    # If parity check passes, then decode the message contents
-                    self.decode_message()
-
-                    if self.print_level == "Brief":
-                        self.print_planes()
-                    if self.log_csv == True:
-                        self.write_plane_to_csv(self.aa_str)
-
-            else:
-                # The packet is only partially contained in this block of
-                # samples, decode as much as possible
-                self.straddled_packet = 1
-                # print "Straddled packet"
-
-
-            if 0:
-                # Tag the 0 and 1 bits markers for debug
-                for ii in range(0,len(bit1_idxs)):
-                    self.add_item_tag(
-                        0,
-                        self.nitems_written(0)+bit1_idxs[ii],
-                        pmt.to_pmt("bits"),
-                        pmt.to_pmt((1, ii, float(self.bit_confidence[ii]))),    
-                        pmt.to_pmt("decoder")
-                    )
-                    self.add_item_tag(
-                        0, 
-                        self.nitems_written(0)+bit0_idxs[ii], 
-                        pmt.to_pmt("bits"),
-                        pmt.to_pmt((0, ii, float(self.bit_confidence[ii]))), 
-                        pmt.to_pmt("decoder")
-                    )
-
-
-        out0[:] = in0
-        return len(output_items[0])
+            if self.print_level == "Brief":
+                self.print_planes()
+            if self.log_csv == True:
+                self.write_plane_to_csv(self.aa_str)
 
 
     def reset(self):
