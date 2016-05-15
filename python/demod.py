@@ -53,7 +53,7 @@ class demod(gr.sync_block):
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
         # Add message port
-        self.message_port_register_out(pmt.to_pmt("bits"))
+        self.message_port_register_out(pmt.to_pmt("pkt"))
 
         print "\n"
         print "Initialized ADS-B Demodulator:"
@@ -61,15 +61,15 @@ class demod(gr.sync_block):
         print "  Samples Per Symbol:  %d" % (self.sps)
 
 
-    def publish_bits(self):
-        meta = pmt.to_pmt(("snr", 10.5))
-        data = pmt.init_u8vector(len(self.bits), self.bits)
+    def publish_pkt(self, snr, bits):
+        meta = pmt.to_pmt(("snr", snr))
+        data = pmt.init_u8vector(len(bits), bits)
 
         # Construct Protocol Data Unit
         pdu = pmt.cons(meta, data)
 
         # Publish message to message port
-        self.message_port_pub(pmt.to_pmt("bits"), pdu)
+        self.message_port_pub(pmt.to_pmt("pkt"), pdu)
 
 
     def work(self, input_items, output_items):
@@ -90,7 +90,7 @@ class demod(gr.sync_block):
         for tag in tags:
             # Grab metadata for this tag
             value = pmt.to_python(tag.value)
-            self.snr = value[1] # SNR in power dBs
+            snr = value[1] # SNR in power dBs
 
             # Calculate the SOB and EOB offsets            
             sob_offset = tag.offset + (8)*self.sps # Start of burst index (middle of the "bit 1 pulse")
@@ -122,9 +122,9 @@ class demod(gr.sync_block):
                 self.bit_confidence = 10.0*np.log10(bit1_amps/bit0_amps)
 
                 # Send PDU message to decoder
-                self.publish_bits()
+                self.publish_pkt(snr, self.bits)
 
-                if 1:
+                if 0:
                     # Tag the 0 and 1 bits markers for debug
                     for ii in range(0,len(bit1_idxs)):
                         self.add_item_tag(

@@ -32,11 +32,11 @@
        * vlen
        * optional (set to 1 for optional inputs) -->
   <source>
-    <name>out</name>
-    <type>float</type>
+    <name>pkt</name>
+    <type>message</type>
   </source>
   <source>
-    <name>bits</name>
-    <type>message</type>
+    <name>out</name>
+    <type>float</type>
   </source>
 </block>
