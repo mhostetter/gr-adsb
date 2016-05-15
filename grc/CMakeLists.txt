@@ -19,5 +19,6 @@
 
 install(FILES
     ADSB_framer.xml
-    ADSB_decoder.xml DESTINATION share/gnuradio/grc/blocks
+    ADSB_decoder.xml
+    ADSB_demod.xml DESTINATION share/gnuradio/grc/blocks
 )

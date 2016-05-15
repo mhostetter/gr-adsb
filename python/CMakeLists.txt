@@ -32,7 +32,8 @@ GR_PYTHON_INSTALL(
     FILES
     __init__.py
     framer.py
-    decoder.py DESTINATION ${GR_PYTHON_DIR}/ADSB
+    decoder.py
+    demod.py DESTINATION ${GR_PYTHON_DIR}/ADSB
 )
 
 ########################################################################
@@ -44,3 +45,4 @@ set(GR_TEST_TARGET_DEPS gnuradio-ADSB)
 set(GR_TEST_PYTHON_DIRS ${CMAKE_BINARY_DIR}/swig)
 GR_ADD_TEST(qa_framer ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_framer.py)
 GR_ADD_TEST(qa_decoder ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_decoder.py)
+GR_ADD_TEST(qa_demod ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_demod.py)
