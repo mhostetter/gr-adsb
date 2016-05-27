@@ -4,7 +4,7 @@
 # GNU Radio Python Flow Graph
 # Title: ADS-B Receiver
 # Author: Matt Hostetter
-# Generated: Sun May 15 01:12:11 2016
+# Generated: Fri May 27 08:52:46 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -23,11 +23,11 @@ from gnuradio import blocks
 from gnuradio import eng_notation
 from gnuradio import gr
 from gnuradio import qtgui
+from gnuradio import uhd
 from gnuradio.eng_option import eng_option
 from gnuradio.filter import firdes
 from optparse import OptionParser
 import ADSB
-import osmosdr
 import sip
 import sys
 import time
@@ -61,23 +61,39 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.rf_gain = rf_gain = 14
-        self.if_gain = if_gain = 32
-        self.fs = fs = 4e6
+        self.gain = gain = 80
+        self.fs = fs = 2e6
         self.fc = fc = 1090e6
         self.burst_thresh = burst_thresh = 0.005
-        self.bb_gain = bb_gain = 16
 
         ##################################################
         # Blocks
         ##################################################
+        self._gain_tool_bar = Qt.QToolBar(self)
+        self._gain_tool_bar.addWidget(Qt.QLabel("Gain (dB)"+": "))
+        self._gain_line_edit = Qt.QLineEdit(str(self.gain))
+        self._gain_tool_bar.addWidget(self._gain_line_edit)
+        self._gain_line_edit.returnPressed.connect(
+        	lambda: self.set_gain(eng_notation.str_to_num(str(self._gain_line_edit.text().toAscii()))))
+        self.top_grid_layout.addWidget(self._gain_tool_bar, 0,0,1,1)
         self._burst_thresh_tool_bar = Qt.QToolBar(self)
         self._burst_thresh_tool_bar.addWidget(Qt.QLabel("Burst Threshold"+": "))
         self._burst_thresh_line_edit = Qt.QLineEdit(str(self.burst_thresh))
         self._burst_thresh_tool_bar.addWidget(self._burst_thresh_line_edit)
         self._burst_thresh_line_edit.returnPressed.connect(
         	lambda: self.set_burst_thresh(eng_notation.str_to_num(str(self._burst_thresh_line_edit.text().toAscii()))))
-        self.top_layout.addWidget(self._burst_thresh_tool_bar)
+        self.top_grid_layout.addWidget(self._burst_thresh_tool_bar, 0,1,1,1)
+        self.uhd_usrp_source_0 = uhd.usrp_source(
+        	",".join(("", "")),
+        	uhd.stream_args(
+        		cpu_format="fc32",
+        		channels=range(1),
+        	),
+        )
+        self.uhd_usrp_source_0.set_samp_rate(fs)
+        self.uhd_usrp_source_0.set_center_freq(fc, 0)
+        self.uhd_usrp_source_0.set_gain(gain, 0)
+        self.uhd_usrp_source_0.set_antenna("RX2", 0)
         self.qtgui_waterfall_sink_x_0 = qtgui.waterfall_sink_c(
         	8192, #size
         	firdes.WIN_BLACKMAN_hARRIS, #wintype
@@ -98,7 +114,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         
         labels = ["", "", "", "", "",
                   "", "", "", "", ""]
-        colors = [5, 0, 0, 0, 0,
+        colors = [1, 0, 0, 0, 0,
                   0, 0, 0, 0, 0]
         alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
                   1.0, 1.0, 1.0, 1.0, 1.0]
@@ -121,7 +137,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         	2 #number of inputs
         )
         self.qtgui_time_sink_x_0.set_update_time(0.1)
-        self.qtgui_time_sink_x_0.set_y_axis(0, 0.25)
+        self.qtgui_time_sink_x_0.set_y_axis(0, 0.1)
         
         self.qtgui_time_sink_x_0.set_y_label("Amplitude", "")
         
@@ -161,24 +177,9 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_time_sink_x_0_win)
-        self.osmosdr_source_0 = osmosdr.source( args="numchan=" + str(1) + " " + "hackrf=0,bias=1" )
-        self.osmosdr_source_0.set_sample_rate(fs)
-        self.osmosdr_source_0.set_center_freq(fc, 0)
-        self.osmosdr_source_0.set_freq_corr(0, 0)
-        self.osmosdr_source_0.set_dc_offset_mode(1, 0)
-        self.osmosdr_source_0.set_iq_balance_mode(1, 0)
-        self.osmosdr_source_0.set_gain_mode(False, 0)
-        self.osmosdr_source_0.set_gain(rf_gain, 0)
-        self.osmosdr_source_0.set_if_gain(if_gain, 0)
-        self.osmosdr_source_0.set_bb_gain(bb_gain, 0)
-        self.osmosdr_source_0.set_antenna("", 0)
-        self.osmosdr_source_0.set_bandwidth(0, 0)
-          
-        self.blocks_null_sink_0 = blocks.null_sink(gr.sizeof_float*1)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
         self.analog_const_source_x_0 = analog.sig_source_f(0, analog.GR_CONST_WAVE, 0, 0, burst_thresh)
         self.ADSB_framer_0 = ADSB.framer(fs, burst_thresh)
-        self.ADSB_demod_0_0 = ADSB.demod(fs)
         self.ADSB_demod_0 = ADSB.demod(fs)
         self.ADSB_decoder_0 = ADSB.decoder("None", "Verbose", False, "", False, "")
 
@@ -186,51 +187,42 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         # Connections
         ##################################################
         self.msg_connect((self.ADSB_demod_0, 'pkt'), (self.ADSB_decoder_0, 'pkt'))    
-        self.msg_connect((self.ADSB_demod_0_0, 'pkt'), (self.ADSB_decoder_0, 'pkt'))    
         self.connect((self.ADSB_demod_0, 0), (self.qtgui_time_sink_x_0, 0))    
-        self.connect((self.ADSB_demod_0_0, 0), (self.blocks_null_sink_0, 0))    
         self.connect((self.ADSB_framer_0, 0), (self.ADSB_demod_0, 0))    
-        self.connect((self.ADSB_framer_0, 0), (self.ADSB_demod_0_0, 0))    
         self.connect((self.analog_const_source_x_0, 0), (self.qtgui_time_sink_x_0, 1))    
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.ADSB_framer_0, 0))    
-        self.connect((self.osmosdr_source_0, 0), (self.blocks_complex_to_mag_squared_0, 0))    
-        self.connect((self.osmosdr_source_0, 0), (self.qtgui_waterfall_sink_x_0, 0))    
+        self.connect((self.uhd_usrp_source_0, 0), (self.blocks_complex_to_mag_squared_0, 0))    
+        self.connect((self.uhd_usrp_source_0, 0), (self.qtgui_waterfall_sink_x_0, 0))    
 
     def closeEvent(self, event):
         self.settings = Qt.QSettings("GNU Radio", "adsb_rx")
         self.settings.setValue("geometry", self.saveGeometry())
         event.accept()
 
+    def get_gain(self):
+        return self.gain
 
-    def get_rf_gain(self):
-        return self.rf_gain
-
-    def set_rf_gain(self, rf_gain):
-        self.rf_gain = rf_gain
-        self.osmosdr_source_0.set_gain(self.rf_gain, 0)
-
-    def get_if_gain(self):
-        return self.if_gain
-
-    def set_if_gain(self, if_gain):
-        self.if_gain = if_gain
-        self.osmosdr_source_0.set_if_gain(self.if_gain, 0)
+    def set_gain(self, gain):
+        self.gain = gain
+        Qt.QMetaObject.invokeMethod(self._gain_line_edit, "setText", Qt.Q_ARG("QString", eng_notation.num_to_str(self.gain)))
+        self.uhd_usrp_source_0.set_gain(self.gain, 0)
+        	
 
     def get_fs(self):
         return self.fs
 
     def set_fs(self, fs):
         self.fs = fs
-        self.osmosdr_source_0.set_sample_rate(self.fs)
-        self.qtgui_time_sink_x_0.set_samp_rate(int(self.fs))
+        self.uhd_usrp_source_0.set_samp_rate(self.fs)
         self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc, self.fs)
+        self.qtgui_time_sink_x_0.set_samp_rate(int(self.fs))
 
     def get_fc(self):
         return self.fc
 
     def set_fc(self, fc):
         self.fc = fc
-        self.osmosdr_source_0.set_center_freq(self.fc, 0)
+        self.uhd_usrp_source_0.set_center_freq(self.fc, 0)
         self.qtgui_waterfall_sink_x_0.set_frequency_range(self.fc, self.fs)
 
     def get_burst_thresh(self):
@@ -240,13 +232,6 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.burst_thresh = burst_thresh
         Qt.QMetaObject.invokeMethod(self._burst_thresh_line_edit, "setText", Qt.Q_ARG("QString", eng_notation.num_to_str(self.burst_thresh)))
         self.analog_const_source_x_0.set_offset(self.burst_thresh)
-
-    def get_bb_gain(self):
-        return self.bb_gain
-
-    def set_bb_gain(self, bb_gain):
-        self.bb_gain = bb_gain
-        self.osmosdr_source_0.set_bb_gain(self.bb_gain, 0)
 
 
 def main(top_block_cls=adsb_rx, options=None):
