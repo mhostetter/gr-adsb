@@ -4,12 +4,26 @@
   <key>ADSB_decoder</key>
   <category>ADS-B</category>
   <import>import ADSB</import>
-  <make>ADSB.decoder($error_corr, $print_level, $log_csv, $csv_filename, $log_db, $db_filename)</make>
+  <make>ADSB.decoder($msg_filter, $error_corr, $print_level, $log_csv, $csv_filename, $log_db, $db_filename)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
        * key (makes the value accessible as $keyname, e.g. in the make node)
        * type -->
+  <param>
+    <name>Message Filter</name>
+    <key>msg_filter</key>
+    <value>"Extended Squitter Only"</value>
+    <type>enum</type>
+    <option>
+      <name>Extended Squitter Only</name>
+      <key>"Extended Squitter Only"</key>
+    </option>
+    <option>
+      <name>All Messages</name>
+      <key>"All Messages"</key>
+    </option>
+  </param>
   <param>
     <name>Error Correction</name>
     <key>error_corr</key>
