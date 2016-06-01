@@ -255,7 +255,7 @@ function getRotation(heading) {
 function getInfoString(plane) {
   str = "<p>"
   str += '<br>ICAO: ' + plane.icao;
-  str += '<br>Callsign: ' + plane.callsign;
+  str += '<br>Callsign: <a href=\"http://flightaware.com/live/flight/' + plane.callsign + '\" target=\"_blank\">' + plane.callsign + '</a>';
   str += '<br>Altitude: ' + plane.altitude + ' ft'
   str += '<br>Vertical Rate: ' + plane.vertical_rate + ' ft/min'
   str += '<br>Speed: ' + plane.speed + ' kt'
