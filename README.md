@@ -105,6 +105,17 @@ Longitude:      -77.4949314 E
 Altitude:       10775 ft
 ```
 
+### Webserver
+To view the decoded planes and flight paths live in Google Maps, a webserver and client are provided.  The webserver can be started before or after the GRC flowgraph, but the webserver must be running to view the Google Maps webpage.  The ZeroMQ block in the example flowgraph is required when using the webserver.
+
+1. Open a console
+2. `$ cd gr-ADSB/web/`
+3. `$ ./webserver.py`
+4. Open a web broswer
+5. Go to `localhost:5000`
+
+![Example Google Maps Webpage](https://github.com/mhostetter/gr-ADSB/blob/master/docs/adsb_google_maps.png)
+
 ### KML Generation
 Add image here.
 
