@@ -108,12 +108,23 @@ Altitude:       10775 ft
 ### KML Generation
 Add image here.
 
+
 ## Dependencies
 * GNU Radio >= 3.7
-* python >= 2.7
+* python
 * numpy
 * sqlite3
-* Google Earth (optional)
+* pyzmq
+
+Webserver (optional):
+  * flask
+  * flask-socketio
+  * gevent
+  * gevent-websocket
+
+Google Earth (optional):
+  * Google Earth
+
 
 ## Installation
 GNU Radio is a dependency for gr-ADSB.  I recommend installing GNU Radio through PyBOMBS, see https://github.com/gnuradio/pybombs.

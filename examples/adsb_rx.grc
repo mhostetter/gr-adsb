@@ -82,14 +82,14 @@
     </param>
   </block>
   <block>
-    <key>variable_qtgui_entry</key>
+    <key>variable_qtgui_chooser</key>
     <param>
       <key>comment</key>
       <value></value>
     </param>
     <param>
       <key>value</key>
-      <value>0.005</value>
+      <value>RX2</value>
     </param>
     <param>
       <key>_enabled</key>
@@ -97,7 +97,106 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(104, 396)</value>
+      <value>(176, 464)</value>
+    </param>
+    <param>
+      <key>gui_hint</key>
+      <value>0,3,1,1</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>ant</value>
+    </param>
+    <param>
+      <key>label0</key>
+      <value></value>
+    </param>
+    <param>
+      <key>label1</key>
+      <value></value>
+    </param>
+    <param>
+      <key>label2</key>
+      <value></value>
+    </param>
+    <param>
+      <key>label3</key>
+      <value></value>
+    </param>
+    <param>
+      <key>label4</key>
+      <value></value>
+    </param>
+    <param>
+      <key>label</key>
+      <value>Antenna</value>
+    </param>
+    <param>
+      <key>labels</key>
+      <value>[]</value>
+    </param>
+    <param>
+      <key>num_opts</key>
+      <value>2</value>
+    </param>
+    <param>
+      <key>option0</key>
+      <value>TX/RX</value>
+    </param>
+    <param>
+      <key>option1</key>
+      <value>RX2</value>
+    </param>
+    <param>
+      <key>option2</key>
+      <value>2</value>
+    </param>
+    <param>
+      <key>option3</key>
+      <value>3</value>
+    </param>
+    <param>
+      <key>option4</key>
+      <value>4</value>
+    </param>
+    <param>
+      <key>options</key>
+      <value>[0, 1, 2]</value>
+    </param>
+    <param>
+      <key>orient</key>
+      <value>Qt.QVBoxLayout</value>
+    </param>
+    <param>
+      <key>type</key>
+      <value>string</value>
+    </param>
+    <param>
+      <key>widget</key>
+      <value>combo_box</value>
+    </param>
+  </block>
+  <block>
+    <key>variable_qtgui_entry</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>0.02</value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(424, 468)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -132,7 +231,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(16, 315)</value>
+      <value>(16, 468)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -159,7 +258,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(16, 379)</value>
+      <value>(104, 468)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -171,7 +270,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>2e6</value>
+      <value>4e6</value>
     </param>
   </block>
   <block>
@@ -190,7 +289,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(104, 316)</value>
+      <value>(304, 468)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -245,7 +344,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(896, 128)</value>
+      <value>(520, 200)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -264,8 +363,20 @@
       <value>False</value>
     </param>
     <param>
+      <key>maxoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>msg_filter</key>
+      <value>"Extended Squitter Only"</value>
+    </param>
+    <param>
+      <key>minoutbuf</key>
+      <value>0</value>
+    </param>
+    <param>
       <key>print_level</key>
-      <value>"Verbose"</value>
+      <value>"None"</value>
     </param>
   </block>
   <block>
@@ -288,7 +399,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(680, 168)</value>
+      <value>(312, 248)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -335,7 +446,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(488, 172)</value>
+      <value>(128, 252)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -378,11 +489,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>True</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(720, 291)</value>
+      <value>(320, 380)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -425,7 +536,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(288, 184)</value>
+      <value>(256, 136)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -476,7 +587,7 @@
     </param>
     <param>
       <key>entags</key>
-      <value>False</value>
+      <value>True</value>
     </param>
     <param>
       <key>_enabled</key>
@@ -484,7 +595,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(896, 259)</value>
+      <value>(520, 348)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -792,7 +903,7 @@
     </param>
     <param>
       <key>update_time</key>
-      <value>0.1</value>
+      <value>0.01</value>
     </param>
     <param>
       <key>ylabel</key>
@@ -804,234 +915,11 @@
     </param>
     <param>
       <key>ymax</key>
-      <value>0.1</value>
+      <value>1</value>
     </param>
     <param>
       <key>ymin</key>
       <value>0</value>
-    </param>
-  </block>
-  <block>
-    <key>qtgui_waterfall_sink_x</key>
-    <param>
-      <key>axislabels</key>
-      <value>True</value>
-    </param>
-    <param>
-      <key>bw</key>
-      <value>fs</value>
-    </param>
-    <param>
-      <key>alias</key>
-      <value></value>
-    </param>
-    <param>
-      <key>fc</key>
-      <value>fc</value>
-    </param>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>fftsize</key>
-      <value>8192</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(288, 251)</value>
-    </param>
-    <param>
-      <key>gui_hint</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>grid</key>
-      <value>False</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>qtgui_waterfall_sink_x_0</value>
-    </param>
-    <param>
-      <key>int_max</key>
-      <value>-70</value>
-    </param>
-    <param>
-      <key>int_min</key>
-      <value>-90</value>
-    </param>
-    <param>
-      <key>legend</key>
-      <value>True</value>
-    </param>
-    <param>
-      <key>alpha1</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color1</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>label1</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha10</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color10</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label10</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha2</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color2</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label2</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha3</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color3</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label3</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha4</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color4</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label4</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha5</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color5</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label5</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha6</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color6</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label6</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha7</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color7</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label7</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha8</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color8</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label8</key>
-      <value></value>
-    </param>
-    <param>
-      <key>alpha9</key>
-      <value>1.0</value>
-    </param>
-    <param>
-      <key>color9</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>label9</key>
-      <value></value>
-    </param>
-    <param>
-      <key>maxoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>minoutbuf</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>name</key>
-      <value>""</value>
-    </param>
-    <param>
-      <key>nconnections</key>
-      <value>1</value>
-    </param>
-    <param>
-      <key>showports</key>
-      <value>True</value>
-    </param>
-    <param>
-      <key>freqhalf</key>
-      <value>True</value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>complex</value>
-    </param>
-    <param>
-      <key>update_time</key>
-      <value>0.1</value>
-    </param>
-    <param>
-      <key>wintype</key>
-      <value>firdes.WIN_BLACKMAN_hARRIS</value>
     </param>
   </block>
   <block>
@@ -1958,11 +1846,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>True</value>
+      <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(24, 160)</value>
+      <value>(24, 112)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2113,6 +2001,51 @@
       <value></value>
     </param>
   </block>
+  <block>
+    <key>zeromq_pub_msg_sink</key>
+    <param>
+      <key>address</key>
+      <value>tcp://127.0.0.1:5001</value>
+    </param>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(800, 236)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>zeromq_pub_msg_sink_0</value>
+    </param>
+    <param>
+      <key>timeout</key>
+      <value>100</value>
+    </param>
+  </block>
+  <connection>
+    <source_block_id>ADSB_decoder_0</source_block_id>
+    <sink_block_id>zeromq_pub_msg_sink_0</sink_block_id>
+    <source_key>zmq</source_key>
+    <sink_key>in</sink_key>
+  </connection>
   <connection>
     <source_block_id>ADSB_demod_0</source_block_id>
     <sink_block_id>qtgui_time_sink_x_0</sink_block_id>
@@ -2146,12 +2079,6 @@
   <connection>
     <source_block_id>uhd_usrp_source_0</source_block_id>
     <sink_block_id>blocks_complex_to_mag_squared_0</sink_block_id>
-    <source_key>0</source_key>
-    <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>uhd_usrp_source_0</source_block_id>
-    <sink_block_id>qtgui_waterfall_sink_x_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
