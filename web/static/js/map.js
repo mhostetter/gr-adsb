@@ -158,7 +158,7 @@ function addPlane(map, plane) {
     strokeOpacity: 1.0,
     strokeWeight: 2,
     rotation: rotation,
-    scale: 4  
+    scale: 4
   };
 
   var location = new google.maps.LatLng(plane.latitude, plane.longitude);
@@ -226,7 +226,7 @@ function removePlane(map, plane) {
 
 
 function getAltitudeColor(altitude) {
-  if (altitude != undefined) {
+  if (altitude != undefined && altitude != -1) {
     idx = Math.floor(altitude/1000);
     if (idx >= colorGradient.length) {
       idx = colorGradient.length - 1;
