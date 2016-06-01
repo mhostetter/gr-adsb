@@ -27,6 +27,7 @@ import time
 import calendar
 import csv
 import sqlite3
+import json
 
 # Downlink Format, 5 bits
 DF_STR_LUT = (
@@ -305,6 +306,9 @@ class decoder(gr.sync_block):
         self.message_port_register_in(pmt.to_pmt("pkt"))
         self.set_msg_handler(pmt.to_pmt("pkt"), self.decode_packet)
 
+        # Create an output message port to send ZMQ messages
+        self.message_port_register_out(pmt.to_pmt("zmq"))
+
         print "\n"
         print "Initialized ADS-B Decoder:"
         print "  Print Level:         %s" % (self.print_level)
@@ -406,6 +410,7 @@ class decoder(gr.sync_block):
             # If the plane has timed out, delete its old altimetry values
             seconds_since_last_seen = (calendar.timegm(time.gmtime()) - self.plane_dict[aa_str]["last_seen"])
             if seconds_since_last_seen > PLANE_TIMEOUT_S:
+                self.webserver_remove_plane(self.aa_str)
                 self.reset_plane_altimetry(self.plane_dict[aa_str])
 
             self.plane_dict[aa_str]["num_msgs"] += 1
@@ -557,6 +562,26 @@ class decoder(gr.sync_block):
             self.db_conn.commit()
             self.inserts = 0
             self.db_cursor.execute("BEGIN TRANSACTION")
+
+
+    def webserver_update_plane(self, aa_str):
+        plane = self.plane_dict[aa_str]
+        plane["icao"] = aa_str
+        plane["msg_type"] = "updatePlane"
+        json_str = json.dumps(plane)
+
+        # Publish message to message port
+        self.message_port_pub(pmt.to_pmt("zmq"), pmt.to_pmt(json_str))
+
+
+    def webserver_remove_plane(self, aa_str):
+        plane = self.plane_dict[aa_str]
+        plane["icao"] = aa_str
+        plane["msg_type"] = "removePlane"
+        json_str = json.dumps(plane)
+
+        # Publish message to message port
+        self.message_port_pub(pmt.to_pmt("zmq"), pmt.to_pmt(json_str))
 
 
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
@@ -1081,6 +1106,7 @@ class decoder(gr.sync_block):
             # Update planes dictionary
             self.update_plane(self.aa_str)
             self.plane_dict[self.aa_str]["callsign"] = callsign
+            self.webserver_update_plane(self.aa_str)
 
             if self.print_level == "Verbose":
                 print "Callsign:".ljust(16) + "%s" % (callsign)
@@ -1126,6 +1152,8 @@ class decoder(gr.sync_block):
             if np.isnan(lat) == False and np.isnan(lon) == False:
                 self.plane_dict[self.aa_str]["latitude"] = lat
                 self.plane_dict[self.aa_str]["longitude"] = lon
+
+            self.webserver_update_plane(self.aa_str)
 
             if self.print_level == "Verbose":
                 print "SS:".ljust(16) + "%d %s" % (ss, SS_STR_LUT[ss])
@@ -1219,6 +1247,7 @@ class decoder(gr.sync_block):
                 self.plane_dict[self.aa_str]["speed"] = speed
                 self.plane_dict[self.aa_str]["heading"] = heading
                 self.plane_dict[self.aa_str]["vertical_rate"] = vertical_rate
+                self.webserver_update_plane(self.aa_str)
 
                 if self.print_level == "Verbose":
                     print "ST:".ljust(16) + "%d %s" % (st, "Ground Velocity")

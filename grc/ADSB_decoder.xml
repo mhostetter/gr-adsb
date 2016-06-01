@@ -116,4 +116,8 @@
        * type
        * vlen
        * optional (set to 1 for optional inputs) -->
+  <source>
+    <name>zmq</name>
+    <type>message</type>
+  </source>
 </block>
