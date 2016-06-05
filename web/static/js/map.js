@@ -253,16 +253,16 @@ function getRotation(heading) {
 
 
 function getInfoString(plane) {
-  str = "<p>"
-  str += '<br>ICAO: ' + plane.icao;
-  str += '<br>Callsign: <a href=\"http://flightaware.com/live/flight/' + plane.callsign + '\" target=\"_blank\">' + plane.callsign + '</a>';
-  str += '<br>Altitude: ' + plane.altitude + ' ft'
-  str += '<br>Vertical Rate: ' + plane.vertical_rate + ' ft/min'
-  str += '<br>Speed: ' + plane.speed + ' kt'
-  str += '<br>Heading: ' + plane.heading + ' deg'
-  str += '<br>Latitude: ' + plane.latitude + ''
-  str += '<br>Longitude: ' + plane.longitude + ''  
-  str += "</p>"
+  str = '<table>';
+  str += '<tr><td>ICAO</td><td>' + plane.icao + '</td></tr>';
+  str += '<tr><td>Callsign</td><td><a href=\"http://flightaware.com/live/flight/' + plane.callsign + '\" target=\"_blank\">' + plane.callsign + '</a></td></tr>';
+  str += '<tr><td>Altitude</td><td>' + plane.altitude + ' ft</td></tr>';
+  str += '<tr><td>Vertical Rate</td><td>' + plane.vertical_rate + ' ft/min</td></tr>';
+  str += '<tr><td>Speed</td><td>' + plane.speed.toFixed(0) + ' kt</td></tr>';
+  str += '<tr><td>Heading</td><td>' + plane.heading.toFixed(0) + ' deg</td></tr>';
+  str += '<tr><td>Latitude</td><td>' + plane.latitude.toFixed(4) + '</td></tr>';
+  str += '<tr><td>Longitude</td><td>' + plane.longitude.toFixed(4) + '</td></tr>';  
+  str += "</table>"
 
   return str;
 }
