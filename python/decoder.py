@@ -575,7 +575,7 @@ class decoder(gr.sync_block):
 
 
     def webserver_remove_plane(self, aa_str):
-        plane = self.plane_dict[aa_str]
+        plane = dict()
         plane["icao"] = aa_str
         plane["msg_type"] = "removePlane"
         json_str = json.dumps(plane)
