@@ -32,10 +32,20 @@
       #map {
         height: 100%;
       }
+      #overmap {
+        position: absolute;
+        top: 40px;
+        left: 10px;
+        z-index: 99;
+      }
     </style>
   </head>
   <body>
-    <div id="map"></div>
+    <div id="map">  
+    </div>
+    <div id="overmap">
+      <img src="./img/colorbar.png" align="middle">
+    </div>
     <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?callback=initialize"></script>
     <script src="./js/map.js"></script>
