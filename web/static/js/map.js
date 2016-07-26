@@ -20,7 +20,8 @@
 var infoWindow; // Global info window, only one can be displayed at a time
 var planeMarkers = new Array(); // Global array of plane markers
 // var planeMarkers = new google.maps.MVCArray();
-var planePaths = new Array(); // Global array of array of plane locations, used to draw flight paths
+var planeLatLngs = new Array(); // Global array of array of plane locations, used to draw flight paths
+var planePolyLines = new Array(); // Global array of arrary of plane flight path lines
 
 // Array of colors in a gradient of red (index 0) to blue (index N-1)
 var colorGradient = [
@@ -109,7 +110,7 @@ function initialize() {
   }
 
   // Create SocketIO instance
-  var socket = io('http://localhost:5000');
+  var socket = io('http://192.168.1.6:5000');
   
   socket.on('connect', function() {
     console.log('Client has connected via SocketIO.');
@@ -124,6 +125,7 @@ function initialize() {
   });
 
   socket.on('removePlane', function(plane) {
+    console.log('here 1');
     removePlane(map, plane);
   });
 
@@ -173,8 +175,9 @@ function addPlane(map, plane) {
   });
 
   // Initialize an array of locations for this plane
-  planePaths[plane.icao] = new Array();
-  planePaths[plane.icao][0] = {lat: Number(plane.latitude), lng: Number(plane.longitude)};
+  planeLatLngs[plane.icao] = new Array();
+  planePolyLines[plane.icao] = new Array();
+  planeLatLngs[plane.icao][0] = {lat: Number(plane.latitude), lng: Number(plane.longitude)};
 
   google.maps.event.addListener(planeMarkers[plane.icao], 'click', function() {
     if (typeof infoWindow != 'undefined') {
@@ -190,15 +193,15 @@ function addPlane(map, plane) {
 
 function movePlane(map, plane) {
   // Add new plane location to paths array
-  position_idx = planePaths[plane.icao].length;
-  planePaths[plane.icao][position_idx] = {lat: Number(plane.latitude), lng: Number(plane.longitude)};
+  position_idx = planeLatLngs[plane.icao].length;
+  planeLatLngs[plane.icao][position_idx] = {lat: Number(plane.latitude), lng: Number(plane.longitude)};
 
   // Get the altitude color
   color = getAltitudeColor(plane.altitude);
 
   // Draw new line between the previous location and current location
-  var path = new google.maps.Polyline({
-    path: [planePaths[plane.icao][position_idx-1], planePaths[plane.icao][position_idx]],
+  planePolyLines[plane.icao][position_idx-1] = new google.maps.Polyline({
+    path: [planeLatLngs[plane.icao][position_idx-1], planeLatLngs[plane.icao][position_idx]],
     geodesic: true,
     strokeColor: color,
     strokeOpacity: 1.0,
@@ -221,7 +224,18 @@ function movePlane(map, plane) {
 
 
 function removePlane(map, plane) {
-  console.log('Need to remove this plane.', plane);
+  if (planeMarkers[plane.icao] != undefined) {
+    // Remove plane from map
+    console.log('Need to remove this plane.', plane);
+
+    // Delete all polylines
+    for (var idx = 0; idx < planePolyLines[plane.icao].length; idx++) {
+      planePolyLines[plane.icao].setMap(null);
+    }
+
+    // Delete plane marker
+    planeMarkers[plane.icao].setMap(null);
+  }
 }
 
 
