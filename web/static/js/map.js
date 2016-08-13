@@ -110,7 +110,7 @@ function initialize() {
   }
 
   // Create SocketIO instance
-  var socket = io('http://192.168.1.6:5000');
+  var socket = io('http://127.0.0.1:5000');
   
   socket.on('connect', function() {
     console.log('Client has connected via SocketIO.');
