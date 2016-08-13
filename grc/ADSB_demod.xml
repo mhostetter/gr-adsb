@@ -2,7 +2,7 @@
 <block>
   <name>ADS-B Demodulator</name>
   <key>ADSB_demod</key>
-  <category>ADS-B</category>
+  <category>[ADS-B]</category>
   <import>import ADSB</import>
   <make>ADSB.demod($fs)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
