@@ -4,7 +4,7 @@
 # GNU Radio Python Flow Graph
 # Title: ADS-B Receiver
 # Author: Matt Hostetter
-# Generated: Wed Jun  1 16:32:43 2016
+# Generated: Sat Aug  6 16:25:52 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -67,26 +67,26 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.fs = fs = 4e6
         self.fc = fc = 1090e6
         self.burst_thresh = burst_thresh = 0.02
-        self.ant = ant = "RX2"
+        self.ant = ant = 'RX2'
 
         ##################################################
         # Blocks
         ##################################################
         self._gain_tool_bar = Qt.QToolBar(self)
-        self._gain_tool_bar.addWidget(Qt.QLabel("Gain (dB)"+": "))
+        self._gain_tool_bar.addWidget(Qt.QLabel('Gain (dB)'+": "))
         self._gain_line_edit = Qt.QLineEdit(str(self.gain))
         self._gain_tool_bar.addWidget(self._gain_line_edit)
         self._gain_line_edit.returnPressed.connect(
         	lambda: self.set_gain(eng_notation.str_to_num(str(self._gain_line_edit.text().toAscii()))))
         self.top_grid_layout.addWidget(self._gain_tool_bar, 0,0,1,1)
         self._burst_thresh_tool_bar = Qt.QToolBar(self)
-        self._burst_thresh_tool_bar.addWidget(Qt.QLabel("Burst Threshold"+": "))
+        self._burst_thresh_tool_bar.addWidget(Qt.QLabel('Burst Threshold'+": "))
         self._burst_thresh_line_edit = Qt.QLineEdit(str(self.burst_thresh))
         self._burst_thresh_tool_bar.addWidget(self._burst_thresh_line_edit)
         self._burst_thresh_line_edit.returnPressed.connect(
         	lambda: self.set_burst_thresh(eng_notation.str_to_num(str(self._burst_thresh_line_edit.text().toAscii()))))
         self.top_grid_layout.addWidget(self._burst_thresh_tool_bar, 0,1,1,1)
-        self.zeromq_pub_msg_sink_0 = zeromq.pub_msg_sink("tcp://127.0.0.1:5001", 100)
+        self.zeromq_pub_msg_sink_0 = zeromq.pub_msg_sink('tcp://127.0.0.1:5001', 100)
         self.uhd_usrp_source_0 = uhd.usrp_source(
         	",".join(("", "")),
         	uhd.stream_args(
@@ -97,7 +97,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.uhd_usrp_source_0.set_samp_rate(fs)
         self.uhd_usrp_source_0.set_center_freq(fc, 0)
         self.uhd_usrp_source_0.set_gain(gain, 0)
-        self.uhd_usrp_source_0.set_antenna("RX2", 0)
+        self.uhd_usrp_source_0.set_antenna('TX/RX', 0)
         self.qtgui_time_sink_x_0 = qtgui.time_sink_f(
         	int(fs*150e-6), #size
         	int(fs), #samp_rate
@@ -107,7 +107,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.qtgui_time_sink_x_0.set_update_time(0.01)
         self.qtgui_time_sink_x_0.set_y_axis(0, 1)
         
-        self.qtgui_time_sink_x_0.set_y_label("Amplitude", "")
+        self.qtgui_time_sink_x_0.set_y_label('Amplitude', "")
         
         self.qtgui_time_sink_x_0.enable_tags(-1, True)
         self.qtgui_time_sink_x_0.set_trigger_mode(qtgui.TRIG_MODE_TAG, qtgui.TRIG_SLOPE_POS, 0, 1.25e-6, 0, "burst")
@@ -119,8 +119,8 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         if not False:
           self.qtgui_time_sink_x_0.disable_legend()
         
-        labels = ["", "", "", "", "",
-                  "", "", "", "", ""]
+        labels = ['', '', '', '', '',
+                  '', '', '', '', '']
         widths = [1, 1, 1, 1, 1,
                   1, 1, 1, 1, 1]
         colors = ["blue", "red", "green", "black", "cyan",
@@ -146,10 +146,10 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self._qtgui_time_sink_x_0_win = sip.wrapinstance(self.qtgui_time_sink_x_0.pyqwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_time_sink_x_0_win)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
-        self._ant_options = ("TX/RX", "RX2", )
+        self._ant_options = ('TX/RX', 'RX2', )
         self._ant_labels = (str(self._ant_options[0]), str(self._ant_options[1]), )
         self._ant_tool_bar = Qt.QToolBar(self)
-        self._ant_tool_bar.addWidget(Qt.QLabel("Antenna"+": "))
+        self._ant_tool_bar.addWidget(Qt.QLabel('Antenna'+": "))
         self._ant_combo_box = Qt.QComboBox()
         self._ant_tool_bar.addWidget(self._ant_combo_box)
         for label in self._ant_labels: self._ant_combo_box.addItem(label)
@@ -161,7 +161,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.analog_const_source_x_0 = analog.sig_source_f(0, analog.GR_CONST_WAVE, 0, 0, burst_thresh)
         self.ADSB_framer_0 = ADSB.framer(fs, burst_thresh)
         self.ADSB_demod_0 = ADSB.demod(fs)
-        self.ADSB_decoder_0 = ADSB.decoder("Extended Squitter Only", "None", "None", False, "", False, "")
+        self.ADSB_decoder_0 = ADSB.decoder("Extended Squitter Only", "None", "Brief", False, "", False, "")
 
         ##################################################
         # Connections
