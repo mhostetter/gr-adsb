@@ -39,7 +39,7 @@ def background_thread():
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     socket.setsockopt(zmq.SUBSCRIBE, "")
-    socket.connect("tcp://127.0.0.1:%d" % (ZMQ_PORT))
+    socket.connect("tcp://0.0.0.0:%d" % (ZMQ_PORT))
 
     while True:
         # Receive decoded ADS-B message from the decoder over ZMQ
@@ -84,4 +84,4 @@ if __name__ == "__main__":
     thread.daemon = True
     thread.start()
 
-    socketio.run(app, host="127.0.0.1", port=HTTP_PORT, debug=True)
+    socketio.run(app, host="0.0.0.0", port=HTTP_PORT, debug=True)

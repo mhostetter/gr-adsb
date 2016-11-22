@@ -86,8 +86,12 @@ function initialize() {
 
   // Associate the styled map with the MapTypeId and set it to display
   map.mapTypes.set('map_style', styledMap);
-  map.setMapTypeId('map_style');
-
+  // map.setMapTypeId('map_style');
+  map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
+  // map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
+  // map.setMapTypeId(google.maps.MapTypeId.TERRAIN);
+  // map.setMapTypeId(google.maps.MapTypeId.HYBRID);
+  
   infoWindow = new google.maps.InfoWindow({map: map});
 
   // Try HTML5 geolocation
@@ -110,7 +114,7 @@ function initialize() {
   }
 
   // Create SocketIO instance
-  var socket = io('http://127.0.0.1:5000');
+  var socket = io('http://0.0.0.0:5000');
   
   socket.on('connect', function() {
     console.log('Client has connected via SocketIO.');
@@ -170,7 +174,7 @@ function addPlane(map, plane) {
     position: location,
     icon: arrow,
     title: plane.icao,
-    label: getInfoString(plane),
+    //label: getInfoString(plane),
     map: map
   });
 
@@ -219,7 +223,7 @@ function movePlane(map, plane) {
   // Move plane marker to new location
   var new_location = new google.maps.LatLng(plane.latitude, plane.longitude);
   planeMarkers[plane.icao].setPosition(new_location);
-  planeMarkers[plane.icao].setLabel(getInfoString(plane));
+  //planeMarkers[plane.icao].setLabel(getInfoString(plane));
 }
 
 
