@@ -174,7 +174,7 @@ function addPlane(map, plane) {
     position: location,
     icon: arrow,
     title: plane.icao,
-    //label: getInfoString(plane),
+    content: getInfoString(plane),
     map: map
   });
 
@@ -188,7 +188,7 @@ function addPlane(map, plane) {
       infoWindow.close();
     }
     infoWindow = new google.maps.InfoWindow({
-      content: this.label
+      content: this.content
     });
     infoWindow.open(map, this);
   });
@@ -223,7 +223,7 @@ function movePlane(map, plane) {
   // Move plane marker to new location
   var new_location = new google.maps.LatLng(plane.latitude, plane.longitude);
   planeMarkers[plane.icao].setPosition(new_location);
-  //planeMarkers[plane.icao].setLabel(getInfoString(plane));
+  planeMarkers[plane.icao].setContent(getInfoString(plane));
 }
 
 
