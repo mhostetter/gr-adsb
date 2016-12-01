@@ -25,21 +25,21 @@ include(GrPlatform) #define LIB_SUFFIX
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 
-list(APPEND ADSB_sources
+list(APPEND adsb_sources
 )
 
-set(ADSB_sources "${ADSB_sources}" PARENT_SCOPE)
-if(NOT ADSB_sources)
+set(adsb_sources "${adsb_sources}" PARENT_SCOPE)
+if(NOT adsb_sources)
 	MESSAGE(STATUS "No C++ sources... skipping lib/")
 	return()
-endif(NOT ADSB_sources)
+endif(NOT adsb_sources)
 
-add_library(gnuradio-ADSB SHARED ${ADSB_sources})
-target_link_libraries(gnuradio-ADSB ${Boost_LIBRARIES} ${GNURADIO_ALL_LIBRARIES})
-set_target_properties(gnuradio-ADSB PROPERTIES DEFINE_SYMBOL "gnuradio_ADSB_EXPORTS")
+add_library(gnuradio-adsb SHARED ${adsb_sources})
+target_link_libraries(gnuradio-adsb ${Boost_LIBRARIES} ${GNURADIO_ALL_LIBRARIES})
+set_target_properties(gnuradio-adsb PROPERTIES DEFINE_SYMBOL "gnuradio_adsb_EXPORTS")
 
 if(APPLE)
-    set_target_properties(gnuradio-ADSB PROPERTIES
+    set_target_properties(gnuradio-adsb PROPERTIES
         INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
     )
 endif(APPLE)
@@ -47,7 +47,7 @@ endif(APPLE)
 ########################################################################
 # Install built library files
 ########################################################################
-install(TARGETS gnuradio-ADSB
+install(TARGETS gnuradio-adsb
     LIBRARY DESTINATION lib${LIB_SUFFIX} # .so/.dylib file
     ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib file
     RUNTIME DESTINATION bin              # .dll file
@@ -60,19 +60,19 @@ include(GrTest)
 
 include_directories(${CPPUNIT_INCLUDE_DIRS})
 
-list(APPEND test_ADSB_sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_ADSB.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/qa_ADSB.cc
+list(APPEND test_adsb_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_adsb.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/qa_adsb.cc
 )
 
-add_executable(test-ADSB ${test_ADSB_sources})
+add_executable(test-adsb ${test_adsb_sources})
 
 target_link_libraries(
-  test-ADSB
+  test-adsb
   ${GNURADIO_RUNTIME_LIBRARIES}
   ${Boost_LIBRARIES}
   ${CPPUNIT_LIBRARIES}
-  gnuradio-ADSB
+  gnuradio-adsb
 )
 
-GR_ADD_TEST(test_ADSB test-ADSB)
+GR_ADD_TEST(test_adsb test-adsb)

@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <block>
-  <name>ADS-B Framer</name>
-  <key>ADSB_framer</key>
+  <name>ADS-B Demodulator</name>
+  <key>adsb_demod</key>
   <category>[ADS-B]</category>
   <import>import ADSB</import>
-  <make>ADSB.framer($fs, $burst_thresh)</make>
+  <make>ADSB.demod($fs)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
@@ -13,12 +13,6 @@
   <param>
     <name>Sampling Rate</name>
     <key>fs</key>
-    <type>float</type>
-  </param>
-
-  <param>
-    <name>Burst Threshold</name>
-    <key>burst_thresh</key>
     <type>float</type>
   </param>
 
@@ -37,6 +31,10 @@
        * type
        * vlen
        * optional (set to 1 for optional inputs) -->
+  <source>
+    <name>pkt</name>
+    <type>message</type>
+  </source>
   <source>
     <name>out</name>
     <type>float</type>

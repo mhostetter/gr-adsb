@@ -4,7 +4,7 @@
 # GNU Radio Python Flow Graph
 # Title: ADS-B Receiver
 # Author: Matt Hostetter
-# Generated: Sat Aug  6 16:25:52 2016
+# Generated: Thu Dec  1 00:39:30 2016
 ##################################################
 
 if __name__ == '__main__':
@@ -30,9 +30,11 @@ from gnuradio.eng_option import eng_option
 from gnuradio.filter import firdes
 from optparse import OptionParser
 import ADSB
+import adsb
 import sip
 import sys
 import time
+from gnuradio import qtgui
 
 
 class adsb_rx(gr.top_block, Qt.QWidget):
@@ -41,6 +43,7 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         gr.top_block.__init__(self, "ADS-B Receiver")
         Qt.QWidget.__init__(self)
         self.setWindowTitle("ADS-B Receiver")
+        qtgui.util.check_set_qss()
         try:
             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
         except:
@@ -159,19 +162,19 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         	lambda i: self.set_ant(self._ant_options[i]))
         self.top_grid_layout.addWidget(self._ant_tool_bar, 0,3,1,1)
         self.analog_const_source_x_0 = analog.sig_source_f(0, analog.GR_CONST_WAVE, 0, 0, burst_thresh)
-        self.ADSB_framer_0 = ADSB.framer(fs, burst_thresh)
-        self.ADSB_demod_0 = ADSB.demod(fs)
-        self.ADSB_decoder_0 = ADSB.decoder("Extended Squitter Only", "None", "Brief", False, "", False, "")
+        self.adsb_framer_1 = adsb.framer(fs, burst_thresh)
+        self.adsb_demod_0 = ADSB.demod(fs)
+        self.adsb_decoder_0 = adsb.decoder("Extended Squitter Only", "None", "Brief", False, "", False, "")
 
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.ADSB_decoder_0, 'zmq'), (self.zeromq_pub_msg_sink_0, 'in'))    
-        self.msg_connect((self.ADSB_demod_0, 'pkt'), (self.ADSB_decoder_0, 'pkt'))    
-        self.connect((self.ADSB_demod_0, 0), (self.qtgui_time_sink_x_0, 0))    
-        self.connect((self.ADSB_framer_0, 0), (self.ADSB_demod_0, 0))    
+        self.msg_connect((self.adsb_decoder_0, 'zmq'), (self.zeromq_pub_msg_sink_0, 'in'))    
+        self.msg_connect((self.adsb_demod_0, 'pkt'), (self.adsb_decoder_0, 'pkt'))    
+        self.connect((self.adsb_demod_0, 0), (self.qtgui_time_sink_x_0, 0))    
+        self.connect((self.adsb_framer_1, 0), (self.adsb_demod_0, 0))    
         self.connect((self.analog_const_source_x_0, 0), (self.qtgui_time_sink_x_0, 1))    
-        self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.ADSB_framer_0, 0))    
+        self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.adsb_framer_1, 0))    
         self.connect((self.uhd_usrp_source_0, 0), (self.blocks_complex_to_mag_squared_0, 0))    
 
     def closeEvent(self, event):

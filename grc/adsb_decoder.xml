@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <block>
   <name>ADS-B Decoder</name>
-  <key>ADSB_decoder</key>
+  <key>adsb_decoder</key>
   <category>[ADS-B]</category>
-  <import>import ADSB</import>
-  <make>ADSB.decoder($msg_filter, $error_corr, $print_level, $log_csv, $csv_filename, $log_db, $db_filename)</make>
+  <import>import adsb</import>
+  <make>adsb.decoder($msg_filter, $error_corr, $print_level, $log_csv, $csv_filename, $log_db, $db_filename)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name

@@ -313,7 +313,7 @@
     </param>
   </block>
   <block>
-    <key>ADSB_decoder</key>
+    <key>adsb_decoder</key>
     <param>
       <key>alias</key>
       <value></value>
@@ -336,7 +336,7 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>True</value>
     </param>
     <param>
       <key>error_corr</key>
@@ -344,7 +344,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 200)</value>
+      <value>(536, 128)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -352,7 +352,7 @@
     </param>
     <param>
       <key>id</key>
-      <value>ADSB_decoder_0</value>
+      <value>adsb_decoder_0</value>
     </param>
     <param>
       <key>log_csv</key>
@@ -380,7 +380,7 @@
     </param>
   </block>
   <block>
-    <key>ADSB_demod</key>
+    <key>adsb_demod</key>
     <param>
       <key>alias</key>
       <value></value>
@@ -395,11 +395,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>True</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(312, 248)</value>
+      <value>(304, 248)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -407,7 +407,7 @@
     </param>
     <param>
       <key>id</key>
-      <value>ADSB_demod_0</value>
+      <value>adsb_demod_0</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -423,7 +423,7 @@
     </param>
   </block>
   <block>
-    <key>ADSB_framer</key>
+    <key>adsb_framer</key>
     <param>
       <key>alias</key>
       <value></value>
@@ -442,11 +442,11 @@
     </param>
     <param>
       <key>_enabled</key>
-      <value>1</value>
+      <value>True</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(128, 252)</value>
+      <value>(104, 252)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -454,7 +454,7 @@
     </param>
     <param>
       <key>id</key>
-      <value>ADSB_framer_0</value>
+      <value>adsb_framer_1</value>
     </param>
     <param>
       <key>maxoutbuf</key>
@@ -2285,7 +2285,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(800, 236)</value>
+      <value>(832, 236)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2301,26 +2301,26 @@
     </param>
   </block>
   <connection>
-    <source_block_id>ADSB_decoder_0</source_block_id>
+    <source_block_id>adsb_decoder_0</source_block_id>
     <sink_block_id>zeromq_pub_msg_sink_0</sink_block_id>
     <source_key>zmq</source_key>
     <sink_key>in</sink_key>
   </connection>
   <connection>
-    <source_block_id>ADSB_demod_0</source_block_id>
+    <source_block_id>adsb_demod_0</source_block_id>
     <sink_block_id>qtgui_time_sink_x_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
   <connection>
-    <source_block_id>ADSB_demod_0</source_block_id>
-    <sink_block_id>ADSB_decoder_0</sink_block_id>
+    <source_block_id>adsb_demod_0</source_block_id>
+    <sink_block_id>adsb_decoder_0</sink_block_id>
     <source_key>pkt</source_key>
     <sink_key>pkt</sink_key>
   </connection>
   <connection>
-    <source_block_id>ADSB_framer_0</source_block_id>
-    <sink_block_id>ADSB_demod_0</sink_block_id>
+    <source_block_id>adsb_framer_1</source_block_id>
+    <sink_block_id>adsb_demod_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>
@@ -2332,7 +2332,7 @@
   </connection>
   <connection>
     <source_block_id>blocks_complex_to_mag_squared_0</source_block_id>
-    <sink_block_id>ADSB_framer_0</sink_block_id>
+    <sink_block_id>adsb_framer_1</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
   </connection>

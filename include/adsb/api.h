@@ -24,7 +24,7 @@
 
 #include <gnuradio/attributes.h>
 
-#ifdef gnuradio_ADSB_EXPORTS
+#ifdef gnuradio_adsb_EXPORTS
 #  define ADSB_API __GR_ATTR_EXPORT
 #else
 #  define ADSB_API __GR_ATTR_IMPORT

@@ -28,7 +28,7 @@
 
 //! collect all the tests for the gr-filter directory
 
-class __GR_ATTR_EXPORT qa_ADSB
+class __GR_ATTR_EXPORT qa_adsb
 {
  public:
   //! return suite of tests for all of gr-filter directory

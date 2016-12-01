@@ -22,5 +22,5 @@
 ########################################################################
 install(FILES
     api.h
-    DESTINATION include/ADSB
+    DESTINATION include/adsb
 )
