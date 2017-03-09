@@ -4,7 +4,7 @@
   <key>adsb_demod</key>
   <category>[ADS-B]</category>
   <import>import adsb</import>
-  <make>ADSB.demod($fs)</make>
+  <make>adsb.demod($fs)</make>
   <!-- Make one 'param' node for every Parameter you want settable from the GUI.
        Sub-nodes:
        * name
