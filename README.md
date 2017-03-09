@@ -106,42 +106,28 @@ Altitude:       10775 ft
 ```
 
 ### Webserver
-To view the decoded planes and flight paths live in Google Maps, a webserver and client are provided.  The webserver can be started before or after the GRC flowgraph, but the webserver must be running to view the Google Maps webpage.  The ZeroMQ block in the example flowgraph is required when using the webserver.
+To view the decoded planes and flight paths live in Google Maps, a webserver and client JavaScript are provided.  The webserver can be started before or after the GRC flowgraph, but the webserver must be running to view the Google Maps webpage.  The ZeroMQ block in the example flowgraph is required when using the webserver.
 
 1. Open a console
-2. `$ cd gr-adsb/web/`
-3. `$ ./webserver.py`
-4. Open a web broswer
-5. Go to `localhost:5000`
+2. `$ cd gr-adsb`
+3. `$ cd web`
+4. `$ ./webserver.py`
+5. Open a web broswer
+6. Go to `localhost:5000`
 
 ![Example Google Maps Webpage](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_google_maps.png)
 
-### KML Generation
-Add image here.
-
-
-## Dependencies
-* GNU Radio >= 3.7
-* python
-* numpy
-* sqlite3
-* pyzmq
-
-Webserver (optional):
-  * flask
-  * flask-socketio
-  * gevent
-  * gevent-websocket
-
-Google Earth (optional):
-  * Google Earth
-
 
 ## Installation
-GNU Radio is a dependency for gr-adsb.  I recommend installing GNU Radio through PyBOMBS, see https://github.com/gnuradio/pybombs.
+GNU Radio is a dependency for gr-adsb.  I recommend installing GNU Radio through ![PyBOMBS](https://github.com/gnuradio/pybombs).
+
+If using the built-in Google Maps webserver, you'll need to install the following Python packages.
+* `$ sudo pip install flask`
+* `$ sudo pip install flask-socketio`
+* `$ sudo pip install gevent`
+* `$ sudo pip install gevent-websocket`
 
 To build gr-adsb, follow this procedure.
-
 1. `$ cd gr-adsb`
 2. `$ mkdir build`
 3. `$ cd build`
