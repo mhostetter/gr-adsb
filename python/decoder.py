@@ -25,8 +25,6 @@ import pmt
 import os
 import time
 import calendar
-import csv
-import sqlite3
 import json
 
 # Downlink Format, 5 bits
@@ -262,7 +260,7 @@ class decoder(gr.sync_block):
     """
     docstring for block decoder
     """
-    def __init__(self, msg_filter, error_corr, print_level, log_csv, csv_filename, log_db, db_filename):
+    def __init__(self, msg_filter, error_corr, print_level):
         gr.sync_block.__init__(self,
             name="ADS-B Decoder",
             in_sig=None,
@@ -271,10 +269,6 @@ class decoder(gr.sync_block):
         self.msg_filter = msg_filter
         self.error_corr = error_corr
         self.print_level = print_level
-        self.log_csv = log_csv
-        self.csv_filename = csv_filename
-        self.log_db = log_db
-        self.db_filename = db_filename
 
         # Initialize plane dictionary
         self.plane_dict = dict([])
@@ -282,42 +276,12 @@ class decoder(gr.sync_block):
         # Reset packet values
         self.reset()
 
-        # Initialize CSV file
-        if self.log_csv == True:
-            self.csv_writer = csv.writer(open(self.csv_filename, "a"))
-            self.csv_writer.writerow(("Date/Time", "Timestamp", "ICAO Address", "Callsign", "Altitude (ft)", "Speed (kt)", "Heading (deg)", "Latitude", "Longitude", "Message Count", "Time Since Seen (s)"))
-
-        # Initialize database
-        if self.log_db == True:
-            self.db_conn = sqlite3.connect(self.db_filename, check_same_thread=False)
-            self.db_conn.text_factory = str
-            # self.db_conn.isolation_level = None
-
-            self.db_cursor = self.db_conn.cursor()
-            self.db_cursor.execute("CREATE TABLE IF NOT EXISTS ADSB (Datetime TEXT, ICAO TEXT, DF INTEGER, TC INTEGER, SNR REAL, Callsign TEXT, Latitude REAL, Longitude REAL, Altitude REAL, VerticalRate REAL, Speed REAL, Heading REAL, Timestamp INTEGER)")
-            # self.db_cursor.execute("PRAGMA journal_mode = WAL")
-            # self.db_cursor.execute("PRAGMA synchronous = NORMAL")
-            self.db_conn.commit()
-
-            self.db_cursor.execute("BEGIN TRANSACTION")
-            self.inserts = 0
-
         # Create a input message port and set message handler function
         self.message_port_register_in(pmt.to_pmt("pkt"))
         self.set_msg_handler(pmt.to_pmt("pkt"), self.decode_packet)
 
         # Create an output message port to send ZMQ messages
         self.message_port_register_out(pmt.to_pmt("zmq"))
-
-        print "\n"
-        print "Initialized ADS-B Decoder:"
-        print "  Print Level:         %s" % (self.print_level)
-        print "  Log to CSV:          %s" % (self.log_csv)
-        if self.log_csv == True:
-            print "    CSV Filename:      %s" % (self.csv_filename)
-        print "  Log to Database:     %s" % (self.log_db)
-        if self.log_db == True:
-            print "    Database Filename: %s" % (self.db_filename)
 
 
     def decode_packet(self, msg):
@@ -343,8 +307,6 @@ class decoder(gr.sync_block):
 
             if self.print_level == "Brief":
                 self.print_planes()
-            if self.log_csv == True:
-                self.write_plane_to_csv(self.aa_str)
 
 
     def reset(self):
@@ -502,66 +464,6 @@ class decoder(gr.sync_block):
                 num_msgs,
                 age
             )
-
-
-    def write_plane_to_csv(self, aa_str):
-        # Write current plane to CSV file
-        self.csv_writer.writerow((
-            time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[aa_str]["last_seen"])),
-            self.plane_dict[aa_str]["last_seen"],
-            aa_str,
-            self.plane_dict[aa_str]["callsign"],
-            self.plane_dict[aa_str]["altitude"],
-            self.plane_dict[aa_str]["speed"],
-            self.plane_dict[aa_str]["heading"],
-            self.plane_dict[aa_str]["latitude"],
-            self.plane_dict[aa_str]["longitude"],
-            self.plane_dict[aa_str]["num_msgs"],
-            (calendar.timegm(time.gmtime()) - self.plane_dict[aa_str]["last_seen"])
-        ))
-
-    def write_plane_to_db(self, aa_str, df, tc, log_type, log_tuple):
-        if log_type == "Callsign":
-            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, SNR, Timestamp, Callsign) VALUES ('%s', '%s', %d, %d, %f, %d, '%s')""" % (
-                time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
-                self.aa_str,
-                df,
-                tc,
-                self.snr,
-                self.plane_dict[self.aa_str]["last_seen"],
-                log_tuple[0]
-            ))
-        elif log_type == "Position":
-            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, SNR, Timestamp, Latitude, Longitude, Altitude) VALUES ('%s', '%s', %d, %d, %f, %d, %f, %f, %f)""" % (
-                time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
-                self.aa_str,
-                df,
-                tc,
-                self.snr,
-                self.plane_dict[self.aa_str]["last_seen"],
-                log_tuple[0],
-                log_tuple[1],
-                log_tuple[2]  
-            ))
-        elif log_type == "Heading":
-            self.db_cursor.execute("""INSERT INTO ADSB (Datetime, ICAO, DF, TC, SNR, Timestamp, Speed, Heading, VerticalRate) VALUES ('%s', '%s', %d, %d, %f, %d, %f, %f, %f)""" % (
-                time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.plane_dict[self.aa_str]["last_seen"])),
-                self.aa_str,
-                df,
-                tc,
-                self.snr,
-                self.plane_dict[self.aa_str]["last_seen"],
-                log_tuple[0],
-                log_tuple[1],
-                log_tuple[2]  
-            ))
-
-        self.inserts += 1
-
-        if self.inserts > INSERTS_PER_TRANSACTION:
-            self.db_conn.commit()
-            self.inserts = 0
-            self.db_cursor.execute("BEGIN TRANSACTION")
 
 
     def webserver_update_plane(self, aa_str):
@@ -1111,9 +1013,6 @@ class decoder(gr.sync_block):
             if self.print_level == "Verbose":
                 print "Callsign:".ljust(16) + "%s" % (callsign)
 
-            if self.log_db == True:
-                self.write_plane_to_db(self.aa_str, self.df, tc, "Callsign", (callsign,))
-
         ### Surface Position ###
         elif tc in range(5,9):
             print "To be implemented"
@@ -1162,9 +1061,6 @@ class decoder(gr.sync_block):
                 print "Longitude:".ljust(16) + "%s E" % (("%1.7f" % lon) if np.isnan(lon)==False else "N/A")
                 print "Altitude:".ljust(16) + "%d ft" % (alt)
 
-            if self.log_db == True:
-                if np.isnan(lat) == False and np.isnan(lon) == False and np.isnan(alt) == False:
-                    self.write_plane_to_db(self.aa_str, self.df, tc, "Position", (lat, lon, alt))
 
         ### Airborne Velocities ###
         elif tc in [19]:
@@ -1262,9 +1158,6 @@ class decoder(gr.sync_block):
                         print "Climb Source:".ljust(16) + "%d %s" % (vr_src, "Geometric Source (GNSS or INS)")
                     else:
                         print "Climb Source:".ljust(16) + "%d %s" % (vr_src, "Barometric Source")
-
-                if self.log_db == True:
-                    self.write_plane_to_db(self.aa_str, self.df, tc, "Heading", (speed, heading, vertical_rate))
 
             # Airborne velocity subtype
             elif st in [3,4]:                

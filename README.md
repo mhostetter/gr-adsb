@@ -18,9 +18,6 @@ A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependen
   * DF 21: Comm-B Identity Reply
 * "Brief" stdout printing.
 * "Verbose" stdout printing.
-* Logging to a CSV file.
-* Logging to a SQLite database.
-* Script to generate Google Earth KML files from a SQLite database.
 
 
 ## Usage
