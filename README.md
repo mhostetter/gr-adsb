@@ -119,16 +119,10 @@ To view the decoded planes and flight paths live in Google Maps, a webserver and
 
 
 ## Installation
-GNU Radio is a dependency for gr-adsb.  I recommend installing GNU Radio through [PyBOMBS](https://github.com/gnuradio/pybombs).
+GNU Radio is a dependency for gr-adsb.  I recommend installing it with [PyBOMBS](https://github.com/gnuradio/pybombs).
 
-If using the built-in Google Maps webserver, you'll need to install the following Python packages.
-
-* `$ sudo pip install flask`
-* `$ sudo pip install flask-socketio`
-* `$ sudo pip install gevent`
-* `$ sudo pip install gevent-websocket`
-
-To build gr-adsb, follow this procedure.
+### Source Build
+To build gr-adsb manually from source, follow this procedure.
 
 1. `$ cd gr-adsb`
 2. `$ mkdir build`
@@ -138,3 +132,10 @@ To build gr-adsb, follow this procedure.
 6. `$ sudo make install`
 7. `$ sudo ldconfig`
 
+### Webserver Dependencies
+If using the built-in Google Maps webserver, you'll need to install the following Python packages.
+
+* `$ sudo pip install flask`
+* `$ sudo pip install flask-socketio`
+* `$ sudo pip install gevent`
+* `$ sudo pip install gevent-websocket`
