@@ -24,7 +24,7 @@ from flask_socketio import SocketIO, emit
 from threading import Thread
 import time 
 import zmq
-import json
+import pmt
 
 HTTP_PORT   = 5000
 ZMQ_PORT    = 5001
@@ -43,25 +43,12 @@ def background_thread():
 
     while True:
         # Receive decoded ADS-B message from the decoder over ZMQ
-        json_str = socket.recv()
+        pdu_bin = socket.recv()
+        pdu = pmt.deserialize_str(pdu_bin)
+        plane = pmt.to_python(pmt.car(pdu))
 
-        # Don't know why I need to remove 3 characters from the beginning of this string, but I do
-        json_str = json_str[3:]
-
-        # Convert JSON string into Python dictionary
-        plane = json.loads(json_str)
-
-        # Handle ZMQ message: either update the plane on the client or remove it from the page
-        if (plane["msg_type"] == "updatePlane"):
-            socketio.emit("updatePlane", plane)
-
-        elif (plane["msg_type"] == "removePlane"):
-            socketio.emit("removePlane", plane)
-
-        else:
-            print "Unknown ZMQ message: %s" % (msg)
-
-        time.sleep(0.100)
+        socketio.emit("updatePlane", plane)
+        time.sleep(0.010)
 
 
 @app.route("/")

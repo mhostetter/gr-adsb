@@ -67,8 +67,9 @@
        * vlen
        * optional (set to 1 for optional inputs) -->
   <sink>
-    <name>pkt</name>
+    <name>pdu</name>
     <type>message</type>
+    <optional>1</optional>
   </sink>
 
   <!-- Make one 'source' node per output. Sub-nodes:
@@ -77,7 +78,8 @@
        * vlen
        * optional (set to 1 for optional inputs) -->
   <source>
-    <name>zmq</name>
+    <name>pdu</name>
     <type>message</type>
+    <optional>1</optional>
   </source>
 </block>

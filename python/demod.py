@@ -27,12 +27,12 @@ SYMBOL_RATE                 = 1e6 # symbols/second
 MAX_NUM_BITS                = 112
 
 class demod(gr.sync_block):
-    """
+    '''
     docstring for block demod
-    """
+    '''
     def __init__(self, fs):
         gr.sync_block.__init__(self,
-            name="demod",
+            name='demod',
             in_sig=[np.float32],
             out_sig=[np.float32])
 
@@ -41,7 +41,7 @@ class demod(gr.sync_block):
         # required fs is 2 Msps
         self.sps = fs/SYMBOL_RATE
         if (self.sps - np.floor(self.sps)) > 0:
-            print "Warning: ADS-B Demodulator is designed to operate on an integer number of samples per symbol"
+            print 'Warning: ADS-B Demodulator is designed to operate on an integer number of samples per symbol'
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
         # Array of data bits
@@ -49,27 +49,8 @@ class demod(gr.sync_block):
         self.bit_idx = 0
         self.straddled_packet = 0
 
-        # Propagate tags
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
-
-        # Add message port
-        self.message_port_register_out(pmt.to_pmt("pkt"))
-
-        print "\n"
-        print "Initialized ADS-B Demodulator:"
-        print "  Sampling Rate:       %1.2f Msps" % (fs/1e6)
-        print "  Samples Per Symbol:  %d" % (self.sps)
-
-
-    def publish_pkt(self, snr, bits):
-        meta = pmt.to_pmt(("snr", snr))
-        data = pmt.init_u8vector(len(bits), bits)
-
-        # Construct Protocol Data Unit
-        pdu = pmt.cons(meta, data)
-
-        # Publish message to message port
-        self.message_port_pub(pmt.to_pmt("pkt"), pdu)
+        self.message_port_register_out(pmt.to_pmt('pdu'))
 
 
     def work(self, input_items, output_items):
@@ -82,7 +63,7 @@ class demod(gr.sync_block):
             self.straddled_packet = 0
 
         # Get tags from ADS-B Framer block
-        tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt("burst"))
+        tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt('burst'))
 
         bit1_idxs = []
         bit0_idxs = []
@@ -93,8 +74,8 @@ class demod(gr.sync_block):
             snr = value[1] # SNR in power dBs
 
             # Calculate the SOB and EOB offsets            
-            sob_offset = tag.offset + (8)*self.sps # Start of burst index (middle of the "bit 1 pulse")
-            eob_offset = tag.offset + (8+112-1)*self.sps + self.sps/2 # End of burst index (middle of the "bit 0 pulse")
+            sob_offset = tag.offset + (8)*self.sps # Start of burst index (middle of the 'bit 1 pulse')
+            eob_offset = tag.offset + (8+112-1)*self.sps + self.sps/2 # End of burst index (middle of the 'bit 0 pulse')
 
             # Find the SOB and EOB indices in this block of samples
             sob_idx = sob_offset - self.nitems_written(0)
@@ -104,15 +85,15 @@ class demod(gr.sync_block):
                 # The packet is fully within this block of samples, so demod
                 # the entire burst
 
-                # Grab the amplitudes where the "bit 1 pulse" should be
+                # Grab the amplitudes where the 'bit 1 pulse' should be
                 bit1_idxs = range(sob_idx, sob_idx + self.sps*MAX_NUM_BITS, self.sps)
                 bit1_amps = in0[bit1_idxs]
 
-                # Grab the amplitudes where the "bit 0 pulse" should be
+                # Grab the amplitudes where the 'bit 0 pulse' should be
                 bit0_idxs = range(sob_idx + self.sps/2, sob_idx + self.sps*MAX_NUM_BITS + self.sps/2, self.sps)
                 bit0_amps = in0[bit0_idxs]
 
-                self.bits = np.zeros(MAX_NUM_BITS, dtype=int)
+                self.bits = np.zeros(MAX_NUM_BITS, dtype=np.uint8)
                 self.bits[bit1_amps > bit0_amps] = 1
 
                 # Get a log-likelihood type function for probability of a
@@ -122,7 +103,10 @@ class demod(gr.sync_block):
                 self.bit_confidence = 10.0*np.log10(bit1_amps/bit0_amps)
 
                 # Send PDU message to decoder
-                self.publish_pkt(snr, self.bits)
+                meta = pmt.to_pmt({'snr': snr})
+                vector = pmt.to_pmt(self.bits)
+                pdu = pmt.cons(meta, vector)
+                self.message_port_pub(pmt.to_pmt('pdu'), pdu)
 
                 if 0:
                     # Tag the 0 and 1 bits markers for debug
@@ -130,23 +114,23 @@ class demod(gr.sync_block):
                         self.add_item_tag(
                             0,
                             self.nitems_written(0)+bit1_idxs[ii],
-                            pmt.to_pmt("bits"),
+                            pmt.to_pmt('bits'),
                             pmt.to_pmt((1, ii, float(self.bit_confidence[ii]))),    
-                            pmt.to_pmt("demod")
+                            pmt.to_pmt('demod')
                         )
                         self.add_item_tag(
                             0, 
                             self.nitems_written(0)+bit0_idxs[ii], 
-                            pmt.to_pmt("bits"),
+                            pmt.to_pmt('bits'),
                             pmt.to_pmt((0, ii, float(self.bit_confidence[ii]))), 
-                            pmt.to_pmt("demod")
+                            pmt.to_pmt('demod')
                         )
 
             else:
                 # The packet is only partially contained in this block of
                 # samples, decode as much as possible
                 self.straddled_packet = 1
-                # print "Straddled packet"
+                # print 'Straddled packet'
         
         out0[:] = in0
         return len(output_items[0])
