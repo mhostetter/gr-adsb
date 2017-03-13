@@ -261,7 +261,7 @@
     </param>
     <param>
       <key>print_level</key>
-      <value>"None"</value>
+      <value>"Brief"</value>
     </param>
   </block>
   <block>
@@ -805,6 +805,100 @@
     <param>
       <key>ymin</key>
       <value>0</value>
+    </param>
+  </block>
+  <block>
+    <key>sqlite_sink</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>filename</key>
+      <value>/home/matt/adsb.db</value>
+    </param>
+    <param>
+      <key>fixed_position_columns</key>
+      <value>['datetime', 'timestamp', 'icao', 'df', 'snr']</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(816, 208)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>sqlite_sink_0</value>
+    </param>
+    <param>
+      <key>vector_column_name</key>
+      <value>data</value>
+    </param>
+    <param>
+      <key>table_name</key>
+      <value>planes</value>
+    </param>
+  </block>
+  <block>
+    <key>sqlite_sink</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>filename</key>
+      <value>/home/matt/adsb.db</value>
+    </param>
+    <param>
+      <key>fixed_position_columns</key>
+      <value>['datetime', 'timestamp', 'df', 'snr']</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(816, 296)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>sqlite_sink_1</value>
+    </param>
+    <param>
+      <key>vector_column_name</key>
+      <value>data</value>
+    </param>
+    <param>
+      <key>table_name</key>
+      <value>unknown_bursts</value>
     </param>
   </block>
   <block>
@@ -2170,7 +2264,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(816, 236)</value>
+      <value>(816, 140)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2187,21 +2281,33 @@
   </block>
   <connection>
     <source_block_id>adsb_decoder_0</source_block_id>
+    <sink_block_id>sqlite_sink_0</sink_block_id>
+    <source_key>decoded</source_key>
+    <sink_key>pdu</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>adsb_decoder_0</source_block_id>
     <sink_block_id>zeromq_pub_msg_sink_0</sink_block_id>
-    <source_key>pdu</source_key>
+    <source_key>decoded</source_key>
     <sink_key>in</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>adsb_decoder_0</source_block_id>
+    <sink_block_id>sqlite_sink_1</sink_block_id>
+    <source_key>unknown</source_key>
+    <sink_key>pdu</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>adsb_demod_0</source_block_id>
+    <sink_block_id>adsb_decoder_0</sink_block_id>
+    <source_key>demodulated</source_key>
+    <sink_key>demodulated</sink_key>
   </connection>
   <connection>
     <source_block_id>adsb_demod_0</source_block_id>
     <sink_block_id>qtgui_time_sink_x_0</sink_block_id>
     <source_key>0</source_key>
     <sink_key>0</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>adsb_demod_0</source_block_id>
-    <sink_block_id>adsb_decoder_0</sink_block_id>
-    <source_key>pdu</source_key>
-    <sink_key>pdu</sink_key>
   </connection>
   <connection>
     <source_block_id>adsb_framer_1</source_block_id>

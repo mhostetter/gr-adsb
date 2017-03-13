@@ -4,7 +4,7 @@
 # GNU Radio Python Flow Graph
 # Title: ADS-B Receiver
 # Author: Matt Hostetter
-# Generated: Sat Mar 11 19:35:50 2017
+# Generated: Mon Mar 13 18:23:25 2017
 ##################################################
 
 if __name__ == '__main__':
@@ -149,13 +149,13 @@ class adsb_rx(gr.top_block, Qt.QWidget):
         self.analog_const_source_x_0 = analog.sig_source_f(0, analog.GR_CONST_WAVE, 0, 0, burst_thresh)
         self.adsb_framer_1 = adsb.framer(fs, burst_thresh)
         self.adsb_demod_0 = adsb.demod(fs)
-        self.adsb_decoder_0 = adsb.decoder("Extended Squitter Only", "None", "None")
+        self.adsb_decoder_0 = adsb.decoder("Extended Squitter Only", "None", "Brief")
 
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.adsb_decoder_0, 'pdu'), (self.zeromq_pub_msg_sink_0, 'in'))
-        self.msg_connect((self.adsb_demod_0, 'pdu'), (self.adsb_decoder_0, 'pdu'))
+        self.msg_connect((self.adsb_decoder_0, 'decoded'), (self.zeromq_pub_msg_sink_0, 'in'))
+        self.msg_connect((self.adsb_demod_0, 'demodulated'), (self.adsb_decoder_0, 'demodulated'))
         self.connect((self.adsb_demod_0, 0), (self.qtgui_time_sink_x_0, 0))
         self.connect((self.adsb_framer_1, 0), (self.adsb_demod_0, 0))
         self.connect((self.analog_const_source_x_0, 0), (self.qtgui_time_sink_x_0, 1))

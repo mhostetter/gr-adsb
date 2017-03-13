@@ -67,7 +67,7 @@
        * vlen
        * optional (set to 1 for optional inputs) -->
   <sink>
-    <name>pdu</name>
+    <name>demodulated</name>
     <type>message</type>
     <optional>1</optional>
   </sink>
@@ -78,7 +78,12 @@
        * vlen
        * optional (set to 1 for optional inputs) -->
   <source>
-    <name>pdu</name>
+    <name>decoded</name>
+    <type>message</type>
+    <optional>1</optional>
+  </source>
+  <source>
+    <name>unknown</name>
     <type>message</type>
     <optional>1</optional>
   </source>

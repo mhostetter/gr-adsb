@@ -50,7 +50,7 @@ class demod(gr.sync_block):
         self.straddled_packet = 0
 
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
-        self.message_port_register_out(pmt.to_pmt('pdu'))
+        self.message_port_register_out(pmt.to_pmt('demodulated'))
 
 
     def work(self, input_items, output_items):
@@ -106,7 +106,7 @@ class demod(gr.sync_block):
                 meta = pmt.to_pmt({'snr': snr})
                 vector = pmt.to_pmt(self.bits)
                 pdu = pmt.cons(meta, vector)
-                self.message_port_pub(pmt.to_pmt('pdu'), pdu)
+                self.message_port_pub(pmt.to_pmt('demodulated'), pdu)
 
                 if 0:
                     # Tag the 0 and 1 bits markers for debug

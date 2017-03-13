@@ -275,9 +275,10 @@ class decoder(gr.sync_block):
         # Reset packet values
         self.reset()
 
-        self.message_port_register_in(pmt.to_pmt('pdu'))
-        self.message_port_register_out(pmt.to_pmt('pdu'))
-        self.set_msg_handler(pmt.to_pmt('pdu'), self.decode_packet)
+        self.message_port_register_in(pmt.to_pmt('demodulated'))
+        self.message_port_register_out(pmt.to_pmt('decoded'))
+        self.message_port_register_out(pmt.to_pmt('unknown'))
+        self.set_msg_handler(pmt.to_pmt('demodulated'), self.decode_packet)
 
 
     def decode_packet(self, pdu):
@@ -414,7 +415,7 @@ class decoder(gr.sync_block):
         for key in self.plane_dict:
             icao = '{:6s}'.format(key)
 
-            if self.plane_dict[key]['callsign'] != '':
+            if self.plane_dict[key]['callsign'] is not None:
                 callsign = '{:8s}'.format(self.plane_dict[key]['callsign'])
             else:
                 callsign = ' '*8
@@ -466,20 +467,33 @@ class decoder(gr.sync_block):
             )
 
 
-    def publish_pdu(self, aa_str):
-        plane = self.plane_dict[aa_str].copy()
-        plane.pop('last_seen', None)
-        plane.pop('cpr', None)
-        plane['timestamp'] = int(time.time())
-        plane['datetime'] = datetime.datetime.utcfromtimestamp(plane['timestamp']).strftime('%Y-%m-%d %H:%M:%S UTC')
-        plane['icao'] = aa_str
-        plane['df'] = self.df
-        plane['snr'] = self.snr
+    def publish_decoded_pdu(self, aa_str):
+        decoded = self.plane_dict[aa_str].copy()
+        decoded.pop('last_seen', None)
+        decoded.pop('cpr', None)
+        decoded['timestamp'] = int(time.time())
+        decoded['datetime'] = datetime.datetime.utcfromtimestamp(decoded['timestamp']).strftime('%Y-%m-%d %H:%M:%S UTC')
+        decoded['icao'] = aa_str
+        decoded['df'] = self.df
+        decoded['snr'] = self.snr
 
-        meta = pmt.to_pmt(plane)
+        meta = pmt.to_pmt(decoded)
         vector = pmt.to_pmt(self.bits)
         pdu = pmt.cons(meta, vector)
-        self.message_port_pub(pmt.to_pmt('pdu'), pdu)
+        self.message_port_pub(pmt.to_pmt('decoded'), pdu)
+
+
+    def publish_unknown_pdu(self):
+        unknown = dict()
+        unknown['timestamp'] = int(time.time())
+        unknown['datetime'] = datetime.datetime.utcfromtimestamp(unknown['timestamp']).strftime('%Y-%m-%d %H:%M:%S UTC')
+        unknown['df'] = self.df
+        unknown['snr'] = self.snr
+
+        meta = pmt.to_pmt(unknown)
+        vector = pmt.to_pmt(self.bits)
+        pdu = pmt.cons(meta, vector)
+        self.message_port_pub(pmt.to_pmt('unknown'), pdu)
 
 
     # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
@@ -1004,7 +1018,7 @@ class decoder(gr.sync_block):
             # Update planes dictionary
             self.update_plane(self.aa_str)
             self.plane_dict[self.aa_str]['callsign'] = callsign
-            self.publish_pdu(self.aa_str)
+            self.publish_decoded_pdu(self.aa_str)
 
             if self.print_level == 'Verbose':
                 print 'Callsign:'.ljust(16) + '%s' % (callsign)
@@ -1012,6 +1026,7 @@ class decoder(gr.sync_block):
         ### Surface Position ###
         elif tc in range(5,9):
             print 'To be implemented'
+            self.publish_unknown_pdu()
 
         ### Airborne Position (Baro Altitude) ###
         elif tc in range(9,19):
@@ -1044,12 +1059,25 @@ class decoder(gr.sync_block):
             (lat, lon) = self.calculate_lat_lon(self.plane_dict[self.aa_str]['cpr'])
             alt = self.decode_ac12(self.bits[40:40+12])
 
+            # TODO: Temporary hack to make sure bad lat/lons don't get published
+            if (lat - self.plane_dict[self.aa_str]['latitude']) < 0.1 and (lat - self.plane_dict[self.aa_str]['latitude']) < 0.1:
+                valid_lat_lon = True
+            else:
+                # Figure out what went wrong
+                valid_lat_lon = False
+                print 'valid_lat_lon', valid_lat_lon
+                print 'lat_cpr', lat_cpr
+                print 'lon_cpr', lon_cpr
+                print 'lat', lat
+                print 'lon', lon
+
             self.plane_dict[self.aa_str]['altitude'] = alt
             if np.isnan(lat) == False and np.isnan(lon) == False:
                 self.plane_dict[self.aa_str]['latitude'] = lat
                 self.plane_dict[self.aa_str]['longitude'] = lon
 
-            self.publish_pdu(self.aa_str)
+            if valid_lat_lon:
+                self.publish_decoded_pdu(self.aa_str)
 
             if self.print_level == 'Verbose':
                 print 'SS:'.ljust(16) + '%d %s' % (ss, SS_STR_LUT[ss])
@@ -1140,7 +1168,7 @@ class decoder(gr.sync_block):
                 self.plane_dict[self.aa_str]['speed'] = speed
                 self.plane_dict[self.aa_str]['heading'] = heading
                 self.plane_dict[self.aa_str]['vertical_rate'] = vertical_rate
-                self.publish_pdu(self.aa_str)
+                self.publish_decoded_pdu(self.aa_str)
 
                 if self.print_level == 'Verbose':
                     print 'ST:'.ljust(16) + '%d %s' % (st, 'Ground Velocity')
@@ -1167,42 +1195,52 @@ class decoder(gr.sync_block):
         ### Airborne Position (GNSS Height) ###
         elif tc in range(20,23):
             print 'To be implemented'
+            self.publish_unknown_pdu()
 
         ### Test Message ###
         elif tc in [23]:
             print 'To be implemented'
-
+            self.publish_unknown_pdu()
+            
         ### Surface System Status ###
         elif tc in [24]:
             print 'To be implemented'
-
+            self.publish_unknown_pdu()
+            
         ### Reserved ###
         elif tc in range(25,28):
             print 'To be implemented'
-
+            self.publish_unknown_pdu()
+            
         ### Extended Squitter A/C Status ###
         elif tc in [28]:
             print 'To be implemented'
-
+            self.publish_unknown_pdu()
+            
         ### Target State and Status (V.2) ###
         elif tc in [29]:
             print 'To be implemented'
-
+            self.publish_unknown_pdu()
+            
         ### Reserved ###
         elif tc in [30]:
             print 'To be implemented'
-
+            self.publish_unknown_pdu()
+            
         ### Aircraft Operation Status ###
         elif tc in [31]:
             print 'To be implemented'
-
+            self.publish_unknown_pdu()
+            
         else:
             print 'To be implemented'
-
+            self.publish_unknown_pdu()
+            
 
     def decode_tisb_me(self):
         print 'To be implemented'
-
+        self.publish_unknown_pdu()
+            
 
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf
     def calculate_lat_lon(self, cpr):
