@@ -17,8 +17,9 @@
 // Boston, MA 02110-1301, USA.
 // 
 
-var infoWindow; // Global info window, only one can be displayed at a time
+var locationInfoWindow; // Global info window, only one can be displayed at a time
 var planeMarkers = new Array(); // Global array of plane markers
+var planeInfoWindows = new Array();
 // var planeMarkers = new google.maps.MVCArray();
 var planeLatLngs = new Array(); // Global array of array of plane locations, used to draw flight paths
 var planePolyLines = new Array(); // Global array of arrary of plane flight path lines
@@ -67,34 +68,46 @@ var colorGradient = [
   '#004BEF'
 ];
 
-
 function initialize() {
-  var styles = [{
-    stylers: [
-      { lightness: 50 }
-    ]
-  }];
-
-  // Create a new StyledMapType object, passing it the array of styles,
-  // as well as the name to be displayed on the map type control.
-  var styledMap = new google.maps.StyledMapType(styles, {name: "Styled Map"});
+  var grey_styles = [{"stylers":[{"saturation":-100},{"gamma":1}]},{"elementType":"labels.text.stroke","stylers":[{"visibility":"off"}]},{"featureType":"poi.business","elementType":"labels.text","stylers":[{"visibility":"off"}]},{"featureType":"poi.business","elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"featureType":"poi.place_of_worship","elementType":"labels.text","stylers":[{"visibility":"off"}]},{"featureType":"poi.place_of_worship","elementType":"labels.icon","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"geometry","stylers":[{"visibility":"simplified"}]},{"featureType":"water","stylers":[{"visibility":"on"},{"saturation":50},{"gamma":0},{"hue":"#50a5d1"}]},{"featureType":"administrative.neighborhood","elementType":"labels.text.fill","stylers":[{"color":"#333333"}]},{"featureType":"road.local","elementType":"labels.text","stylers":[{"weight":0.5},{"color":"#333333"}]},{"featureType":"transit.station","elementType":"labels.icon","stylers":[{"gamma":1},{"saturation":50}]}];
+  grey_styles.push(
+    {
+      "featureType": "poi.park",
+      "elementType": "geometry.fill",
+      "stylers": [
+        {"visibility": "simplified"},
+      ]
+    }
+  );
+  grey_styles.push(
+    {
+      "featureType": "transit.station.airport",
+      "elementType": "geometry.fill",
+      "stylers": [
+        // {"invert_lightness": true},
+        {"color": "#000000"},
+        // {"hue": "#000000"}
+        {"lightness": 50},
+        {"saturation": 0},
+        // {"gamma": 2},
+      ]
+    }
+  );
 
   var map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: 38.8976451, lng: -77.0367452},
-    zoom: 8
+    zoom: 8,
+    styles: grey_styles
   });
 
-  // Associate the styled map with the MapTypeId and set it to display
-  map.mapTypes.set('map_style', styledMap);
-  // map.setMapTypeId('map_style');
   map.setMapTypeId(google.maps.MapTypeId.ROADMAP);
   // map.setMapTypeId(google.maps.MapTypeId.SATELLITE);
   // map.setMapTypeId(google.maps.MapTypeId.TERRAIN);
   // map.setMapTypeId(google.maps.MapTypeId.HYBRID);
   
-  infoWindow = new google.maps.InfoWindow({map: map});
 
   // Try HTML5 geolocation
+  locationInfoWindow = new google.maps.InfoWindow({map: map});
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(position) {
       var pos = {
@@ -102,15 +115,15 @@ function initialize() {
         lng: position.coords.longitude
       };
 
-      infoWindow.setPosition(pos);
-      infoWindow.setContent('Location found.');
+      locationInfoWindow.setPosition(pos);
+      locationInfoWindow.setContent('Location found.');
       map.setCenter(pos);
     }, function() {
-      handleLocationError(true, infoWindow, map.getCenter());
+      handleLocationError(true, locationInfoWindow, map.getCenter());
     });
   } else {
     // Browser doesn't support Geolocation
-    handleLocationError(false, infoWindow, map.getCenter());
+    handleLocationError(false, locationInfoWindow, map.getCenter());
   }
 
   // Create SocketIO instance
@@ -119,18 +132,11 @@ function initialize() {
   socket.on('connect', function() {
     console.log('Client has connected via SocketIO.');
   });
-
   socket.on('disconnect', function() {
     console.log('Client disconnected via SocketIO.');
   });
-  
   socket.on('updatePlane', function(plane) {
     updatePlane(map, plane);
-  });
-
-  socket.on('removePlane', function(plane) {
-    console.log('here 1');
-    removePlane(map, plane);
   });
 
   // google.maps.event.addDomListener(window, 'load', initialize);
@@ -162,7 +168,7 @@ function addPlane(map, plane) {
     fillOpacity: 1,
     strokeColor: 'black',
     strokeOpacity: 1.0,
-    strokeWeight: 2,
+    strokeWeight: 1.5,
     rotation: rotation,
     scale: 4
   };
@@ -173,9 +179,13 @@ function addPlane(map, plane) {
   planeMarkers[plane.icao] = new google.maps.Marker({
     position: location,
     icon: arrow,
-    title: plane.icao,
-    content: getInfoString(plane),
+    title: plane.callsign,
     map: map
+  });
+
+  // Create info window
+  planeInfoWindows[plane.icao] = new google.maps.InfoWindow({
+    content: getInfoString(plane)
   });
 
   // Initialize an array of locations for this plane
@@ -184,13 +194,7 @@ function addPlane(map, plane) {
   planeLatLngs[plane.icao][0] = {lat: Number(plane.latitude), lng: Number(plane.longitude)};
 
   google.maps.event.addListener(planeMarkers[plane.icao], 'click', function() {
-    if (typeof infoWindow != 'undefined') {
-      infoWindow.close();
-    }
-    infoWindow = new google.maps.InfoWindow({
-      content: this.content
-    });
-    infoWindow.open(map, this);
+    planeInfoWindows[plane.icao].open(map, this);
   });
 }
 
@@ -209,7 +213,7 @@ function movePlane(map, plane) {
     geodesic: true,
     strokeColor: color,
     strokeOpacity: 1.0,
-    strokeWeight: 4,
+    strokeWeight: 3,
     map: map
   });
 
@@ -223,24 +227,25 @@ function movePlane(map, plane) {
   // Move plane marker to new location
   var new_location = new google.maps.LatLng(plane.latitude, plane.longitude);
   planeMarkers[plane.icao].setPosition(new_location);
-  planeMarkers[plane.icao].setContent(getInfoString(plane));
+  planeMarkers[plane.icao].setTitle(plane.callsign);
+  planeInfoWindows[plane.icao].setContent(getInfoString(plane));
 }
 
 
-function removePlane(map, plane) {
-  if (planeMarkers[plane.icao] != undefined) {
-    // Remove plane from map
-    console.log('Need to remove this plane.', plane);
+// function removePlane(map, plane) {
+//   if (planeMarkers[plane.icao] != undefined) {
+//     // Remove plane from map
+//     console.log('Need to remove this plane.', plane);
 
-    // Delete all polylines
-    for (var idx = 0; idx < planePolyLines[plane.icao].length; idx++) {
-      planePolyLines[plane.icao].setMap(null);
-    }
+//     // Delete all polylines
+//     for (var idx = 0; idx < planePolyLines[plane.icao].length; idx++) {
+//       planePolyLines[plane.icao].setMap(null);
+//     }
 
-    // Delete plane marker
-    planeMarkers[plane.icao].setMap(null);
-  }
-}
+//     // Delete plane marker
+//     planeMarkers[plane.icao].setMap(null);
+//   }
+// }
 
 
 function getAltitudeColor(altitude) {
@@ -286,9 +291,9 @@ function getInfoString(plane) {
 }
 
 
-function handleLocationError(browserHasGeolocation, infoWindow, pos) {
-  infoWindow.setPosition(pos);
-  infoWindow.setContent(browserHasGeolocation ?
+function handleLocationError(browserHasGeolocation, locationInfoWindow, pos) {
+  locationInfoWindow.setPosition(pos);
+  locationInfoWindow.setContent(browserHasGeolocation ?
                         'Error: The Geolocation service failed.' :
                         'Error: Your browser doesn\'t support geolocation.');
 }
