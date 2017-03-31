@@ -5,11 +5,7 @@
   <category>[ADS-B]</category>
   <import>import adsb</import>
   <make>adsb.decoder($msg_filter, $error_corr, $print_level)</make>
-  <!-- Make one 'param' node for every Parameter you want settable from the GUI.
-       Sub-nodes:
-       * name
-       * key (makes the value accessible as $keyname, e.g. in the make node)
-       * type -->
+
   <param>
     <name>Message Filter</name>
     <key>msg_filter</key>
@@ -61,22 +57,12 @@
     </option>
   </param>
 
-  <!-- Make one 'sink' node per input. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
   <sink>
     <name>demodulated</name>
     <type>message</type>
     <optional>1</optional>
   </sink>
 
-  <!-- Make one 'source' node per output. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
   <source>
     <name>decoded</name>
     <type>message</type>
