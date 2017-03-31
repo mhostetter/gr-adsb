@@ -19,8 +19,8 @@
 
 var locationInfoWindow; // Global info window, only one can be displayed at a time
 var planeMarkers = new Array(); // Global array of plane markers
-var planeInfoWindows = new Array();
 // var planeMarkers = new google.maps.MVCArray();
+var planeInfoWindows = new Array();
 var planeLatLngs = new Array(); // Global array of array of plane locations, used to draw flight paths
 var planePolyLines = new Array(); // Global array of arrary of plane flight path lines
 
@@ -84,12 +84,9 @@ function initialize() {
       "featureType": "transit.station.airport",
       "elementType": "geometry.fill",
       "stylers": [
-        // {"invert_lightness": true},
         {"color": "#000000"},
-        // {"hue": "#000000"}
         {"lightness": 50},
         {"saturation": 0},
-        // {"gamma": 2},
       ]
     }
   );
@@ -293,7 +290,5 @@ function getInfoString(plane) {
 
 function handleLocationError(browserHasGeolocation, locationInfoWindow, pos) {
   locationInfoWindow.setPosition(pos);
-  locationInfoWindow.setContent(browserHasGeolocation ?
-                        'Error: The Geolocation service failed.' :
-                        'Error: Your browser doesn\'t support geolocation.');
+  locationInfoWindow.setContent(browserHasGeolocation ? 'Error: The Geolocation service failed.' : 'Error: Your browser doesn\'t support geolocation.');
 }
