@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<?grc format='1' created='3.7.11'?>
+<?grc format='1' created='3.7.12'?>
 <flow_graph>
   <timestamp>Thu Apr  7 21:10:19 2016</timestamp>
   <block>
@@ -10,7 +10,7 @@
     </param>
     <param>
       <key>window_size</key>
-      <value></value>
+      <value>4096,4096</value>
     </param>
     <param>
       <key>category</key>
@@ -79,45 +79,6 @@
     <param>
       <key>title</key>
       <value>ADS-B Receiver</value>
-    </param>
-  </block>
-  <block>
-    <key>variable_qtgui_entry</key>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>value</key>
-      <value>0.010</value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>True</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(456, 12)</value>
-    </param>
-    <param>
-      <key>gui_hint</key>
-      <value>0,1,1,1</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>burst_thresh</value>
-    </param>
-    <param>
-      <key>label</key>
-      <value>Burst Threshold</value>
-    </param>
-    <param>
-      <key>type</key>
-      <value>real</value>
     </param>
   </block>
   <block>
@@ -214,6 +175,45 @@
     </param>
   </block>
   <block>
+    <key>variable_qtgui_entry</key>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>value</key>
+      <value>0.010</value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>True</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(456, 12)</value>
+    </param>
+    <param>
+      <key>gui_hint</key>
+      <value>0,1,1,1</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>threshold</value>
+    </param>
+    <param>
+      <key>label</key>
+      <value>Detection Threshold</value>
+    </param>
+    <param>
+      <key>type</key>
+      <value>real</value>
+    </param>
+  </block>
+  <block>
     <key>adsb_decoder</key>
     <param>
       <key>alias</key>
@@ -237,7 +237,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 228)</value>
+      <value>(496, 228)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -284,7 +284,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(304, 248)</value>
+      <value>(288, 248)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -314,10 +314,6 @@
       <value></value>
     </param>
     <param>
-      <key>burst_thresh</key>
-      <value>burst_thresh</value>
-    </param>
-    <param>
       <key>comment</key>
       <value></value>
     </param>
@@ -326,12 +322,16 @@
       <value></value>
     </param>
     <param>
+      <key>threshold</key>
+      <value>threshold</value>
+    </param>
+    <param>
       <key>_enabled</key>
       <value>1</value>
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(104, 252)</value>
+      <value>(64, 252)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -366,7 +366,7 @@
     </param>
     <param>
       <key>const</key>
-      <value>burst_thresh</value>
+      <value>threshold</value>
     </param>
     <param>
       <key>affinity</key>
@@ -378,7 +378,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(320, 380)</value>
+      <value>(304, 380)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -480,7 +480,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(520, 348)</value>
+      <value>(504, 348)</value>
     </param>
     <param>
       <key>gui_hint</key>
@@ -788,7 +788,7 @@
     </param>
     <param>
       <key>update_time</key>
-      <value>0.01</value>
+      <value>1.0/100.0</value>
     </param>
     <param>
       <key>ylabel</key>
@@ -835,7 +835,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(816, 208)</value>
+      <value>(728, 344)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -852,53 +852,6 @@
     <param>
       <key>table_name</key>
       <value>planes</value>
-    </param>
-  </block>
-  <block>
-    <key>sqlite_sink</key>
-    <param>
-      <key>alias</key>
-      <value></value>
-    </param>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>filename</key>
-      <value>/home/matt/adsb.db</value>
-    </param>
-    <param>
-      <key>fixed_position_columns</key>
-      <value>['datetime', 'timestamp', 'df', 'snr']</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(816, 296)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>sqlite_sink_1</value>
-    </param>
-    <param>
-      <key>vector_column_name</key>
-      <value>data</value>
-    </param>
-    <param>
-      <key>table_name</key>
-      <value>unknown_bursts</value>
     </param>
   </block>
   <block>
@@ -2264,7 +2217,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(816, 140)</value>
+      <value>(800, 220)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2290,12 +2243,6 @@
     <sink_block_id>zeromq_pub_msg_sink_0</sink_block_id>
     <source_key>decoded</source_key>
     <sink_key>in</sink_key>
-  </connection>
-  <connection>
-    <source_block_id>adsb_decoder_0</source_block_id>
-    <sink_block_id>sqlite_sink_1</sink_block_id>
-    <source_key>unknown</source_key>
-    <sink_key>pdu</sink_key>
   </connection>
   <connection>
     <source_block_id>adsb_demod_0</source_block_id>

@@ -1,5 +1,3 @@
-# Ignore build tree
 /build/**
-
-# Ignore raw IQ files
+/examples/*.py
 *.fc32
