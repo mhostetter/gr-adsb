@@ -33,7 +33,7 @@ class framer(gr.sync_block):
     '''
     docstring for block framer
     '''
-    def __init__(self, fs, burst_thresh):
+    def __init__(self, fs, threshold):
         gr.sync_block.__init__(self,
             name='ADS-B Framer',
             in_sig=[np.float32],
@@ -47,7 +47,7 @@ class framer(gr.sync_block):
             print 'Warning: ADS-B Framer is designed to operate on an integer number of samples per symbol'
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
-        self.burst_thresh = burst_thresh
+        self.threshold = threshold
 
         # Initialize the preamble 'pulses' template
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
@@ -69,6 +69,10 @@ class framer(gr.sync_block):
         self.set_tag_propagation_policy(gr.TPP_ONE_TO_ONE)
 
 
+    def set_threshold(self, threshold):
+        self.threshold = threshold
+
+    
     def work(self, input_items, output_items):
         in0 = input_items[0]
         out0 = output_items[0]
@@ -81,7 +85,7 @@ class framer(gr.sync_block):
         # NOTE: Add the last sample from the previous work() call to the 
         # beginning of this block of samples
         in0_pulses = np.zeros(N+1, dtype=int)
-        in0_pulses[np.insert(in0[0:N], 0, self.prev_in0) >= self.burst_thresh] = 1
+        in0_pulses[np.insert(in0[0:N], 0, self.prev_in0) >= self.threshold] = 1
 
         # Set prev_in0 for the next work() call
         self.prev_in0 = in0[N-1]

@@ -4,39 +4,25 @@
   <key>adsb_framer</key>
   <category>[ADS-B]</category>
   <import>import adsb</import>
-  <make>adsb.framer($fs, $burst_thresh)</make>
-  <!-- Make one 'param' node for every Parameter you want settable from the GUI.
-       Sub-nodes:
-       * name
-       * key (makes the value accessible as $keyname, e.g. in the make node)
-       * type -->
+  <make>adsb.framer($fs, $threshold)</make>
+  <callback>set_threshold($threshold)</callback>
+
   <param>
-    <name>Sampling Rate</name>
+    <name>Sample Rate</name>
     <key>fs</key>
     <type>float</type>
   </param>
-
   <param>
-    <name>Burst Threshold</name>
-    <key>burst_thresh</key>
+    <name>Detection Threshold</name>
+    <key>threshold</key>
     <type>float</type>
   </param>
 
-  <!-- Make one 'sink' node per input. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
   <sink>
     <name>in</name>
     <type>float</type>
   </sink>
 
-  <!-- Make one 'source' node per output. Sub-nodes:
-       * name (an identifier for the GUI)
-       * type
-       * vlen
-       * optional (set to 1 for optional inputs) -->
   <source>
     <name>out</name>
     <type>float</type>
