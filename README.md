@@ -109,7 +109,7 @@ To view the decoded planes and flight paths live in Google Maps, a webserver and
 2. `$ cd gr-adsb`
 3. `$ cd web`
 4. `$ ./webserver.py`
-5. Open a web broswer
+5. Open a web browser
 6. Go to `localhost:5000`
 
 ![Example Google Maps Webpage](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_google_maps.png)
