@@ -1,8 +1,10 @@
+
 # gr-adsb
+
 A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
 
-
 ## Features
+
 * Supports many SDRs through GNU Radio and OsmoSDR (USRP, RTL-SDR, HackRF, BladeRF, etc).
 * Supports various sample rates (2 Msps, 4 Msps, 6 Msps, etc).  Currently the sampling rate needs to be an integer multiple of 2*fsym or 2 Msps.
 * Decoding of messages:
@@ -19,15 +21,17 @@ A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependen
 * "Brief" stdout printing.
 * "Verbose" stdout printing.
 
-
 ## Usage
+
 ### GNU Radio
+
 There is an example GNU Radio Companion (.grc) file located at `/gr-adsb/examples/adsb_rx.grc`.  To use it, first open GNU Radio Companion `$ gnuradio-companion` and then open the .grc file.
 
 ![GRC Example Flowgraph](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_rx.png)
 
 Example "Brief" output:
-```
+
+```text
  ICAO  Callsign  Alt  Climb Speed Hdng  Latitude    Longitude  Msgs Age
                  (ft) (ft/m) (kn) (deg)                             (s)
 ------ -------- ----- ----- ----- ---- ----------- ----------- ---- ---
@@ -49,8 +53,10 @@ c00ec2          36975     0   413  103  37.9071614 -77.9345040  176   0
 a8f63b FDX1679  25700  2240   419  175  38.9744110 -78.4300829  455  39
 a8d62a FDX1630  34000     0   379  175  38.9746508 -78.4457397  126 234
 ```
+
 Example "Verbose" Output:
-```
+
+```text
 ----------------------------------------------------------------------
 SNR:            18.50 dB
 DF:             0 Short Air-Air Surveillance (ACAS)
@@ -103,6 +109,7 @@ Altitude:       10775 ft
 ```
 
 ### Webserver
+
 To view the decoded planes and flight paths live in Google Maps, a webserver and client JavaScript are provided.  The webserver can be started before or after the GRC flowgraph, but the webserver must be running to view the Google Maps webpage.  The ZeroMQ block in the example flowgraph is required when using the webserver.
 
 1. Open a console
@@ -114,11 +121,12 @@ To view the decoded planes and flight paths live in Google Maps, a webserver and
 
 ![Example Google Maps Webpage](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_google_maps.png)
 
-
 ## Installation
+
 GNU Radio is a dependency for gr-adsb.  I recommend installing it with [PyBOMBS](https://github.com/gnuradio/pybombs).
 
 ### Source Build
+
 To build gr-adsb manually from source, follow this procedure.
 
 1. `$ cd gr-adsb`
@@ -130,6 +138,7 @@ To build gr-adsb manually from source, follow this procedure.
 7. `$ sudo ldconfig`
 
 ### Webserver Dependencies
+
 If using the built-in Google Maps webserver, you'll need to install the following Python packages.
 
 * `$ sudo pip install flask`
