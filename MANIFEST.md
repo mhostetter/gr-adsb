@@ -1,13 +1,16 @@
-title: The ADSB OOT Module
-brief: Short description of gr-adsb
+title: ADSB OOT Module
+brief: GNU Radio OOT Module for demodulating and decoding ADS-B packets
 tags: # Tags are arbitrary, but look at CGRAN what other authors are using
   - sdr
+  - ads-b
+  - acas
+  - airplanes
 author:
-  - Author Name <authors@email.address>
+  - Matt Hostetter <matthostetter@gmail.com>
 copyright_owner:
-  - Copyright Owner 1
+  - Matt Hostetter
 license:
-#repo: # Put the URL of the repository here, or leave blank for default
+repo: https://github.com/mhostetter/gr-adsb
 #website: <module_website> # If you have a separate project website, put it here
 #icon: <icon_url> # Put a URL to a square image here that will be used as an icon on CGRAN
 ---
