@@ -148,4 +148,6 @@ If using the built-in Google Maps webserver, you'll need to install the followin
 * `$ sudo pip install gevent`
 * `$ sudo pip install gevent-websocket`
 
-To avoid installing the Python packages in the system folders consider using [pipenv](https://pipenv.readthedocs.io/en/latest). The software was tested on Ubuntu 18.04.2.
+To avoid installing the Python packages in the system folders consider using [pipenv](https://pipenv.readthedocs.io/en/latest). 
+
+The software was tested on Ubuntu 18.04.2.
