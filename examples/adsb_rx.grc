@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<?grc format='1' created='3.7.12'?>
+<?grc format='1' created='3.7.13'?>
 <flow_graph>
   <timestamp>Thu Apr  7 21:10:19 2016</timestamp>
   <block>
@@ -30,7 +30,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(8, 8)</value>
+      <value>(8, 12)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -73,12 +73,20 @@
       <value>True</value>
     </param>
     <param>
+      <key>sizing_mode</key>
+      <value>fixed</value>
+    </param>
+    <param>
       <key>thread_safe_setters</key>
       <value></value>
     </param>
     <param>
       <key>title</key>
       <value>ADS-B Receiver</value>
+    </param>
+    <param>
+      <key>placement</key>
+      <value>(0,0)</value>
     </param>
   </block>
   <block>
@@ -421,7 +429,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(256, 136)</value>
+      <value>(256, 144)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -484,7 +492,7 @@
     </param>
     <param>
       <key>gui_hint</key>
-      <value></value>
+      <value>1,0,1,2</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -759,6 +767,10 @@
       <value>int(fs)</value>
     </param>
     <param>
+      <key>stemplot</key>
+      <value>False</value>
+    </param>
+    <param>
       <key>tr_chan</key>
       <value>0</value>
     </param>
@@ -808,53 +820,6 @@
     </param>
   </block>
   <block>
-    <key>sqlite_sink</key>
-    <param>
-      <key>alias</key>
-      <value></value>
-    </param>
-    <param>
-      <key>comment</key>
-      <value></value>
-    </param>
-    <param>
-      <key>affinity</key>
-      <value></value>
-    </param>
-    <param>
-      <key>_enabled</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>filename</key>
-      <value>/home/matt/adsb.db</value>
-    </param>
-    <param>
-      <key>fixed_position_columns</key>
-      <value>['datetime', 'timestamp', 'icao', 'df', 'snr']</value>
-    </param>
-    <param>
-      <key>_coordinate</key>
-      <value>(728, 344)</value>
-    </param>
-    <param>
-      <key>_rotation</key>
-      <value>0</value>
-    </param>
-    <param>
-      <key>id</key>
-      <value>sqlite_sink_0</value>
-    </param>
-    <param>
-      <key>vector_column_name</key>
-      <value>data</value>
-    </param>
-    <param>
-      <key>table_name</key>
-      <value>planes</value>
-    </param>
-  </block>
-  <block>
     <key>uhd_usrp_source</key>
     <param>
       <key>alias</key>
@@ -874,11 +839,11 @@
     </param>
     <param>
       <key>dc_offs_enb0</key>
-      <value>""</value>
+      <value>True</value>
     </param>
     <param>
       <key>iq_imbal_enb0</key>
-      <value>""</value>
+      <value>True</value>
     </param>
     <param>
       <key>norm_gain0</key>
@@ -2038,7 +2003,7 @@
     </param>
     <param>
       <key>_coordinate</key>
-      <value>(24, 112)</value>
+      <value>(24, 116)</value>
     </param>
     <param>
       <key>_rotation</key>
@@ -2232,12 +2197,6 @@
       <value>10</value>
     </param>
   </block>
-  <connection>
-    <source_block_id>adsb_decoder_0</source_block_id>
-    <sink_block_id>sqlite_sink_0</sink_block_id>
-    <source_key>decoded</source_key>
-    <sink_key>pdu</sink_key>
-  </connection>
   <connection>
     <source_block_id>adsb_decoder_0</source_block_id>
     <sink_block_id>zeromq_pub_msg_sink_0</sink_block_id>
