@@ -1,12 +1,12 @@
 
 # gr-adsb
 
-A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
+A GNU Radio out-of-tree (OOT) module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
 
 ## Features
 
-* Supports many SDRs through GNU Radio and OsmoSDR (USRP, RTL-SDR, HackRF, BladeRF, etc).
-* Supports various sample rates (2 Msps, 4 Msps, 6 Msps, etc).  Currently the sampling rate needs to be an integer multiple of 2*fsym or 2 Msps.
+* Supports many SDRs through GNU Radio and OsmoSDR (USRP, RTL-SDR, HackRF, BladeRF, etc)
+* Supports various sample rates (2 Msps, 4 Msps, 6 Msps, etc). NOTE: Currently the sample rate must be an integer multiple of twice the symbol rate (2 Msym/s)
 * Decoding of messages:
   * DF 0:  Short Air-Air Surveillance (ACAS)
   * DF 4:  Surveillance Altitude Reply
@@ -18,14 +18,14 @@ A GNU Radio Out-Of-Tree (OOT) Module to demodulate and decode Automatic Dependen
   * DF 19: AF=0 Military ADS-B Extended Squitter
   * DF 20: Comm-B Altitude Reply
   * DF 21: Comm-B Identity Reply
-* "Brief" stdout printing.
-* "Verbose" stdout printing.
+* "Brief" stdout printing
+* "Verbose" stdout printing
 
 ## Usage
 
 ### GNU Radio
 
-There is an example GNU Radio Companion (.grc) file located at `/gr-adsb/examples/adsb_rx.grc`.  To use it, first open GNU Radio Companion `$ gnuradio-companion` and then open the .grc file.
+There is an example GNU Radio Companion (`.grc`) flowgraph located at `gr-adsb/examples/adsb_rx.grc`. To use it, first open GNU Radio Companion `$ gnuradio-companion` and then open the `.grc` file.
 
 ![GRC Example Flowgraph](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_rx.png)
 
@@ -110,32 +110,36 @@ Altitude:       10775 ft
 
 ### Webserver
 
-To view the decoded planes and flight paths live in Google Maps, a webserver and client JavaScript are provided.  The webserver can be started before or after the GRC flowgraph, but the webserver must be running to view the Google Maps webpage.  The ZeroMQ block in the example flowgraph is required when using the webserver.
+To view the decoded planes and flight paths live in Google Maps, a webserver is included. The webserver can be started before or after the GRC flowgraph, but the webserver must be running to view the Google Maps webpage. The ZeroMQ block in the example flowgraph is required when using the webserver. Before running the webserver, be sure to install its [dependencies](#webserver-dependencies).
 
-1. Open a console
-2. `$ cd gr-adsb`
-3. `$ cd web`
-4. `$ ./webserver.py`
+NOTE: The webserver is a Python 2.7 application. Incompatibilities with Python 3 exist.
+
+1. Open a terminal
+2. `$ cd gr-adsb/`
+3. `$ cd web/`
+4. `$ ./webserver.py` or `$ python2 webserver.py`
 5. Open a web browser
-6. Go to `localhost:5000`
+6. Browse to `localhost:5000`
 
 ![Example Google Maps Webpage](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_google_maps.png)
 
 ## Installation
 
-GNU Radio is a dependency for gr-adsb.  I recommend installing it with [PyBOMBS](https://github.com/gnuradio/pybombs).
+GNU Radio is a dependency for `gr-adsb`. I recommend installing it with [PyBOMBS](https://github.com/gnuradio/pybombs). `gr-adsb` is currently compatible with GNU Radio 3.7 only. *GNU Radio 3.8 support is in development*.
 
 ### Source Build
 
-To build gr-adsb manually from source, follow this procedure.
+Build `gr-adsb` manually from source using the following procedure.
 
-1. `$ cd gr-adsb`
-2. `$ mkdir build`
-3. `$ cd build`
-4. `$ cmake ../` or `$ cmake -DCMAKE_INSTALL_PREFIX=<path_to_install> ../`
-5. `$ make`
-6. `$ sudo make install`
-7. `$ sudo ldconfig`
+```bash
+$ cd gr-adsb/
+$ mkdir build
+$ cd build/
+$ cmake ../  # or cmake -DCMAKE_INSTALL_PREFIX=<path_to_install> ../
+$ make
+$ sudo make install
+$ sudo ldconfig
+```
 
 ### Webserver Dependencies
 
