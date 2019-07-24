@@ -145,7 +145,9 @@ $ sudo ldconfig
 
 If using the built-in Google Maps webserver, you'll need to install the following Python packages.
 
-* `$ sudo pip install flask`
-* `$ sudo pip install flask-socketio`
-* `$ sudo pip install gevent`
-* `$ sudo pip install gevent-websocket`
+```bash
+$ sudo pip install flask
+$ sudo pip install flask-socketio
+$ sudo pip install gevent
+$ sudo pip install gevent-websocket
+```
