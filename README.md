@@ -141,13 +141,7 @@ To build gr-adsb manually from source, follow this procedure.
 
 If using the built-in Google Maps webserver, you'll need to install the following Python packages.
 
-* `$ sudo pip install zmq`
-* `$ sudo pip install pmt`
 * `$ sudo pip install flask`
 * `$ sudo pip install flask-socketio`
 * `$ sudo pip install gevent`
 * `$ sudo pip install gevent-websocket`
-
-To avoid installing the Python packages in the system folders consider using [pipenv](https://pipenv.readthedocs.io/en/latest). 
-
-The software was tested on Ubuntu 18.04.2.
