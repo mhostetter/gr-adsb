@@ -24,11 +24,11 @@ import numpy as np
 import pmt
 from gnuradio import gr
 
-SYMBOL_RATE             = 1e6 # symbols/second
-NUM_PREAMBLE_BITS       = 8
-MIN_NUM_BITS            = 56
-NUM_PREAMBLE_PULSES     = NUM_PREAMBLE_BITS*2
-NUM_NOISE_SAMPLES       = 100
+SYMBOL_RATE = 1e6  # symbols/second
+NUM_PREAMBLE_BITS = 8
+MIN_NUM_BITS = 56
+NUM_PREAMBLE_PULSES = NUM_PREAMBLE_BITS*2
+NUM_NOISE_SAMPLES = 100
 
 class framer(gr.sync_block):
     """
@@ -43,11 +43,9 @@ class framer(gr.sync_block):
         # Calculate the samples/symbol
         # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
         # required fs is 2 Msps
-        self.sps = fs/SYMBOL_RATE
-        if (self.sps - np.floor(self.sps)) > 0:
-            print "Warning: ADS-B Framer is designed to operate on an integer number of samples per symbol"
-        self.sps = int(self.sps) # Set the samples/symbol to an integer
-
+        self.fs = fs
+        assert self.fs % SYMBOL_RATE == 0, "ADS-B Framer is designed to operate on an integer number of samples per symbol, not %f sps" % (self.fs / SYMBOL_RATE)
+        self.sps = int(fs // SYMBOL_RATE)
         self.threshold = threshold
 
         # Initialize the preamble "pulses" template
