@@ -20,8 +20,9 @@
 #
 
 import numpy as np
-from gnuradio import gr
+
 import pmt
+from gnuradio import gr
 
 SYMBOL_RATE             = 1e6 # symbols/second
 NUM_PREAMBLE_BITS       = 8
@@ -30,12 +31,12 @@ NUM_PREAMBLE_PULSES     = NUM_PREAMBLE_BITS*2
 NUM_NOISE_SAMPLES       = 100
 
 class framer(gr.sync_block):
-    '''
+    """
     docstring for block framer
-    '''
+    """
     def __init__(self, fs, threshold):
         gr.sync_block.__init__(self,
-            name='ADS-B Framer',
+            name="ADS-B Framer",
             in_sig=[np.float32],
             out_sig=[np.float32])
 
@@ -44,12 +45,12 @@ class framer(gr.sync_block):
         # required fs is 2 Msps
         self.sps = fs/SYMBOL_RATE
         if (self.sps - np.floor(self.sps)) > 0:
-            print 'Warning: ADS-B Framer is designed to operate on an integer number of samples per symbol'
+            print "Warning: ADS-B Framer is designed to operate on an integer number of samples per symbol"
         self.sps = int(self.sps) # Set the samples/symbol to an integer
 
         self.threshold = threshold
 
-        # Initialize the preamble 'pulses' template
+        # Initialize the preamble "pulses" template
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
         self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
 
@@ -57,7 +58,7 @@ class framer(gr.sync_block):
         # the beginning of the current work() call.
         self.prev_in0 = 0
 
-        # End of the last burst (56 bit message).  Don't look for preambles during a valid packet
+        # End of the last burst (56 bit message).  Don"t look for preambles during a valid packet
         self.prev_eob_idx = -1
 
         # Set history so we can check for a preambles that wrapped around the
@@ -111,7 +112,7 @@ class framer(gr.sync_block):
                 if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) == 1:
                     in0_rise_edge_idxs = np.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs) - 1)
                 else:
-                    print 'Oh no, this shouldn\'t be happening...'
+                    print "Oh no, this shouldn\"t be happening..."
 
             # Find the index of the center of each pulses
             pulse_idxs = np.mean((in0_fall_edge_idxs,in0_rise_edge_idxs), axis=0).astype(int)
@@ -120,10 +121,10 @@ class framer(gr.sync_block):
             # preamble.
             for pulse_idx in pulse_idxs:
                 # Only process this pulse if it's not a pulse from the previous packet.
-                # There will be many 'pulses' in a valid packet and we don't want to waster
-                # cycles looking for preambles where they won't be
+                # There will be many "pulses" in a valid packet and we don"t want to waster
+                # cycles looking for preambles where they won"t be
                 if pulse_idx > self.prev_eob_idx:
-                    # Reset EOB index so we don't trigger on it later
+                    # Reset EOB index so we don"t trigger on it later
                     self.prev_eob_idx = -1
 
                     # Tag the detected pulses for debug
@@ -131,9 +132,9 @@ class framer(gr.sync_block):
                         self.add_item_tag(
                             0,
                             (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
-                            pmt.to_pmt('pulse'),
-                            pmt.to_pmt('1'),
-                            pmt.to_pmt('framer')
+                            pmt.to_pmt("pulse"),
+                            pmt.to_pmt("1"),
+                            pmt.to_pmt("framer")
                         )
 
                     # Starting at the center of the discovered pulse, find the amplitudes of each
@@ -144,7 +145,7 @@ class framer(gr.sync_block):
                     pulses = np.zeros(NUM_PREAMBLE_PULSES, dtype=int)
                     pulses[amps > in0[pulse_idx]/2] = 1
 
-                    # Count how many 'pulses' or half symbols match the preamble 'pulses'
+                    # Count how many "pulses" or half symbols match the preamble "pulses"
                     corr_matches = np.sum(pulses == self.preamble_pulses)
 
                     # Only assert preamble found if all the 1/2 symbols match
@@ -162,9 +163,9 @@ class framer(gr.sync_block):
                         else:
                             snr = 10.0*np.log10(in0[pulse_idx]/np.median(in0[(pulse_idx - NUM_NOISE_SAMPLES):pulse_idx])) + 1.6
 
-                        # Calculate when this burst will end so we don't have to trigger
-                        # on all the 'pulses' in this packet
-                        # NOTE: Assume the shorter 56 bit packet because we don't yet know
+                        # Calculate when this burst will end so we don"t have to trigger
+                        # on all the "pulses" in this packet
+                        # NOTE: Assume the shorter 56 bit packet because we don"t yet know
                         # the packet length
                         self.prev_eob_idx = pulse_idx + (NUM_PREAMBLE_BITS + MIN_NUM_BITS - 1)*self.sps
 
@@ -172,9 +173,9 @@ class framer(gr.sync_block):
                         self.add_item_tag(
                             0,
                             (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
-                            pmt.to_pmt('burst'),
-                            pmt.to_pmt(('SOB', snr)),
-                            pmt.to_pmt('framer')
+                            pmt.to_pmt("burst"),
+                            pmt.to_pmt(("SOB", snr)),
+                            pmt.to_pmt("framer")
                         )
 
             # Check if the end of this burst will be in the next work() call
