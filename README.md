@@ -27,7 +27,7 @@ A GNU Radio out-of-tree (OOT) module to demodulate and decode Automatic Dependen
 
 There is an example GNU Radio Companion (`.grc`) flowgraph located at `gr-adsb/examples/adsb_rx.grc`. To use it, first open GNU Radio Companion `$ gnuradio-companion` and then open the `.grc` file.
 
-![GRC Example Flowgraph](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_rx.png)
+![ADS-B Receiver Flowgraph](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_rx.png)
 
 Example "Brief" output:
 
@@ -58,6 +58,7 @@ Example "Verbose" Output:
 
 ```text
 ----------------------------------------------------------------------
+Datetime:       2019-07-25 21:41:55.426630 UTC
 SNR:            18.50 dB
 DF:             0 Short Air-Air Surveillance (ACAS)
 Parity:         Passed (Recognized AA from AP)
@@ -66,6 +67,7 @@ Units:          Standard
 Altitude:       28800 ft
 
 ----------------------------------------------------------------------
+Datetime:       2019-07-25 21:41:56.696635 UTC
 SNR:            22.36 dB
 DF:             4 Surveillance Altitude Reply
 Parity:         Passed (Recognized AA from AP)
@@ -78,6 +80,7 @@ Units:          Standard
 Altitude:       28800 ft
 
 ----------------------------------------------------------------------
+Datetime:       2019-07-25 21:41:56.716640 UTC
 SNR:            8.76 dB
 DF:             11 All-Call Reply
 Parity:         Passed
@@ -85,6 +88,7 @@ CA:             5 Level >=2 Transponder, Can Set CA 7, In Air
 AA:             a72bda
 
 ----------------------------------------------------------------------
+Datetime:       2019-07-25 21:41:57.006685 UTC
 SNR:            12.92 dB
 DF:             17 Extended Squitter
 Parity:         Passed
@@ -97,6 +101,7 @@ Climb:          3136 ft/min
 Source:         Barometric Pressure Altitude Change Rate
 
 ----------------------------------------------------------------------
+Datetime:       2019-07-25 21:41:57.249964 UTC
 SNR:            16.79 dB
 DF:             17 Extended Squitter
 Parity:         Passed
@@ -122,6 +127,14 @@ NOTE: The webserver is a Python 2.7 application. Incompatibilities with Python 3
 6. Browse to `localhost:5000`
 
 ![Example Google Maps Webpage](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_google_maps.png)
+
+### SQLite Playback
+
+Users can optionally record demodulated bursts to a SQLite database for storing or later replaying. This option depends on my other project [gr-sqlite](https://github.com/mhostetter/gr-sqlite). Follow these [instructions](https://github.com/mhostetter/gr-sqlite#installation) to install `gr-sqlite`.
+
+To record bursts, enable the SQLite Sink in the `adsb_rx.grc` flowgraph. To replay those demodulated bursts later, run the `adsb_playback.grc` flowgraph.
+
+![ADS-B Playback Flowgraph](https://github.com/mhostetter/gr-adsb/blob/master/docs/adsb_playback.png)
 
 ## Installation
 
