@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# 
+#
 # Copyright 2016-2017 Matt Hostetter.
-# 
+#
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3, or (at your option)
 # any later version.
-# 
+#
 # This software is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this software; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
-# 
+#
 
 import numpy as np
 from gnuradio import gr
@@ -52,10 +52,10 @@ class framer(gr.sync_block):
         # Initialize the preamble 'pulses' template
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
         self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
-        
-        # Last sample from previous work() call.  Needed for finding pulses at 
-        # the beginning of the current work() call.        
-        self.prev_in0 = 0 
+
+        # Last sample from previous work() call.  Needed for finding pulses at
+        # the beginning of the current work() call.
+        self.prev_in0 = 0
 
         # End of the last burst (56 bit message).  Don't look for preambles during a valid packet
         self.prev_eob_idx = -1
@@ -72,7 +72,7 @@ class framer(gr.sync_block):
     def set_threshold(self, threshold):
         self.threshold = threshold
 
-    
+
     def work(self, input_items, output_items):
         in0 = input_items[0]
         out0 = output_items[0]
@@ -82,7 +82,7 @@ class framer(gr.sync_block):
 
         # Create a binary array that represents when the input goes above
         # the threshold value. 1 = above threshold, 0 = below threshold
-        # NOTE: Add the last sample from the previous work() call to the 
+        # NOTE: Add the last sample from the previous work() call to the
         # beginning of this block of samples
         in0_pulses = np.zeros(N+1, dtype=int)
         in0_pulses[np.insert(in0[0:N], 0, self.prev_in0) >= self.threshold] = 1
@@ -106,7 +106,7 @@ class framer(gr.sync_block):
             if len(in0_rise_edge_idxs) > len(in0_fall_edge_idxs):
                 # If there are more rising edges than falling edges, then
                 # remove the extras
-                # NOTE: There technically can only possibly be 1 extra rising edge, if 
+                # NOTE: There technically can only possibly be 1 extra rising edge, if
                 # there are more, something went terribly wrong
                 if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) == 1:
                     in0_rise_edge_idxs = np.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs) - 1)
@@ -128,15 +128,15 @@ class framer(gr.sync_block):
 
                     # Tag the detected pulses for debug
                     if 0:
-                        self.add_item_tag(  
+                        self.add_item_tag(
                             0,
                             (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
                             pmt.to_pmt('pulse'),
-                            pmt.to_pmt('1'),    
+                            pmt.to_pmt('1'),
                             pmt.to_pmt('framer')
                         )
 
-                    # Starting at the center of the discovered pulse, find the amplitudes of each 
+                    # Starting at the center of the discovered pulse, find the amplitudes of each
                     # half symbol and then compare it to the preamble half symbols
                     amps = in0[pulse_idx:(pulse_idx + NUM_PREAMBLE_BITS*self.sps):(self.sps/2)]
 
@@ -169,7 +169,7 @@ class framer(gr.sync_block):
                         self.prev_eob_idx = pulse_idx + (NUM_PREAMBLE_BITS + MIN_NUM_BITS - 1)*self.sps
 
                         # Tag the start of the burst (preamble)
-                        self.add_item_tag(  
+                        self.add_item_tag(
                             0,
                             (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
                             pmt.to_pmt('burst'),

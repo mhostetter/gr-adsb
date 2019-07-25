@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# 
+#
 # Copyright 2016-2017 Matt Hostetter.
-# 
+#
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3, or (at your option)
 # any later version.
-# 
+#
 # This software is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this software; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
-# 
+#
 
 import numpy as np
 from gnuradio import gr
@@ -73,7 +73,7 @@ class demod(gr.sync_block):
             value = pmt.to_python(tag.value)
             snr = value[1] # SNR in power dBs
 
-            # Calculate the SOB and EOB offsets            
+            # Calculate the SOB and EOB offsets
             sob_offset = tag.offset + (8)*self.sps # Start of burst index (middle of the 'bit 1 pulse')
             eob_offset = tag.offset + (8+112-1)*self.sps + self.sps/2 # End of burst index (middle of the 'bit 0 pulse')
 
@@ -115,14 +115,14 @@ class demod(gr.sync_block):
                             0,
                             self.nitems_written(0)+bit1_idxs[ii],
                             pmt.to_pmt('bits'),
-                            pmt.to_pmt((1, ii, float(self.bit_confidence[ii]))),    
+                            pmt.to_pmt((1, ii, float(self.bit_confidence[ii]))),
                             pmt.to_pmt('demod')
                         )
                         self.add_item_tag(
-                            0, 
-                            self.nitems_written(0)+bit0_idxs[ii], 
+                            0,
+                            self.nitems_written(0)+bit0_idxs[ii],
                             pmt.to_pmt('bits'),
-                            pmt.to_pmt((0, ii, float(self.bit_confidence[ii]))), 
+                            pmt.to_pmt((0, ii, float(self.bit_confidence[ii]))),
                             pmt.to_pmt('demod')
                         )
 
@@ -131,7 +131,7 @@ class demod(gr.sync_block):
                 # samples, decode as much as possible
                 self.straddled_packet = 1
                 # print 'Straddled packet'
-        
+
         out0[:] = in0
         return len(output_items[0])
 
