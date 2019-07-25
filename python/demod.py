@@ -19,6 +19,7 @@
 # Boston, MA 02110-1301, USA.
 #
 
+import datetime
 import numpy as np
 
 import pmt
@@ -43,6 +44,9 @@ class demod(gr.sync_block):
         self.fs = fs
         assert self.fs % SYMBOL_RATE == 0, "ADS-B Demodulator is designed to operate on an integer number of samples per symbol, not %f sps" % (self.fs / SYMBOL_RATE)
         self.sps = int(fs // SYMBOL_RATE)
+
+        # Calculate current UTC time at block startup. Then we'll use burst sample offset to derive burst time.
+        self.start_timestamp = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds()
 
         # Array of data bits
         self.bits = []
@@ -103,12 +107,15 @@ class demod(gr.sync_block):
                 self.bit_confidence = 10.0*np.log10(bit1_amps/bit0_amps)
 
                 # Send PDU message to decoder
-                meta = pmt.to_pmt({"snr": snr})
+                meta = pmt.to_pmt({
+                    "timestamp": self.start_timestamp + tag.offset/self.fs,
+                    "snr": snr,
+                })
                 vector = pmt.to_pmt(self.bits)
                 pdu = pmt.cons(meta, vector)
                 self.message_port_pub(pmt.to_pmt("demodulated"), pdu)
 
-                if 0:
+                if False:
                     # Tag the 0 and 1 bits markers for debug
                     for ii in range(0,len(bit1_idxs)):
                         self.add_item_tag(

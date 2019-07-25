@@ -289,6 +289,8 @@ class decoder(gr.sync_block):
         # Grab packet PDU data
         meta = pmt.to_python(pmt.car(pdu))
         vector = pmt.to_python(pmt.cdr(pdu))
+        self.timestamp = meta["timestamp"]
+        self.datetime = datetime.datetime.utcfromtimestamp(self.timestamp).strftime("%Y-%m-%d %H:%M:%S.%f UTC")
         self.snr = meta["snr"]
         # print "vector\n", vector
         # print "vector.dtype\n", vector.dtype
@@ -472,8 +474,8 @@ class decoder(gr.sync_block):
         decoded = self.plane_dict[aa_str].copy()
         decoded.pop("last_seen", None)
         decoded.pop("cpr", None)
-        decoded["timestamp"] = int(time.time())
-        decoded["datetime"] = datetime.datetime.utcfromtimestamp(decoded["timestamp"]).strftime("%Y-%m-%d %H:%M:%S UTC")
+        decoded["timestamp"] = self.timestamp
+        decoded["datetime"] = self.datetime
         decoded["icao"] = aa_str
         decoded["df"] = self.df
         decoded["snr"] = self.snr
@@ -486,8 +488,8 @@ class decoder(gr.sync_block):
 
     def publish_unknown_pdu(self):
         unknown = dict()
-        unknown["timestamp"] = int(time.time())
-        unknown["datetime"] = datetime.datetime.utcfromtimestamp(unknown["timestamp"]).strftime("%Y-%m-%d %H:%M:%S UTC")
+        unknown["timestamp"] = self.timestamp
+        unknown["datetime"] = self.datetime
         unknown["df"] = self.df
         unknown["snr"] = self.snr
 
@@ -510,6 +512,7 @@ class decoder(gr.sync_block):
             if self.msg_filter == "All Messages" or (self.msg_filter == "Extended Squitter Only" and self.df in [17,18,19]):
                 print "\n"
                 print "----------------------------------------------------------------------"
+                print "Datetime:".ljust(16) + self.datetime
                 print "SNR:".ljust(16) + "%1.2f dB" % (self.snr)
                 print "DF:".ljust(16) + "%d %s" % (self.df, DF_STR_LUT[self.df])
 
