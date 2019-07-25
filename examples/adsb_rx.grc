@@ -820,6 +820,53 @@
     </param>
   </block>
   <block>
+    <key>sqlite_sink</key>
+    <param>
+      <key>alias</key>
+      <value></value>
+    </param>
+    <param>
+      <key>comment</key>
+      <value></value>
+    </param>
+    <param>
+      <key>affinity</key>
+      <value></value>
+    </param>
+    <param>
+      <key>_enabled</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>filename</key>
+      <value>/home/matt/adsb.db</value>
+    </param>
+    <param>
+      <key>fixed_position_columns</key>
+      <value>["timestamp", ]</value>
+    </param>
+    <param>
+      <key>_coordinate</key>
+      <value>(496, 116)</value>
+    </param>
+    <param>
+      <key>_rotation</key>
+      <value>0</value>
+    </param>
+    <param>
+      <key>id</key>
+      <value>sqlite_sink_0</value>
+    </param>
+    <param>
+      <key>vector_column_name</key>
+      <value>data</value>
+    </param>
+    <param>
+      <key>table_name</key>
+      <value>demodulated</value>
+    </param>
+  </block>
+  <block>
     <key>uhd_usrp_source</key>
     <param>
       <key>alias</key>
@@ -2208,6 +2255,12 @@
     <sink_block_id>adsb_decoder_0</sink_block_id>
     <source_key>demodulated</source_key>
     <sink_key>demodulated</sink_key>
+  </connection>
+  <connection>
+    <source_block_id>adsb_demod_0</source_block_id>
+    <sink_block_id>sqlite_sink_0</sink_block_id>
+    <source_key>demodulated</source_key>
+    <sink_key>pdu</sink_key>
   </connection>
   <connection>
     <source_block_id>adsb_demod_0</source_block_id>
