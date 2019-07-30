@@ -1,5 +1,5 @@
-title: ADSB OOT Module
-brief: GNU Radio OOT Module for demodulating and decoding ADS-B packets
+title: gr-adsb
+brief: GNU Radio OOT module for demodulating and decoding ADS-B packets
 tags: # Tags are arbitrary, but look at CGRAN what other authors are using
   - sdr
   - ads-b
