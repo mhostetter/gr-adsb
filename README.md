@@ -3,6 +3,21 @@
 
 A GNU Radio out-of-tree (OOT) module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
 
+Note, the `master` branch of this repository is currently maintained for GNU Radio 3.8. The final GNU Radio 3.7 version is tagged as `gnuradio-3.7`.
+
+### Clone for GNU Radio 3.8
+
+```bash
+$ git clone https://github.com/mhostetter/gr-adsb
+```
+
+### Clone for GNU Radio 3.7
+
+```bash
+$ git clone https://github.com/mhostetter/gr-adsb
+$ git checkout tags/gnuradio-3.7
+```
+
 ## Features
 
 * Supports many SDRs through GNU Radio and OsmoSDR (USRP, RTL-SDR, HackRF, BladeRF, etc)
@@ -31,98 +46,93 @@ There is an example GNU Radio Companion (`.grc`) flowgraph located at `gr-adsb/e
 
 Example "Brief" output:
 
-```text
- ICAO  Callsign  Alt  Climb Speed Hdng  Latitude    Longitude  Msgs Age
-                 (ft) (ft/m) (kn) (deg)                             (s)
------- -------- ----- ----- ----- ---- ----------- ----------- ---- ---
-a4da13 4349 60  16450  2240   360    9  39.0509491 -77.0292066   47  47
-a72bda          27225                                           459   0
-abe82c SWA3329  37000     0   481   39                            6 221
-a00ca4 FDX1273  36025     0   407 -157  39.6801034 -77.9697876  273   0
-a58a1b           1775                                             2   2
-a1c534          24975 -2816   471   31                            9 233
-a3cd6b          10575                                           542   0
-a022ee FDX1234  28075  4352   455 -168  38.7769900 -78.8369141  168  23
-a2dffe UAL1704   9725     0   307  -34  39.1294556 -78.0681909  114   0
-aa8af7          16800     0   431   34  39.2041533 -76.5144043   59 110
-a318ea          12075                                            27 257
-aaf111 DAL1436  10525 -1152   303   -3  39.4307230 -76.9674072  921  55
-ace5b6          16100                                             3   4
-a50e47          29600                                           427  13
-c00ec2          36975     0   413  103  37.9071614 -77.9345040  176   0
-a8f63b FDX1679  25700  2240   419  175  38.9744110 -78.4300829  455  39
-a8d62a FDX1630  34000     0   379  175  38.9746508 -78.4457397  126 234
-```
+<pre>
+<b>  Time    ICAO  Callsign  Alt  Climb Speed Hdng   Latitude    Longitude  Msgs</b>
+                            ft  ft/m    kt   deg         deg         deg     
+00:55:55 a03816          12425  2112   316    -7  39.0346566 -76.8112793   10
+00:55:55 aa7df3 SWA398    1950  -128   167    11  39.1743622 -76.8109131   28
+00:55:55 abb19c SWA513   16050  2112   386  -148  39.1567166 -77.2299194   28
+80:55:55 a4fbb4 AWI4868  17125  1152   361   -23  38.9627838 -76.7352627   66
+00:55:55 a8ab3c          36975 -3008   472    48                            4
+30:55:55 a34729 DAL1299  13100  3968   338   169  39.2229767 -77.1123206   70
+10:55:55 a9b088 AAL9616   9000  -768   276  -133  39.0424347 -76.8132417   28
+30:55:55 a24031           9925   -64   288   -63  39.2082964 -76.6861572   25
+00:55:55 a01f73          12975  2240   339   -47  39.0163879 -76.8472754   38
+</pre>
 
 Example "Verbose" Output:
 
-```text
-----------------------------------------------------------------------
-Datetime:       2019-07-25 21:41:55.426630 UTC
-SNR:            18.50 dB
-DF:             0 Short Air-Air Surveillance (ACAS)
-Parity:         Passed (Recognized AA from AP)
-AA:             a50e47
-Units:          Standard
-Altitude:       28800 ft
-
-----------------------------------------------------------------------
-Datetime:       2019-07-25 21:41:56.696635 UTC
-SNR:            22.36 dB
-DF:             4 Surveillance Altitude Reply
-Parity:         Passed (Recognized AA from AP)
-AA:             a50e47
-FS:             0 No Alert, No SPI, In Air
-DR:             0 No Downlink Request
-IIS:            0
-IDS:            0 No Information
-Units:          Standard
-Altitude:       28800 ft
-
-----------------------------------------------------------------------
-Datetime:       2019-07-25 21:41:56.716640 UTC
-SNR:            8.76 dB
-DF:             11 All-Call Reply
-Parity:         Passed
-CA:             5 Level >=2 Transponder, Can Set CA 7, In Air
-AA:             a72bda
-
-----------------------------------------------------------------------
-Datetime:       2019-07-25 21:41:57.006685 UTC
-SNR:            12.92 dB
-DF:             17 Extended Squitter
-Parity:         Passed
-CA:             5 Level >=2 Transponder, Can Set CA 7, In Air
-AA:             a8f63b
-TC:             19 Airborne Velocity
-Speed:          367 kn
-Heading:        177 deg (W)
-Climb:          3136 ft/min
-Source:         Barometric Pressure Altitude Change Rate
-
-----------------------------------------------------------------------
-Datetime:       2019-07-25 21:41:57.249964 UTC
-SNR:            16.79 dB
-DF:             17 Extended Squitter
-Parity:         Passed
-CA:             5 Level >=2 Transponder, Can Set CA 7, In Air
-AA:             aaf111
-TC:             11 Airborne Position
-Latitude:       39.4474182 N
-Longitude:      -77.4949314 E
-Altitude:       10775 ft
-```
+<pre>
+[INFO] ----------------------------------------------------------------------
+[INFO] <font color="#AD7FA8"><b>Datetime</b></font>: 2019-07-31 00:43:30.944816 UTC
+[INFO] <font color="#AD7FA8"><b>SNR</b></font>: 19.90 dB
+[INFO] <font color="#AD7FA8"><b>Downlink Format (DF)</b></font>: 0 Short Air-Air Surveillance (ACAS)
+[INFO] <font color="#AD7FA8"><b>CRC</b></font>: Passed Recognized AA from AP
+[INFO] <font color="#AD7FA8"><b>Address Announced (AA)</b></font>: ac53a4
+[INFO] <font color="#AD7FA8"><b>Callsign</b></font>: EDV5271 
+[INFO] <font color="#AD7FA8"><b>Vertical Status (VS)</b></font>: 0 In Air
+[INFO] <font color="#AD7FA8"><b>Reply Information (RI)</b></font>: 3 Reserved for ACAS
+[INFO] <font color="#AD7FA8"><b>Altitude</b></font>: 7025 ft
+[INFO] <font color="#AD7FA8"><b>Crosslink Capability (CC)</b></font>: Does Support Crosslink Capability
+[INFO] ----------------------------------------------------------------------
+[INFO] <font color="#AD7FA8"><b>Datetime</b></font>: 2019-07-31 00:43:32.114965 UTC
+[INFO] <font color="#AD7FA8"><b>SNR</b></font>: 21.85 dB
+[INFO] <font color="#AD7FA8"><b>Downlink Format (DF)</b></font>: 4 Surveillance Altitude Reply
+[INFO] <font color="#AD7FA8"><b>CRC</b></font>: Passed Recognized AA from AP
+[INFO] <font color="#AD7FA8"><b>Address Announced (AA)</b></font>: ac53a4
+[INFO] <font color="#AD7FA8"><b>Callsign</b></font>: EDV5271 
+[INFO] <font color="#AD7FA8"><b>Flight Status (FS)</b></font>: 0 No Alert, No SPI, In Air
+[INFO] <font color="#AD7FA8"><b>Downlink Request (DR)</b></font>: 0 No Downlink Request
+[INFO] <font color="#AD7FA8"><b>IIS</b></font>: 0
+[INFO] <font color="#AD7FA8"><b>IDS</b></font>: 0 No Information
+[INFO] <font color="#AD7FA8"><b>Altitude</b></font>: 7075 ft
+[INFO] ----------------------------------------------------------------------
+[INFO] <font color="#AD7FA8"><b>Datetime</b></font>: 2019-07-31 00:43:36.695273 UTC
+[INFO] <font color="#AD7FA8"><b>SNR</b></font>: 22.41 dB
+[INFO] <font color="#AD7FA8"><b>Downlink Format (DF)</b></font>: 11 All-Call Reply
+[INFO] <font color="#AD7FA8"><b>CRC</b></font>: Passed
+[INFO] <font color="#AD7FA8"><b>Capability (CA)</b></font>: 5 Level 2 or Above Transponder, Can Set CA 7, In Air
+[INFO] <font color="#AD7FA8"><b>Address Announced (AA)</b></font>: ac53a4
+[INFO] <font color="#AD7FA8"><b>Callsign</b></font>: EDV5271
+[INFO] ----------------------------------------------------------------------
+[INFO] <font color="#AD7FA8"><b>Datetime</b></font>: 2019-07-31 00:43:37.784807 UTC
+[INFO] <font color="#AD7FA8"><b>SNR</b></font>: 21.87 dB
+[INFO] <font color="#AD7FA8"><b>Downlink Format (DF)</b></font>: 17 Extended Squitter
+[INFO] <font color="#AD7FA8"><b>CRC</b></font>: Passed
+[INFO] <font color="#AD7FA8"><b>Capability (CA)</b></font>: 5 Level 2 or Above Transponder, Can Set CA 7, In Air
+[INFO] <font color="#AD7FA8"><b>Address Announced (AA)</b></font>: ac53a4
+[INFO] <font color="#AD7FA8"><b>Callsign</b></font>: EDV5271 
+[INFO] <font color="#AD7FA8"><b>Type Code (TC)</b></font>: 19 Airborne Velocity
+[INFO] <font color="#AD7FA8"><b>Subtype (ST)</b></font>: 1 Ground Velocity
+[INFO] <font color="#AD7FA8"><b>Intent Change (IC)</b></font>: 1 No Change in Intent
+[INFO] <font color="#AD7FA8"><b>Speed</b></font>: 267 kt
+[INFO] <font color="#AD7FA8"><b>Heading</b></font>: 173 deg (W)
+[INFO] <font color="#AD7FA8"><b>Climb</b></font>: 2816 ft/min
+[INFO] <font color="#AD7FA8"><b>Climb Source</b></font>: 0 Geometric Source (GNSS or INS)
+[INFO] ----------------------------------------------------------------------
+[INFO] <font color="#AD7FA8"><b>Datetime</b></font>: 2019-07-31 00:43:40.305197 UTC
+[INFO] <font color="#AD7FA8"><b>SNR</b></font>: 24.35 dB
+[INFO] <font color="#AD7FA8"><b>Downlink Format (DF)</b></font>: 17 Extended Squitter
+[INFO] <font color="#AD7FA8"><b>CRC</b></font>: Passed
+[INFO] <font color="#AD7FA8"><b>Capability (CA)</b></font>: 5 Level 2 or Above Transponder, Can Set CA 7, In Air
+[INFO] <font color="#AD7FA8"><b>Address Announced (AA)</b></font>: ac53a4
+[INFO] <font color="#AD7FA8"><b>Callsign</b></font>: EDV5271 
+[INFO] <font color="#AD7FA8"><b>Type Code (TC)</b></font>: 11 Airborne Position
+[INFO] <font color="#AD7FA8"><b>Surveillance Status (SS)</b></font>: 0 No Condition Information
+[INFO] <font color="#AD7FA8"><b>Time</b></font>: 0 Not Synced to 0.2s UTC Epoch
+[INFO] <font color="#AD7FA8"><b>Latitude</b></font>: 39.20978610798464 N
+[INFO] <font color="#AD7FA8"><b>Longitude</b></font>: -76.8250732421875 E
+[INFO] <font color="#AD7FA8"><b>Altitude</b></font>: 7450 ft
+</pre>
 
 ### Webserver
 
 To view the decoded planes and flight paths live in Google Maps, a webserver is included. The webserver can be started before or after the GRC flowgraph, but the webserver must be running to view the Google Maps webpage. The ZeroMQ block in the example flowgraph is required when using the webserver. Before running the webserver, be sure to install its [dependencies](#webserver-dependencies).
 
-NOTE: The webserver is a Python 2.7 application. Incompatibilities with Python 3 exist.
-
 1. Open a terminal
 2. `$ cd gr-adsb/`
 3. `$ cd web/`
-4. `$ ./webserver.py` or `$ python2 webserver.py`
+4. `$ ./webserver.py` or `$ python3 webserver.py`
 5. Open a web browser
 6. Browse to `localhost:5000`
 
@@ -148,7 +158,6 @@ Python dependencies:
 
 ```bash
 $ pip3 install --user colorama
-$ pip3 install --user zmq
 ```
 
 Source build:
@@ -168,6 +177,7 @@ $ sudo ldconfig
 If using the built-in Google Maps webserver, you'll need to install the following Python packages.
 
 ```bash
+$ pip3 install --user zmq
 $ pip3 install --user flask
 $ pip3 install --user flask-socketio
 $ pip3 install --user gevent
