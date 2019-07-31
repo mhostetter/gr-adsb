@@ -5,6 +5,8 @@ category: '[ADS-B]'
 templates:
   imports: import adsb
   make: adsb.framer(${fs}, ${threshold})
+  callbacks:
+  - set_threshold(${threshold})
 
 parameters:
 - id: fs
