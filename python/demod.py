@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016-2017 Matt Hostetter.
+# Copyright 2016-2019 Matt Hostetter.
 #
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,10 +33,7 @@ class demod(gr.sync_block):
     docstring for block demod
     """
     def __init__(self, fs):
-        gr.sync_block.__init__(self,
-            name="demod",
-            in_sig=[np.float32],
-            out_sig=[np.float32])
+        gr.sync_block.__init__(self, name="demod", in_sig=[np.float32], out_sig=[np.float32])
 
         # Calculate the samples/symbol
         # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
@@ -69,9 +66,6 @@ class demod(gr.sync_block):
         # Get tags from ADS-B Framer block
         tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt("burst"))
 
-        bit1_idxs = []
-        bit0_idxs = []
-
         for tag in tags:
             # Grab metadata for this tag
             value = pmt.to_python(tag.value)
@@ -94,7 +88,7 @@ class demod(gr.sync_block):
                 bit1_amps = in0[bit1_idxs]
 
                 # Grab the amplitudes where the "bit 0 pulse" should be
-                bit0_idxs = range(sob_idx + self.sps/2, sob_idx + self.sps*MAX_NUM_BITS + self.sps/2, self.sps)
+                bit0_idxs = range(sob_idx + self.sps // 2, sob_idx + self.sps // 2 + self.sps*MAX_NUM_BITS, self.sps)
                 bit0_amps = in0[bit0_idxs]
 
                 self.bits = np.zeros(MAX_NUM_BITS, dtype=np.uint8)

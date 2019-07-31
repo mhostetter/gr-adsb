@@ -144,6 +144,15 @@ GNU Radio is a dependency for `gr-adsb`. I recommend installing it with [PyBOMBS
 
 Build `gr-adsb` manually from source using the following procedure.
 
+Python dependencies:
+
+```bash
+$ pip3 install --user colorama
+$ pip3 install --user zmq
+```
+
+Source build:
+
 ```bash
 $ cd gr-adsb/
 $ mkdir build
@@ -159,8 +168,8 @@ $ sudo ldconfig
 If using the built-in Google Maps webserver, you'll need to install the following Python packages.
 
 ```bash
-$ sudo pip install flask
-$ sudo pip install flask-socketio
-$ sudo pip install gevent
-$ sudo pip install gevent-websocket
+$ pip3 install --user flask
+$ pip3 install --user flask-socketio
+$ pip3 install --user gevent
+$ pip3 install --user gevent-websocket
 ```

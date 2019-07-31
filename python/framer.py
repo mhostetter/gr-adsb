@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016-2017 Matt Hostetter.
+# Copyright 2016-2019 Matt Hostetter.
 #
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,10 +35,7 @@ class framer(gr.sync_block):
     docstring for block framer
     """
     def __init__(self, fs, threshold):
-        gr.sync_block.__init__(self,
-            name="ADS-B Framer",
-            in_sig=[np.float32],
-            out_sig=[np.float32])
+        gr.sync_block.__init__(self, name="ADS-B Framer", in_sig=[np.float32], out_sig=[np.float32])
 
         # Calculate the samples/symbol
         # ADS-B is modulated at 1 Msym/s with Pulse Position Modulation, so the effective
@@ -110,10 +107,10 @@ class framer(gr.sync_block):
                 if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) == 1:
                     in0_rise_edge_idxs = np.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs) - 1)
                 else:
-                    print "Oh no, this shouldn\"t be happening..."
+                    print("Oh no, this shouldn't be happening...")
 
             # Find the index of the center of each pulses
-            pulse_idxs = np.mean((in0_fall_edge_idxs,in0_rise_edge_idxs), axis=0).astype(int)
+            pulse_idxs = np.mean((in0_fall_edge_idxs, in0_rise_edge_idxs), axis=0, dtype=int)
 
             # For each pulse found, check if that pulse is the beginning of the ADS-B
             # preamble.
@@ -126,7 +123,7 @@ class framer(gr.sync_block):
                     self.prev_eob_idx = -1
 
                     # Tag the detected pulses for debug
-                    if 0:
+                    if False:
                         self.add_item_tag(
                             0,
                             (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
@@ -137,7 +134,7 @@ class framer(gr.sync_block):
 
                     # Starting at the center of the discovered pulse, find the amplitudes of each
                     # half symbol and then compare it to the preamble half symbols
-                    amps = in0[pulse_idx:(pulse_idx + NUM_PREAMBLE_BITS*self.sps):(self.sps/2)]
+                    amps = in0[pulse_idx:pulse_idx + NUM_PREAMBLE_BITS*self.sps:self.sps // 2]
 
                     # Set a pulse to 1 if it's greater than 1/2 the amplitude of the detected pulse
                     pulses = np.zeros(NUM_PREAMBLE_PULSES, dtype=int)

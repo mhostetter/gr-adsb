@@ -22,16 +22,17 @@
 This is the GNU Radio ADSB module. Place your Python package
 description here (python/__init__.py).
 '''
+from __future__ import unicode_literals
 
-# import swig generated symbols into the ADSB namespace
+# import swig generated symbols into the adsb namespace
 try:
-	# this might fail if the module is python-only
-	from ADSB_swig import *
+    # this might fail if the module is python-only
+    from .adsb_swig import *
 except ImportError:
-	pass
+    pass
 
 # import any pure python here
-from framer import framer
-from decoder import decoder
-from demod import demod
+from .framer import framer
+from .demod import demod
+from .decoder import decoder
 #

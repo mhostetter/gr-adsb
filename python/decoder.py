@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2016-2017 Matt Hostetter.
+# Copyright 2016-2019 Matt Hostetter.
 #
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,9 +19,13 @@
 # Boston, MA 02110-1301, USA.
 #
 
+import atexit
+import curses
 import datetime
+import logging
 import os
 import time
+from colorama import Fore, Back, Style
 
 import pmt
 from gnuradio import gr
@@ -91,11 +95,11 @@ RI_STR_LUT = (
     "Not Assigned",
 )
 
-# (DF 0) Cross-Link Capability, 1 bit
+# (DF 0) Crosslink Capability, 1 bit
 # (3.1.2.8.2.3)
 CC_STR_LUT = (
-    "Does Not Support Cross-Link Capability",
-    "Does Support Cross-Link Capability",
+    "Does Not Support Crosslink Capability",
+    "Does Support Crosslink Capability",
 )
 
 # (DF 4, 20) Flight Status, 3 bits
@@ -250,21 +254,18 @@ T_STR_LUT = (
 # (3.1.2.9.1.2)
 CALLSIGN_CHAR_LUT = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ_____ _______________0123456789______"
 
-MAX_NUM_BITS                = 112
-CPR_TIMEOUT_S               = 30 # Seconds consider CPR-encoded lat/lon info invalid
-PLANE_TIMEOUT_S             = 1*60
-INSERTS_PER_TRANSACTION     = 50
-FT_PER_METER                = 3.28084
+MAX_NUM_BITS = 112
+CPR_TIMEOUT_S = 30 # Seconds consider CPR-encoded lat/lon info invalid
+PLANE_TIMEOUT_S = 1*60
+INSERTS_PER_TRANSACTION = 50
+FT_PER_METER = 3.28084
 
 class decoder(gr.sync_block):
     """
     docstring for block decoder
     """
     def __init__(self, msg_filter, error_corr, print_level):
-        gr.sync_block.__init__(self,
-            name="ADS-B Decoder",
-            in_sig=None,
-            out_sig=None)
+        gr.sync_block.__init__(self, name="ADS-B Decoder", in_sig=None, out_sig=None)
 
         self.msg_filter = msg_filter
         self.error_corr = error_corr
@@ -276,11 +277,21 @@ class decoder(gr.sync_block):
         # Reset packet values
         self.reset()
 
+        if self.print_level == "Brief":
+            logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.CRITICAL)
+
+            atexit.register(curses.endwin)
+            self.screen = curses.initscr()
+            self.screen.addstr(0, 0, "{:^8s} {:^6s} {:^8s} {:^5s} {:^5s} {:^5s} {:^5s} {:^11s} {:^11s} {:^4s}".format("Time", "ICAO", "Callsign", "Alt", "Climb", "Speed", "Hdng", "Latitude", "Longitude", "Msgs"), curses.A_BOLD)
+            self.screen.addstr(1, 0, "{:^8s} {:>6s} {:>8s} {:>5s} {:>5s} {:>5s} {:>5s} {:>11s} {:>11s} {:>4s}".format("", "", "", "ft", "ft/m", "kt", "deg", "deg", "deg", ""), curses.A_DIM)
+            self.screen.refresh()
+        else:
+            logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.DEBUG)
+
         self.message_port_register_in(pmt.to_pmt("demodulated"))
         self.message_port_register_out(pmt.to_pmt("decoded"))
         self.message_port_register_out(pmt.to_pmt("unknown"))
         self.set_msg_handler(pmt.to_pmt("demodulated"), self.decode_packet)
-
 
     def decode_packet(self, pdu):
         # Reset decoder values before decoding next burst
@@ -292,9 +303,6 @@ class decoder(gr.sync_block):
         self.timestamp = meta["timestamp"]
         self.datetime = datetime.datetime.utcfromtimestamp(self.timestamp).strftime("%Y-%m-%d %H:%M:%S.%f UTC")
         self.snr = meta["snr"]
-        # print "vector\n", vector
-        # print "vector.dtype\n", vector.dtype
-        # print "type(vector)\n", type(vector)
         self.bits = vector
 
         # Decode the header (common) part of the packet
@@ -326,10 +334,13 @@ class decoder(gr.sync_block):
 
 
     def get_direction(self, heading):
-        # Heading = 0 deg = Eastbound
-        # Heading = 90 deg = Northbound
-        # Heading = 180/-180 deg = Westbound
-        # Heading = -90 deg = Southbound
+        """
+        Notes:
+            `heading = 0` Eastbound
+            `heading = 90` Northbound
+            `heading = 180/-180` Westbound
+            `heading = -90` Southbound
+        """
         if heading < 0:
             heading += 360.0
 
@@ -370,7 +381,7 @@ class decoder(gr.sync_block):
 
 
     def update_plane(self, aa_str):
-        if self.plane_dict.has_key(aa_str) == True:
+        if aa_str in self.plane_dict:
             # The current plane already exists in the dictionary
 
             # If the plane has timed out, delete its old altimetry values
@@ -409,54 +420,50 @@ class decoder(gr.sync_block):
 
 
     def print_planes(self):
-        os.system("clear")
-        # print "\n\n"
-        print " ICAO  Callsign  Alt  Climb Speed Hdng  Latitude    Longitude  Msgs Age"
-        print "                 (ft) (ft/m) (kt) (deg)                             (s)"
-        print "------ -------- ----- ----- ----- ---- ----------- ----------- ---- ---"
+        index = 0
+        for icao in self.plane_dict:
+            last_seen = datetime.datetime.utcfromtimestamp(self.timestamp).strftime("%H:%M:%S")
 
-        for key in self.plane_dict:
-            icao = "{:6s}".format(key)
-
-            if self.plane_dict[key]["callsign"] is not None:
-                callsign = "{:8s}".format(self.plane_dict[key]["callsign"])
+            if self.plane_dict[icao]["callsign"] is not None:
+                callsign = "{:8s}".format(self.plane_dict[icao]["callsign"])
             else:
                 callsign = " "*8
 
-            if np.isnan(self.plane_dict[key]["altitude"]) == False:
-                altitude = "{:5.0f}".format(self.plane_dict[key]["altitude"])
+            if np.isnan(self.plane_dict[icao]["altitude"]) == False:
+                altitude = "{:5.0f}".format(self.plane_dict[icao]["altitude"])
             else:
                 altitude = " "*5
 
-            if np.isnan(self.plane_dict[key]["vertical_rate"]) == False:
-                vertical_rate = "{:5.0f}".format(self.plane_dict[key]["vertical_rate"])
+            if np.isnan(self.plane_dict[icao]["vertical_rate"]) == False:
+                vertical_rate = "{:5.0f}".format(self.plane_dict[icao]["vertical_rate"])
             else:
                 vertical_rate = " "*5
 
-            if np.isnan(self.plane_dict[key]["speed"]) == False:
-                speed = "{:5.0f}".format(self.plane_dict[key]["speed"])
+            if np.isnan(self.plane_dict[icao]["speed"]) == False:
+                speed = "{:5.0f}".format(self.plane_dict[icao]["speed"])
             else:
                 speed = " "*5
 
-            if np.isnan(self.plane_dict[key]["heading"]) == False:
-                heading = "{:4.0f}".format(self.plane_dict[key]["heading"])
+            if np.isnan(self.plane_dict[icao]["heading"]) == False:
+                heading = "{:5.0f}".format(self.plane_dict[icao]["heading"])
             else:
-                heading = " "*4
+                heading = " "*5
 
-            if np.isnan(self.plane_dict[key]["latitude"]) == False:
-                latitude = "{:11.7f}".format(self.plane_dict[key]["latitude"])
+            if np.isnan(self.plane_dict[icao]["latitude"]) == False:
+                latitude = "{:11.7f}".format(self.plane_dict[icao]["latitude"])
             else:
                 latitude = " "*11
 
-            if np.isnan(self.plane_dict[key]["longitude"]) == False:
-                longitude = "{:11.7f}".format(self.plane_dict[key]["longitude"])
+            if np.isnan(self.plane_dict[icao]["longitude"]) == False:
+                longitude = "{:11.7f}".format(self.plane_dict[icao]["longitude"])
             else:
                 longitude = " "*11
 
-            num_msgs = "{:4d}".format(self.plane_dict[key]["num_msgs"])
-            age = "{:3.0f}".format(int(time.time()) - self.plane_dict[key]["last_seen"])
+            num_msgs = "{:4d}".format(self.plane_dict[icao]["num_msgs"])
+            age = "{:3.0f}".format(int(time.time()) - self.plane_dict[icao]["last_seen"])
 
-            print "%s %s %s %s %s %s %s %s %s %s" % (
+            self.screen.addstr(2 + index, 0, "{:8s} {:6s} {} {} {} {} {} {} {} {}".format(
+                last_seen,
                 icao,
                 callsign,
                 altitude,
@@ -465,9 +472,11 @@ class decoder(gr.sync_block):
                 heading,
                 latitude,
                 longitude,
-                num_msgs,
-                age
-            )
+                num_msgs
+            ))
+            self.screen.refresh()
+
+            index += 1
 
 
     def publish_decoded_pdu(self, aa_str):
@@ -498,27 +507,39 @@ class decoder(gr.sync_block):
         pdu = pmt.cons(meta, vector)
         self.message_port_pub(pmt.to_pmt("unknown"), pdu)
 
+    def log(self, level, name, value, subvalue=None):
+        level_value = {"critical": 50, "error": 40, "warning": 30, "info": 20, "debug": 10, "notset": 0}.get(level.lower(), 0)
+        name_color = {"critical": Fore.RED, "error": Fore.RED, "warning": Fore.YELLOW, "info": Fore.MAGENTA, "debug": Fore.GREEN, "notset": Fore.GREEN}.get(level.lower(), Fore.MAGENTA)
+        name_str = "{}{}{}".format(Style.BRIGHT + name_color, name, Style.RESET_ALL)
+        # subname_str = " {}{}".format(Style.DIM, subname) if subname else ""
+        value_str = "{}{}{}".format(Style.NORMAL, value, Style.RESET_ALL)
+        subvalue_str = " {}{}{}".format(Style.DIM, subvalue, Style.RESET_ALL) if subvalue is not None else ""
+        msg = "{}: {}{}{}".format(name_str, value_str, subvalue_str, Style.RESET_ALL)
+        logging.log(level_value, msg)
 
-    # http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
-    # http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
-    # http://www.anteni.net/adsb/Doc/1090-WP30-18-DRAFT_DO-260B-V42.pdf
-    # http://www.cats.com.kh/download.php?path=vdzw4dHS08mjtKi6vNi31Mbn0tnZ2eycn6ydmqPE19rT7Mze4cSYpsetmdXd0w==
-    # http://www.sigidwiki.com/images/1/15/ADS-B_for_Dummies.pdf
     def decode_header(self):
+        """
+        References:
+            http://www.bucharestairports.ro/files/pages_files/Vol_IV_-_4yh_ed,_July_2007.pdf
+            http://www.icao.int/APAC/Documents/edocs/cns/SSR_%20modesii.pdf
+            http://www.anteni.net/adsb/Doc/1090-WP30-18-DRAFT_DO-260B-V42.pdf
+            http://www.cats.com.kh/download.php?path=vdzw4dHS08mjtKi6vNi31Mbn0tnZ2eycn6ydmqPE19rT7Mze4cSYpsetmdXd0w==
+            http://www.sigidwiki.com/images/1/15/ADS-B_for_Dummies.pdf
+        """
         # Downlink Format, 5 bits
         self.df = self.bin2dec(self.bits[0:0+5])
 
-        if self.print_level == "Verbose":
-            if self.msg_filter == "All Messages" or (self.msg_filter == "Extended Squitter Only" and self.df in [17,18,19]):
-                print "\n"
-                print "----------------------------------------------------------------------"
-                print "Datetime:".ljust(16) + self.datetime
-                print "SNR:".ljust(16) + "%1.2f dB" % (self.snr)
-                print "DF:".ljust(16) + "%d %s" % (self.df, DF_STR_LUT[self.df])
+        if self.msg_filter == "All Messages" or (self.msg_filter == "Extended Squitter Only" and self.df in [17,18,19]):
+            logging.info("----------------------------------------------------------------------")
+            self.log("info", "Datetime", self.datetime)
+            self.log("info", "SNR", "{:1.2f} dB".format(self.snr))
+            self.log("info", "Downlink Format (DF)", self.df, DF_STR_LUT[self.df])
 
-
-    # http://jetvision.de/sbs/adsb/crc.htm
     def check_parity(self):
+        """
+        References:
+            http://jetvision.de/sbs/adsb/crc.htm
+        """
         # CRC polynomial (0xFFFA048) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 + x^11 + x^12 + x^14 + x^21 + x^24
         crc_poly = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1])
 
@@ -537,21 +558,20 @@ class decoder(gr.sync_block):
                 # interrogated plane's ICAO address
                 self.aa_bits = crc_bits ^ ap_bits
                 self.aa = self.bin2dec(self.aa_bits)
-                self.aa_str = "%06x" % (self.aa)
+                self.aa_str = "{:06x}".format(self.aa)
 
                 # If the ICAO address is in our plane dictionary,
                 # then it's safe to assume the CRC passes
-                parity_passed = self.plane_dict.has_key(self.aa_str) == True
+                parity_passed = self.aa_str in self.plane_dict
 
-                if parity_passed == True:
-                    if self.print_level == "Verbose":
-                        print "CRC:".ljust(16) + "Passed (Recognized AA from AP)"
-                        print "AA:".ljust(16) + "%s" % (self.aa_str)
+                if parity_passed:
+                    self.log("info", "CRC", "Passed", "Recognized AA from AP")
+                    self.log("info", "Address Announced (AA)", self.aa_str)
+                    self.log("info", "Callsign", self.plane_dict.get(self.aa_str, {}).get("callsign", ""))
                     return 1
                 else:
-                    if self.print_level == "Verbose":
-                        print "CRC:".ljust(16) + "Failed (Unrecognized AA from AP)"
-                        print "AA:".ljust(16) + "%s" % (self.aa_str)
+                    self.log("info", "CRC", Fore.RED + "Failed", "Unrecognized AA from AP")
+                    self.log("info", "Address Announced (AA)", self.aa_str)
                     return 0
 
             elif self.df in [11]:
@@ -566,24 +586,22 @@ class decoder(gr.sync_block):
                 crc = self.bin2dec(crc_bits)
 
                 # result_bits = pi_bits ^ crc_bits
-                # print "pi_bits", pi_bits
-                # print "crc_bits", crc_bits
-                # print "result_bits", result_bits
+                # print("pi_bits", pi_bits)
+                # print("crc_bits", crc_bits)
+                # print("result_bits", result_bits)
                 # parity_passed = (pi_bits[:7] == crc_bits[:7])
 
-                parity_passed = (pi == crc)
+                parity_passed = pi == crc
 
                 # 17 0s
                 # Code Label, 3 bits (3.1.2.5.2.1.3)
                 # Interrogator Code, 4 bits (3.1.2.5.2.1.2)
 
-                if parity_passed == True:
-                    if self.print_level == "Verbose":
-                        print "CRC:".ljust(16) + "Passed"
+                if parity_passed:
+                    self.log("info", "CRC", "Passed")
                     return 1
                 else:
-                    if self.print_level == "Verbose":
-                        print "CRC:".ljust(16) + "Failed (PI-CRC = %d)" % (pi-crc)
+                    self.log("info", "CRC", Fore.RED + "Failed", "PI-CRC = {}".format(pi-crc))
                     return 0
 
             elif self.df in [16,20,21,24]:
@@ -600,21 +618,20 @@ class decoder(gr.sync_block):
                 # interrogated plane's ICAO address
                 self.aa_bits = crc_bits ^ ap_bits
                 self.aa = self.bin2dec(self.aa_bits)
-                self.aa_str = "%06x" % (self.aa)
+                self.aa_str = "{:06x}".format(self.aa)
 
                 # If the ICAO address is in our plane dictionary,
                 # then it's safe to assume the CRC passes
-                parity_passed = self.plane_dict.has_key(self.aa_str) == True
+                parity_passed = self.aa_str in self.plane_dict
 
-                if parity_passed == True:
-                    if self.print_level == "Verbose":
-                        print "CRC:".ljust(16) + "Passed (Recognized AA from AP)"
-                        print "AA:".ljust(16) + "%s" % (self.aa_str)
+                if parity_passed:
+                    self.log("info", "CRC", "Passed", "Recognized AA from AP")
+                    self.log("info", "Address Announced (AA)", self.aa_str)
+                    self.log("info", "Callsign", self.plane_dict.get(self.aa_str, {}).get("callsign", ""))
                     return 1
                 else:
-                    if self.print_level == "Verbose":
-                        print "CRC:".ljust(16) + "Failed (Unrecognized AA from AP)"
-                        print "AA:".ljust(16) + "%s" % (self.aa_str)
+                    self.log("info", "CRC", Fore.RED + "Failed", "Unrecognized AA from AP")
+                    self.log("info", "Address Announced (AA)", self.aa_str)
                     return 0
 
         if self.msg_filter == "All Messages" or self.msg_filter == "Extended Squitter Only":
@@ -630,23 +647,25 @@ class decoder(gr.sync_block):
 
                 parity_passed = (pi == crc)
 
-                if parity_passed == True:
-                    if self.print_level == "Verbose":
-                        print "CRC:".ljust(16) + "Passed"
+                if parity_passed:
+                    self.log("info", "CRC", "Passed")
                     return 1
                 else:
-                    if self.print_level == "Verbose":
-                        print "CRC:".ljust(16) + "Failed (PI-CRC = %d)" % (pi-crc)
+                    self.log("info", "CRC", Fore.RED + "Failed", "PI-CRC = {}".format(pi-crc))
                     return 0
 
         # Unsupported downlink format
-        #print "Unsupported downlink format"
+        self.log("debug", "DF", self.df, "Unknown DF")
+
         return 0 # Parity failed
 
 
-    # http://www.radarspotters.eu/forum/index.php?topic=5617.msg41293#msg41293
-    # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1994/022_CRC_calculations_for_Mode_S.pdf
     def compute_crc(self, data, poly):
+        """
+        References:
+            http://www.radarspotters.eu/forum/index.php?topic=5617.msg41293#msg41293
+            http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1994/022_CRC_calculations_for_Mode_S.pdf
+        """
         num_data_bits = len(data)
         num_crc_bits = len(poly)-1
 
@@ -671,42 +690,42 @@ class decoder(gr.sync_block):
             return 0
 
         if self.error_corr == "Conservative":
-            print "To be implemented"
+            self.log("critical", "FEC", "Conservative error correction to be implemented")
             return 0
 
         elif self.error_corr == "Brute Force":
-            print "To be implemented"
+            self.log("critical", "FEC", "Brute Force error correction to be implemented")
             return 0
 
         else:
             return 0
 
 
-    # http://adsb-decode-guide.readthedocs.org/en/latest/introduction.html
     def decode_message(self):
+        """
+        References:
+            http://adsb-decode-guide.readthedocs.org/en/latest/introduction.html
+        """
         if self.msg_filter == "All Messages":
             # DF = 0  (3.1.2.8.2) Short Air-Air Surveillance (ACAS)
             # DF = 16 (3.1.2.8.3) Long Air-Air Surveillance (ACAS)
             if self.df in [0,16]:
                 # Vertical Status, 1 bit
                 vs = self.bits[5]
+                self.log("info", "Vertical Status (VS)", vs, VS_STR_LUT[vs])
 
                 # Reply Information, 4 bits
                 ri = self.bin2dec(self.bits[13:13+4])
+                self.log("info", "Reply Information (RI)", ri, RI_STR_LUT[ri])
 
                 # Altitude Code, 13 bits
                 altitude = self.decode_ac13(self.bits[19:19+13])
-
-                if self.print_level == "Verbose":
-                    print "VS:".ljust(16) + "%s" % (VS_STR_LUT[vs])
-                    print "RI:".ljust(16) + "%s" % (RI_STR_LUT[ri])
+                self.log("info", "Altitude", "{} ft".format(altitude))
 
                 if self.df == 0:
-                    # Cross-Link Capability, 1 bits
+                    # Crosslink Capability, 1 bits
                     cc = self.bits[6]
-
-                    if self.print_level == "Verbose":
-                        print "CC:".ljust(16) + "%s" % (CC_STR_LUT[cc])
+                    self.log("info", "Crosslink Capability (CC)", CC_STR_LUT[cc])
 
                 elif self.df == 16:
                     # (4.3.8.4.2.4)
@@ -717,10 +736,9 @@ class decoder(gr.sync_block):
                     vds1 = self.bin2dec(self.bits[32:32+4])
                     vds2 = self.bin2dec(self.bits[36:36+4])
 
-                    if self.print_level == "Verbose":
-                        print "VDS1:".ljust(16) + "%d" % (vds1)
-                        print "VDS2:".ljust(16) + "%d" % (vds2)
-                        print "MV:".ljust(16) + "0x%x To be implemented" % (mv)
+                    self.log("info", "VDS1", vds1)
+                    self.log("info", "VDS2", vds2)
+                    self.log("debug", "MV", "To be implemented", "0x{:x}".format(mv))
 
                     # if vds1 == 3 and vds2 == 0:
 
@@ -730,9 +748,6 @@ class decoder(gr.sync_block):
                     # If the altitude is not invalid, log it
                     self.plane_dict[self.aa_str]["altitude"] = altitude
 
-                if self.print_level == "Verbose":
-                    print "Altitude:".ljust(16) + "%d ft" % (altitude)
-
             # DF = 4 (3.1.2.6.5) Surveillance Altitude Reply
             # DF = 5 (3.1.2.6.7) Surveillance Identity Reply
             # DF = 20 (3.1.2.6.6) Comm-B Altitude Reply
@@ -740,33 +755,27 @@ class decoder(gr.sync_block):
             if self.df in [4,5,20,21]:
                 # Flight Status, 3 bits
                 fs = self.bin2dec(self.bits[5:5+3])
+                self.log("info", "Flight Status (FS)", fs, FS_STR_LUT[fs])
 
                 # Downlink Request, 5 bits
                 dr = self.bin2dec(self.bits[8:8+5])
+                self.log("info", "Downlink Request (DR)", dr, DR_STR_LUT[dr])
 
                 # Utility Message, 6 bits
                 iis = self.bin2dec(self.bits[13:13+4])
                 ids = self.bin2dec(self.bits[17:17+2])
-
-                if self.print_level == "Verbose":
-                    print "FS:".ljust(16) + "%d %s" % (fs, FS_STR_LUT[fs])
-                    print "DR:".ljust(16) + "%d %s" % (dr, DR_STR_LUT[dr])
-                    print "IIS:".ljust(16) + "%d" % (iis)
-                    print "IDS:".ljust(16) + "%d %s" % (ids, IDS_STR_LUT[ids])
+                self.log("info", "IIS", iis)
+                self.log("info", "IDS", ids, IDS_STR_LUT[ids])
 
                 if self.df in [4,20]:
                     # Altitude Code, 13 bits
                     alt = self.decode_ac13(self.bits[19:19+13])
-
-                    if self.print_level == "Verbose":
-                        print "Altitude:".ljust(16) + "%d ft" % (alt)
+                    self.log("info", "Altitude", "{} ft".format(alt))
 
                     if self.df == 20:
                         # Message Comm-B, 56 bits
                         mb = self.decode_mb(self.bits[32:32+56])
-
-                        if self.print_level == "Verbose":
-                            print "MB:".ljust(16) + "0x%x To be implemented" % (mb)
+                        self.log("debug", "Message Comm-B", "To be implemented", "0x{:x}".format(mb))
 
                     # Update planes dictionary
                     self.update_plane(self.aa_str)
@@ -777,9 +786,7 @@ class decoder(gr.sync_block):
                 elif self.df in [5,21]:
                     # Identity Code, 13 bits
                     identity = self.decode_id(self.bits[19:19+13])
-
-                    if self.print_level == "Verbose":
-                        print "Identity:".ljust(16) + "%d" % (identity)
+                    self.log("info", "Identity Code (IC)", identity)
 
                     # Update planes dictionary
                     self.update_plane(self.aa_str)
@@ -790,9 +797,7 @@ class decoder(gr.sync_block):
                     if self.df == 21:
                         # Message Comm-B, 56 bits
                         mb = self.decode_mb(self.bits[32:32+56])
-
-                        if self.print_level == "Verbose":
-                            print "MB:".ljust(16) + "0x%x To be implemented" % (mb)
+                        self.log("debug", "Message Comm-B", "To be implemented", "0x{:x}".format(mb))
 
             # DF = 11 (3.1.2.5.2.2) All-Call Reply
             elif self.df == 11:
@@ -802,29 +807,28 @@ class decoder(gr.sync_block):
                 # Address Announced (ICAO Address) 24 bits
                 self.aa_bits = self.bits[8:8+24]
                 self.aa = self.bin2dec(self.aa_bits)
-                self.aa_str = "%06x" % (self.aa)
+                self.aa_str = "{:06x}".format(self.aa)
 
                 # Update planes dictionary
                 self.update_plane(self.aa_str)
 
-                if self.print_level == "Verbose":
-                    print "CA:".ljust(16) + "%d %s" % (ca, CA_STR_LUT[ca])
-                    print "AA:".ljust(16) + "%s" % (self.aa_str)
+                self.log("info", "Capability (CA)", ca, CA_STR_LUT[ca])
+                self.log("info", "Address Announced (AA)", self.aa_str)
+                self.log("info", "Callsign", self.plane_dict.get(self.aa_str, {}).get("callsign", ""))
 
         if self.msg_filter == "All Messages" or self.msg_filter == "Extended Squitter Only":
             # ADS-B Extended Squitter
             if self.df == 17:
                 # Capability, 3 bits
                 ca = self.bin2dec(self.bits[5:5+3])
+                self.log("info", "Capability (CA)", ca, subvalue=CA_STR_LUT[ca])
 
                 # Address Announced (ICAO Address) 24 bits
                 self.aa_bits = self.bits[8:8+24]
                 self.aa = self.bin2dec(self.aa_bits)
-                self.aa_str = "%06x" % (self.aa)
-
-                if self.print_level == "Verbose":
-                    print "CA:".ljust(16) + "%d %s" % (ca, CA_STR_LUT[ca])
-                    print "AA:".ljust(16) + "%s" % (self.aa_str)
+                self.aa_str = "{:06x}".format(self.aa)
+                self.log("info", "Address Announced (AA)", self.aa_str)
+                self.log("info", "Callsign", self.plane_dict.get(self.aa_str, {}).get("callsign", ""))
 
                 # All CA types contain ADS-B messages
                 self.decode_me()
@@ -833,69 +837,64 @@ class decoder(gr.sync_block):
             elif self.df == 18:
                 # CF Field, 3 bits
                 cf = self.bin2dec(self.bits[5:5+3])
+                self.log("info", "CF", cf, CF_STR_LUT[cf])
 
                 # Address Announced (ICAO Address) 24 bits
                 self.aa_bits = self.bits[8:8+24]
                 self.aa = self.bin2dec(self.aa_bits)
-                self.aa_str = "%06x" % (self.aa)
+                self.aa_str = "{:06x}".format(self.aa)
+                self.log("info", "Address Announced (AA)", self.aa_str)
+                self.log("info", "Callsign", self.plane_dict.get(self.aa_str, {}).get("callsign", ""))
 
-                if self.print_level == "Verbose":
-                    print "CF:".ljust(16) + "%d %s" % (cf, CF_STR_LUT[cf])
-                    print "AA:".ljust(16) + "%s" % (self.aa_str)
-
-                print "***** DF %d CF %d spotted in the wild *****" % (self.df, cf)
+                self.log("debug", "DF={} CF={}".format(self.df, cf), "Spotted in the wild!")
 
                 if cf in [0,1,6]:
                     if cf == 1:
-                        print "Look into this. The AA is not the ICAO address."
+                        self.log("debug", "CF={}".format(cf), "Look into this, the AA is not the ICAO address")
                     self.decode_me()
                 elif cf in [2,3,5]:
                     self.decode_tisb_me()
                 elif cf in [4]:
-                    print "TIS-B and ADS-B Management Message"
+                    self.log("debug", "TIS-B and ADS-B Management Message", "To be implemented")
                 elif cf in [6]:
-                    print "ADS-B Message Rebroadcast"
+                    self.log("debug", "ADS-B Message Rebroadcast", "To be implemented")
 
             # Military Extended Squitter
             elif self.df == 19:
                 # Application Field, 3 bits
                 af = self.bin2dec(self.bits[5:5+3])
+                self.log("info", "Application Field (AF)", af, AF_STR_LUT[af])
 
                 # Address Announced (ICAO Address) 24 bits
                 self.aa_bits = self.bits[8:8+24]
                 self.aa = self.bin2dec(self.aa_bits)
-                self.aa_str = "%06x" % (self.aa)
-
-                if self.print_level == "Verbose":
-                    print "AF:".ljust(16) + "%d %s" % (af, AF_STR_LUT[af])
-                    print "AA:".ljust(16) + "%s" % (self.aa_str)
-
-                print "***** DF %d AF %d spotted in the wild *****" % (self.df, af)
+                self.aa_str = "{:06x}".format(self.aa)
+                self.log("info", "Address Announced (AA)", self.aa_str)
+                self.log("info", "Callsign", self.plane_dict.get(self.aa_str, {}).get("callsign", ""))
+                self.log("debug", "DF={} AF={}".format(self.df, af), "Spotted in the wild!")
 
                 if af in [0]:
                     self.decode_me()
                 elif af in [1,2,3,4,5,6,7]:
-                    print "Reserved for Military Use"
+                    self.log("debug", "AF={}".format(af), "Reserved for Military Use")
 
-        # elif self.df == 28:
-        #     print "Emergency/priority status"
-        # elif self.df == 31:
-        #     print "Aircraft operational status"
-        # else:
-        #     print "Unknown DF"
+        elif self.df == 28:
+            self.log("debug", "DF", self.df, "Emergency/priority status")
+        elif self.df == 31:
+            self.log("debug", "DF", self.df, "Aircraft operational status")
+        else:
+            self.log("debug", "DF", self.df, "Unknown DF")
 
 
     # (3.1.2.6.7.1) Identity Code
     def decode_id(self, bits):
-        print "To be implemented"
-
+        self.log("debug", "Identity Code", "To be implemented", bits)
         return self.bin2dec(bits)
 
 
     # (3.1.2.6.6.1) Message Comm-B, 56 bits
     def decode_mb(self, bits):
-        print "To be implemented"
-
+        self.log("debug", "Message Comm-B", "To be implemented", bits)
         return self.bin2dec(bits)
 
 
@@ -907,10 +906,7 @@ class decoder(gr.sync_block):
 
         if q_bit == 0:
             # Q-bit = 0, altitude is encoded in multiples of 100 ft
-
-            if self.print_level == "Verbose":
-                print "To be implemented"
-                print "Is this happening ?????????????????????????????????????????????"
+            self.log("debug", "AC=12 Q-bit={}".format(q_bit), "To be implemented")
 
             return -1
 
@@ -935,8 +931,7 @@ class decoder(gr.sync_block):
 
             if m_bit == 0:
                 # The altitude reading is in feet
-                if self.print_level == "Verbose":
-                    print "Units:".ljust(16) + "Standard"
+                self.log("debug", "Units", "Standard")
 
                 # Q-bit, 1 bit
                 q_bit = bits[8]
@@ -957,11 +952,8 @@ class decoder(gr.sync_block):
                     b4 = bits[11]
                     d4 = bits[12]
 
-                    if self.print_level == "Verbose":
-                        # To be implemented
-                        print "This requires a huge LUT *************************************"
-                        print "AltCode:".ljust(16) + "%d%d%d%d%d%d%d%d%d%d%d" % (d2,d4,a1,a2,a4,b1,b2,b4,c1,c2,c4)
-                        print "To be implemented"
+                    # To be implemented
+                    self.log("debug", "AC=13 M-bit=0 Q-bit={}".format(q_bit), "To be implemented, AltCode: {}".format(d2,d4,a1,a2,a4,b1,b2,b4,c1,c2,c4))
 
                     # Altitude in ft
                     return -1
@@ -978,9 +970,7 @@ class decoder(gr.sync_block):
 
             else:
                 # The altitude reading is in meters
-                if self.print_level == "Verbose":
-                    print "Units:".ljust(16) + "Metric"
-                    print "To be implemented"
+                self.log("debug", "Units", "Metric", "To be implemented")
 
                 # Altitude in ft
                 return -1
@@ -994,19 +984,14 @@ class decoder(gr.sync_block):
     def decode_me(self):
         # Type Code, 5 bits
         tc = self.bin2dec(self.bits[32:32+5])
-
-        if self.print_level == "Verbose":
-            print "TC:".ljust(16) + "%d %s" % (tc, TC_STR_LUT[tc])
+        self.log("info", "Type Code (TC)", tc, TC_STR_LUT[tc])
 
         ## Airborne/Surface Position ###
         if tc in [0]:
             # Message, 3 bits
             me = self.bits[0:self.payload_length]
-            # print "ME"
-            # print me
-            # sort(me) # Crash the program
 
-        ### Aircraft Indentification ###
+        ### Aircraft Identification ###
         elif tc in range(1,5):
             # Grab callsign using character LUT
             callsign = ""
@@ -1024,12 +1009,11 @@ class decoder(gr.sync_block):
             self.plane_dict[self.aa_str]["callsign"] = callsign
             self.publish_decoded_pdu(self.aa_str)
 
-            if self.print_level == "Verbose":
-                print "Callsign:".ljust(16) + "%s" % (callsign)
+            # print("Callsign: {}".format(callsign))
 
         ### Surface Position ###
         elif tc in range(5,9):
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         ### Airborne Position (Baro Altitude) ###
@@ -1069,11 +1053,11 @@ class decoder(gr.sync_block):
             else:
                 # Figure out what went wrong
                 valid_lat_lon = False
-                print "valid_lat_lon", valid_lat_lon
-                print "lat_cpr", lat_cpr
-                print "lon_cpr", lon_cpr
-                print "lat", lat
-                print "lon", lon
+                self.log("debug", "valid_lat_lon", valid_lat_lon)
+                self.log("debug", "lat_cpr", lat_cpr)
+                self.log("debug", "lon_cpr", lon_cpr)
+                self.log("debug", "lat", lat)
+                self.log("debug", "lon", lon)
 
             self.plane_dict[self.aa_str]["altitude"] = alt
             if np.isnan(lat) == False and np.isnan(lon) == False:
@@ -1083,12 +1067,11 @@ class decoder(gr.sync_block):
             if valid_lat_lon:
                 self.publish_decoded_pdu(self.aa_str)
 
-            if self.print_level == "Verbose":
-                print "SS:".ljust(16) + "%d %s" % (ss, SS_STR_LUT[ss])
-                print "Time:".ljust(16) + "%d %s" % (time_bit, T_STR_LUT[time_bit])
-                print "Latitude:".ljust(16) + "%s N" % (("%1.7f" % lat) if np.isnan(lat)==False else "N/A")
-                print "Longitude:".ljust(16) + "%s E" % (("%1.7f" % lon) if np.isnan(lon)==False else "N/A")
-                print "Altitude:".ljust(16) + "%d ft" % (alt)
+            self.log("info", "Surveillance Status (SS)", ss, SS_STR_LUT[ss])
+            self.log("info", "Time", time_bit, T_STR_LUT[time_bit])
+            self.log("info", "Latitude", "{} N".format(lat))
+            self.log("info", "Longitude", "{} E".format(lon))
+            self.log("info", "Altitude", "{} ft".format(alt))
 
 
         ### Airborne Velocities ###
@@ -1174,81 +1157,78 @@ class decoder(gr.sync_block):
                 self.plane_dict[self.aa_str]["vertical_rate"] = vertical_rate
                 self.publish_decoded_pdu(self.aa_str)
 
-                if self.print_level == "Verbose":
-                    print "ST:".ljust(16) + "%d %s" % (st, "Ground Velocity")
-                    if ic == 0:
-                        print "IC:".ljust(16) + "%d %s" % (ic, "No Change in Intent")
-                    else:
-                        print "IC:".ljust(16) + "%d %s" % (ic, "No Change in Intent")
-                    print "Speed:".ljust(16) + "%1.0f kt" % (speed)
-                    print "Heading:".ljust(16) + "%1.0f deg (%s)" % (heading, self.get_direction(heading))
-                    print "Climb:".ljust(16) + "%d ft/min" % (vertical_rate)
-                    if vr_src == 0:
-                        print "Climb Source:".ljust(16) + "%d %s" % (vr_src, "Geometric Source (GNSS or INS)")
-                    else:
-                        print "Climb Source:".ljust(16) + "%d %s" % (vr_src, "Barometric Source")
+                self.log("info", "Subtype (ST)", st, "Ground Velocity")
+                if ic == 0:
+                    self.log("info", "Intent Change (IC)", ic, "No Change in Intent")
+                else:
+                    self.log("info", "Intent Change (IC)", ic, "No Change in Intent")
+                self.log("info", "Speed", "{:1.0f} kt".format(speed))
+                self.log("info", "Heading", "{:1.0f} deg ({})".format(heading, self.get_direction(heading)))
+                self.log("info", "Climb", "{} ft/min".format(vertical_rate))
+                if vr_src == 0:
+                    self.log("info", "Climb Source", vr_src, "Geometric Source (GNSS or INS)")
+                else:
+                    self.log("info", "Climb Source", vr_src, "Barometric Source")
 
             # Airborne velocity subtype
             elif st in [3,4]:
-                if self.print_level == "Verbose":
-                    print "ST:".ljust(16) + "%d %s" % (st, "Air Velocity")
-
-            # else:
-            #     print "DF %d TC %d ST %d Not yet implemented" % (self.df, tc, self.st)
+                self.log("info", "Subtype (ST)", st, "Air Velocity")
+            else:
+                self.log("debug", "DF={} TC={} ST={}".format(self.df, tc, self.st), "To be implemented")
 
         ### Airborne Position (GNSS Height) ###
         elif tc in range(20,23):
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         ### Test Message ###
         elif tc in [23]:
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         ### Surface System Status ###
         elif tc in [24]:
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         ### Reserved ###
         elif tc in range(25,28):
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         ### Extended Squitter A/C Status ###
         elif tc in [28]:
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         ### Target State and Status (V.2) ###
         elif tc in [29]:
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         ### Reserved ###
         elif tc in [30]:
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         ### Aircraft Operation Status ###
         elif tc in [31]:
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
         else:
-            print "To be implemented"
+            self.log("debug", "TC", tc, "To be implemented")
             self.publish_unknown_pdu()
 
 
     def decode_tisb_me(self):
-        print "To be implemented"
+        self.log("TIS-B", "To be implemented")
         self.publish_unknown_pdu()
 
 
     # http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1995/002_Aircraft_Position_Report_using_DGPS_Mode-S.pdf
     def calculate_lat_lon(self, cpr):
-        # If the even and odd frame data is still valid, calculatte the
+        # If the even and odd frame data is still valid, calculate the
         # latitude and longitude
         lat_dec = np.NaN
         lon_dec = np.NaN
