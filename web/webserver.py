@@ -19,11 +19,14 @@
 # Boston, MA 02110-1301, USA.
 #
 
+from gevent import monkey
+monkey.patch_all()
+
+import time
 from flask import Flask, request
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 from threading import Thread
-import time 
-import zmq
+import zmq.green as zmq
 
 import pmt
 
@@ -34,11 +37,11 @@ ZMQ_ADDRESS = "127.0.0.1"
 ZMQ_PORT = 5001
 
 app = Flask(__name__, static_url_path="")
-# app.config["SECRET_KEY"] = "secret!"
+app.config["SECRET_KEY"] = "secret!"
 socketio = SocketIO(app)
 
 
-def background_thread():
+def zmq_thread():
     # Establish ZMQ context and socket
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
@@ -50,10 +53,8 @@ def background_thread():
         pdu_bin = socket.recv()
         pdu = pmt.deserialize_str(pdu_bin)
         plane = pmt.to_python(pmt.car(pdu))
-        print(plane)
 
         socketio.emit("updatePlane", plane)
-        time.sleep(0.0001)
 
 
 @app.route("/")
@@ -72,8 +73,8 @@ def disconnect():
 
 
 if __name__ == "__main__":
-    thread = Thread(target=background_thread)
+    thread = Thread(target=zmq_thread)
     thread.daemon = True
     thread.start()
 
-    socketio.run(app, host=HTTP_ADDRESS, port=HTTP_PORT, debug=True)
+    socketio.run(app, host=HTTP_ADDRESS, port=HTTP_PORT, debug=True, use_reloader=False)
