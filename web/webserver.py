@@ -48,7 +48,6 @@ def background_thread():
         plane = pmt.to_python(pmt.car(pdu))
 
         socketio.emit("updatePlane", plane)
-        time.sleep(0.010)
 
 
 @app.route("/")
