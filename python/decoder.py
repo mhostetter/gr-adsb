@@ -265,11 +265,19 @@ class decoder(gr.sync_block):
     docstring for block decoder
     """
     def __init__(self, msg_filter, error_corr, print_level):
+        # CRC polynomial (0xFFFA048) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 + x^11 + x^12 + x^14 + x^21 + x^24
+        self.crc_poly = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1])
+        self.crc_fix_lookup = dict([])
+        for burst in range(1, 3):
+            self.compute_crc_syndromes_for_contiguous_bursts(56, burst)
+            self.compute_crc_syndromes_for_contiguous_bursts(112, burst)
+
         gr.sync_block.__init__(self, name="ADS-B Decoder", in_sig=None, out_sig=None)
 
         self.msg_filter = msg_filter
         self.error_corr = error_corr
         self.print_level = print_level
+
 
         # Initialize plane dictionary
         self.plane_dict = dict([])
@@ -293,6 +301,27 @@ class decoder(gr.sync_block):
         self.message_port_register_out(pmt.to_pmt("unknown"))
         self.set_msg_handler(pmt.to_pmt("demodulated"), self.decode_packet)
 
+    def compute_crc_syndromes_for_contiguous_bursts(self,payload_length, burst_length):
+        if payload_length in self.crc_fix_lookup:
+            lut = self.crc_fix_lookup[payload_length]
+        else:
+            lut = dict([])
+        for i in range(0,payload_length-burst_length+1):
+            zarray = np.zeros(payload_length, dtype=int)
+
+            for j in range(0,burst_length):
+                zarray[i+j]=1
+
+            crc_residual = self.compute_crc_2(zarray, self.crc_poly)
+
+            crc_residual_dec = self.bin2dec(crc_residual)
+
+            if  crc_residual_dec in lut:
+                print(lut[crc_residual_dec])
+                raise "FEC syndrome collision"
+            lut[self.bin2dec(crc_residual)] = [j+i for j in  range(0,burst_length)]
+        self.crc_fix_lookup[payload_length] = lut
+
     def decode_packet(self, pdu):
         # Reset decoder values before decoding next burst
         self.reset()
@@ -314,6 +343,7 @@ class decoder(gr.sync_block):
             parity_passed = self.correct_errors()
 
         if parity_passed == 1:
+            self.decode_header() # do this again to reparse the header should it have fixes
             # If parity check passes, then decode the message contents
             self.decode_message()
 
@@ -540,8 +570,7 @@ class decoder(gr.sync_block):
         References:
             http://jetvision.de/sbs/adsb/crc.htm
         """
-        # CRC polynomial (0xFFFA048) = 1 + x + x^2 + x^3 + x^4 + x^5 + x^6 + x^7 + x^8 + x^9 + x^10 + x^11 + x^12 + x^14 + x^21 + x^24
-        crc_poly = np.array([1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1])
+
 
         if self.msg_filter == "All Messages":
             if self.df in [0,4,5]:
@@ -551,7 +580,7 @@ class decoder(gr.sync_block):
                 # Address/Parity, 24 bits
                 ap_bits = self.bits[32:32+24]
 
-                crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], crc_poly)
+                crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)
                 crc = self.bin2dec(crc_bits)
 
                 # XOR the computed CRC with the AP, the result should be the
@@ -582,7 +611,7 @@ class decoder(gr.sync_block):
                 pi_bits = self.bits[32:32+24]
                 pi = self.bin2dec(pi_bits)
 
-                crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], crc_poly)
+                crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)
                 crc = self.bin2dec(crc_bits)
 
                 # result_bits = pi_bits ^ crc_bits
@@ -593,6 +622,7 @@ class decoder(gr.sync_block):
 
                 parity_passed = pi == crc
 
+
                 # 17 0s
                 # Code Label, 3 bits (3.1.2.5.2.1.3)
                 # Interrogator Code, 4 bits (3.1.2.5.2.1.2)
@@ -601,7 +631,7 @@ class decoder(gr.sync_block):
                     self.log("info", "CRC", "Passed")
                     return 1
                 else:
-                    self.log("info", "CRC", Fore.RED + "Failed", "PI-CRC = {}".format(pi-crc))
+                    self.log("info", "CRC", Fore.RED + "Failed", "PI-CRC = {}".format(pi^crc))
                     return 0
 
             elif self.df in [16,20,21,24]:
@@ -611,7 +641,7 @@ class decoder(gr.sync_block):
                 # Address/Parity, 24 bits
                 ap_bits = self.bits[88:88+24]
 
-                crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], crc_poly)
+                crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)
                 crc = self.bin2dec(crc_bits)
 
                 # XOR the computed CRC with the AP, the result should be the
@@ -642,7 +672,7 @@ class decoder(gr.sync_block):
                 # Parity/Interrogator ID, 24 bits
                 pi = self.bin2dec(self.bits[88:88+24])
 
-                crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], crc_poly)
+                crc_bits = self.compute_crc(self.bits[0:self.payload_length-24], self.crc_poly)
                 crc = self.bin2dec(crc_bits)
 
                 parity_passed = (pi == crc)
@@ -651,7 +681,7 @@ class decoder(gr.sync_block):
                     self.log("info", "CRC", "Passed")
                     return 1
                 else:
-                    self.log("info", "CRC", Fore.RED + "Failed", "PI-CRC = {}".format(pi-crc))
+                    self.log("info", "CRC", Fore.RED + "Failed", "PI-CRC = {}".format(pi^crc))
                     return 0
 
         # Unsupported downlink format
@@ -683,17 +713,67 @@ class decoder(gr.sync_block):
         crc = data[num_data_bits:num_data_bits+num_crc_bits]
 
         return crc
+    def compute_crc_2(self, data, poly):
+        """
+        References:
+            http://www.radarspotters.eu/forum/index.php?topic=5617.msg41293#msg41293
+            http://www.eurocontrol.int/eec/gallery/content/public/document/eec/report/1994/022_CRC_calculations_for_Mode_S.pdf
+        """
+        num_data_bits = len(data)-  len(poly)
+        num_crc_bits = len(poly)-1
 
+        # Multiply the data by x^(num_crc_bits), which is equivalent to a
+        # left shift operation which is equivalent to appending zeros
+        #data = np.append(data, np.zeros(num_crc_bits, dtype=int))
+        data = data.astype(int)
+        for ii in range(0,num_data_bits):
+            if data[ii] == 1:
+                # XOR the data with the CRC polynomial
+                # NOTE: The data polynomial and CRC polynomial are Galois Fields
+                # in GF(2)
+                data[ii:ii+num_crc_bits+1] ^= poly
+        crc = data[num_data_bits:num_data_bits+1+num_crc_bits]
+        return crc
+
+    def correct_burst_errors(self):
+        if self.payload_length < 1:
+            return 0
+        crc_bits = self.compute_crc_2(self.bits[0:self.payload_length], self.crc_poly)
+        crc_dec= self.bin2dec(crc_bits)
+        crc_res = self.bin2dec(self.bits[self.payload_length-24:self.payload_length])
+        crc_lookup = crc_dec
+        if self.payload_length in self.crc_fix_lookup:
+            if  crc_lookup in self.crc_fix_lookup[self.payload_length]:
+                bits_to_change =  self.crc_fix_lookup[self.payload_length][crc_lookup]
+                print(bits_to_change)
+                self.log("debug" , "FEC", "detected faulty bits",self.bits[0:self.payload_length])
+                for bt in bits_to_change:
+                    self.bits[bt] = self.bits[bt] ^ 1
+
+                crc_bits = self.compute_crc_2(self.bits[0:self.payload_length], self.crc_poly)
+                crc_dec= self.bin2dec(crc_bits)
+                success = crc_dec == 0
+
+                self.log("debug", "FEC", "Conservative error correction:" + str(success))
+                return success
+            else:
+                self.log("debug", "FEC", "Conservative error correction lookup failed to get syndrome")
+        else:
+            self.log("debug", "FEC", "Conservative error correction lookup failed to get syndromes for length "  + str(self.payload_length))
+    
+        return 0
 
     def correct_errors(self):
         if self.error_corr == "None":
             return 0
 
         if self.error_corr == "Conservative":
-            self.log("critical", "FEC", "Conservative error correction to be implemented")
-            return 0
+            return self.correct_burst_errors()
 
         elif self.error_corr == "Brute Force":
+#            for l in [56, 112]:
+#                self.payload_length = l
+#                self.correct_burst_errors()
             self.log("critical", "FEC", "Brute Force error correction to be implemented")
             return 0
 
