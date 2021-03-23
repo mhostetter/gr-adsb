@@ -745,8 +745,7 @@ class decoder(gr.sync_block):
         if self.payload_length in self.crc_fix_lookup:
             if  crc_lookup in self.crc_fix_lookup[self.payload_length]:
                 bits_to_change =  self.crc_fix_lookup[self.payload_length][crc_lookup]
-                print(bits_to_change)
-                self.log("debug" , "FEC", "detected faulty bits",self.bits[0:self.payload_length])
+                self.log("debug" , "FEC", "detected faulty bits",bits_to_change)
                 for bt in bits_to_change:
                     self.bits[bt] = self.bits[bt] ^ 1
 
