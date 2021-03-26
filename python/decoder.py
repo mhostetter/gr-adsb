@@ -631,7 +631,7 @@ class decoder(gr.sync_block):
                     self.log("info", "CRC", "Passed")
                     return 1
                 else:
-                    self.log("info", "CRC", Fore.RED + "Failed", "PI-CRC = {}".format(pi^crc))
+                    self.log("info", "CRC", Fore.RED + "Failed", "PI^CRC = {}".format(pi^crc))
                     return 0
 
             elif self.df in [16,20,21,24]:
