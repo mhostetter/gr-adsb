@@ -3,7 +3,7 @@
 
 A GNU Radio out-of-tree (OOT) module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
 
-Note, the `master` branch of this repository is currently maintained for GNU Radio 3.8. The final GNU Radio 3.7 version is tagged as `gnuradio-3.7`.
+Note, the `master` branch of this repository is currently maintained for GNU Radio 3.8. The GNU Radio 3.7 support is on the `maint-3.7` branch.
 
 ### Clone for GNU Radio 3.8
 
@@ -14,8 +14,7 @@ $ git clone https://github.com/mhostetter/gr-adsb
 ### Clone for GNU Radio 3.7
 
 ```bash
-$ git clone https://github.com/mhostetter/gr-adsb
-$ git checkout tags/gnuradio-3.7
+$ git clone -b maint-3.7 https://github.com/mhostetter/gr-adsb
 ```
 
 ## Features
@@ -148,7 +147,7 @@ To record bursts, enable the SQLite Sink in the `adsb_rx.grc` flowgraph. To repl
 
 ## Installation
 
-GNU Radio is a dependency for `gr-adsb`. I recommend installing it with [PyBOMBS](https://github.com/gnuradio/pybombs). `gr-adsb` is currently compatible with GNU Radio 3.7 only. *GNU Radio 3.8 support is in development*.
+GNU Radio is a dependency for `gr-adsb`. I recommend installing it with [PyBOMBS](https://github.com/gnuradio/pybombs).
 
 ### Source Build
 
