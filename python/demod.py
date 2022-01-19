@@ -64,7 +64,7 @@ class demod(gr.sync_block):
             self.straddled_packet = 0
 
         # Get tags from ADS-B Framer block
-        tags = self.get_tags_in_window(0, 0, len(in0), pmt.to_pmt("burst"))
+        tags = self.get_tags_in_range(0, self.nitems_read(0), self.nitems_read(0) + len(in0), pmt.to_pmt("burst"))
 
         for tag in tags:
             # Grab metadata for this tag
