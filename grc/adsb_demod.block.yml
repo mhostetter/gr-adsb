@@ -3,7 +3,7 @@ label: ADS-B Demod
 category: '[ADS-B]'
 
 templates:
-  imports: import adsb
+  imports: import gnuradio.adsb as adsb
   make: adsb.demod(${fs})
 
 parameters:
