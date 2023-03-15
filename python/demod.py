@@ -98,7 +98,8 @@ class demod(gr.sync_block):
                 # bit being a 0 or 1.  Confidence of 0 is equally likely 0 or 1.
                 # Positive confidence levels are more likely 1 and negative values
                 # are more likely 0.
-                self.bit_confidence = 10.0*np.log10(bit1_amps/bit0_amps)
+                with np.errstate(divide='ignore'):
+                    self.bit_confidence = 10.0*(np.log10(bit1_amps)-np.log10(bit0_amps))
 
                 # Send PDU message to decoder
                 meta = pmt.to_pmt({
