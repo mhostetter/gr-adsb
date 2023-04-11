@@ -38,7 +38,7 @@ ZMQ_PORT = 5001
 
 app = Flask(__name__, static_url_path="")
 app.config["SECRET_KEY"] = "secret!"
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins=f"http://{HTTP_ADDRESS}:{HTTP_PORT}")
 
 
 def zmq_thread():
