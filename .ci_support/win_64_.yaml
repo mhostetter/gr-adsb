@@ -1,0 +1,14 @@
+c_compiler:
+- vs2019
+channel_sources:
+- conda-forge
+channel_targets:
+- gnuradio main
+cxx_compiler:
+- vs2019
+gnuradio_core:
+- 3.10.8
+gnuradio_extra_pin:
+- ''
+numpy:
+- '1.23'
