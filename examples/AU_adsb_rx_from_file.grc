@@ -135,7 +135,7 @@ blocks:
     length: '0'
     maxoutbuf: '0'
     minoutbuf: '0'
-    offset: 200*samp_rate
+    offset: '0'
     repeat: 'True'
     type: complex
     vlen: '1'
