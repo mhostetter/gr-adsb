@@ -31,20 +31,15 @@ GNU Radio is a dependency for `gr-adsb`. First, install GNU Radio and its compan
 **Debian/Ubuntu:**  
   
 ```bash  
-sudo apt-get update && sudo apt-get install gnuradio gnuradio-companion
+sudo apt-get update && sudo apt-get install gnuradio
 ```  
   
 **Fedora:**  
   
 ```bash  
-sudo dnf install gnuradio gnuradio-companion  
+sudo dnf install gnuradio 
 ```  
-  
-**Arch Linux:**  
-  
-```bash  
-sudo pacman -S gnuradio  
-```  
+
   
 After installing GNU Radio, build `gr-adsb` manually from source using the following procedure:  
   
@@ -53,7 +48,7 @@ git clone https://github.com/iMRUM/gr-adsb.git
 cd gr-adsb
 mkdir build
 cd build
-cmake ..  # or cmake -DCMAKE_INSTALL_PREFIX=<path_to_install> 
+cmake ..  
 make  
 sudo make install
 sudo ldconfig 
@@ -65,7 +60,7 @@ If using the built-in updated Google Maps webserver, you'll need to install the 
 NOTE: If using a Python virtual environment, create one and make it aware to the system-wide GNU Radio packages. Here's how to do it:  
   
 ```bash  
-python -m venv .venv --system-site-packages
+python3 -m venv .venv --system-site-packages
 source .venv/bin/activate
 pip3 install zmq
 pip3 install flask
