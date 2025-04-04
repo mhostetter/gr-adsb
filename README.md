@@ -1,4 +1,79 @@
 
+# Fork Notice  
+  
+This repository is a fork of [gr-adsb](https://github.com/mhostetter/gr-adsb).    
+The goal of this fork is to adapt the `adsb_rx.grc` example for use with RTL-SDR (RTL2832U) chips or file source and update dependencies for better compatibility.  
+  
+## Changes in this Fork  
+  
+**Updated GNU Radio Flowgraph**:    
+- Replaced UHD USRP Source with SoapySDR RTL-SDR source (Maintained 2M sample rate and 1.09G center frequency)
+- Added file source version for offline analysis  
+- Added waterfall and time sink displays for signal visualization  
+  
+**Modifications for RTL2832U Compatibility**:    
+- Added SoapySDR API for RTL-SDR hardware access  
+- Added configurable gain control with default 20dB setting
+  
+**Updated Webserver Dependencies**:  
+- Upgraded `socket.io` version to **4.8.1** in `index.html` for v4 support  
+- Added Python virtual environment instructions  
+  
+If you're using an RTL2832U-based SDR, follow the updated setup instructions below.  
+  
+  
+## Installation  
+  
+GNU Radio is a dependency for `gr-adsb`. First, install GNU Radio and its companion tool on your (Linux) system. 
+  
+**Debian/Ubuntu:**  
+  
+```bash  
+sudo apt-get update && sudo apt-get install gnuradio gnuradio-companion
+```  
+  
+**Fedora:**  
+  
+```bash  
+sudo dnf install gnuradio gnuradio-companion  
+```  
+  
+**Arch Linux:**  
+  
+```bash  
+sudo pacman -S gnuradio  
+```  
+  
+After installing GNU Radio, build `gr-adsb` manually from source using the following procedure:  
+  
+```bash  
+git clone https://github.com/iMRUM/gr-adsb.git 
+cd gr-adsb
+mkdir build
+cd build
+cmake ../  # or cmake -DCMAKE_INSTALL_PREFIX=<path_to_install> 
+make  
+sudo make install
+sudo ldconfig 
+  ```  
+  
+### Webserver Python Dependencies:  
+
+If using the built-in updated Google Maps webserver, you'll need to install the following Python packages.  
+NOTE: If using a Python virtual environment, create one and make it aware to the system-wide GNU Radio packages. Here's how to do it:  
+  
+```bash  
+python -m venv .venv --system-site-packages
+source .venv/bin/activate
+pip3 install zmq
+pip3 install flask
+pip3 install flask-socketio
+pip3 install gevent
+pip3 install gevent-websocket  
+```  
+**(end of fork notice)**  
+
+
 # gr-adsb
 
 A GNU Radio out-of-tree (OOT) module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
