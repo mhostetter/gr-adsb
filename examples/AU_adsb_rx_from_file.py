@@ -13,7 +13,6 @@ from PyQt5 import Qt
 from gnuradio import qtgui
 from gnuradio import blocks
 import pmt
-from gnuradio import blocks, gr
 from gnuradio import gr
 from gnuradio.filter import firdes
 from gnuradio.fft import window
@@ -71,7 +70,6 @@ class AU_adsb_rx_from_file(gr.top_block, Qt.QWidget):
         # Blocks
         ##################################################
 
-        self.zeromq_pull_msg_source_1 = zeromq.pull_msg_source('tcp://127.0.0.1:9034', 100, False)
         self.zeromq_pub_msg_sink_0 = zeromq.pub_msg_sink('tcp://127.0.0.1:9034', 100, True)
         self.qtgui_waterfall_sink_x_0 = qtgui.waterfall_sink_c(
             1024, #size
@@ -157,7 +155,6 @@ class AU_adsb_rx_from_file(gr.top_block, Qt.QWidget):
         self._qtgui_time_sink_x_1_win = sip.wrapinstance(self.qtgui_time_sink_x_1.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_time_sink_x_1_win)
         self.blocks_throttle2_0 = blocks.throttle( gr.sizeof_gr_complex*1, samp_rate, True, 0 if "auto" == "auto" else max( int(float(0.1) * samp_rate) if "auto" == "time" else int(0.1), 1) )
-        self.blocks_message_debug_0 = blocks.message_debug(True, gr.log_levels.info)
         self.blocks_file_source_0 = blocks.file_source(gr.sizeof_gr_complex*1, 'path/to/your/adsb/recording', True, (200*samp_rate), 0)
         self.blocks_file_source_0.set_begin_tag(pmt.PMT_NIL)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
@@ -171,7 +168,6 @@ class AU_adsb_rx_from_file(gr.top_block, Qt.QWidget):
         ##################################################
         self.msg_connect((self.adsb_decoder_0, 'decoded'), (self.zeromq_pub_msg_sink_0, 'in'))
         self.msg_connect((self.adsb_demod_0, 'demodulated'), (self.adsb_decoder_0, 'demodulated'))
-        self.msg_connect((self.zeromq_pull_msg_source_1, 'out'), (self.blocks_message_debug_0, 'print'))
         self.connect((self.adsb_demod_0, 0), (self.qtgui_time_sink_x_1, 0))
         self.connect((self.adsb_framer_0, 0), (self.adsb_demod_0, 0))
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.adsb_framer_0, 0))

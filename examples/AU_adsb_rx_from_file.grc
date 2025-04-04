@@ -146,21 +146,6 @@ blocks:
     coordinate: [16, 208.0]
     rotation: 0
     state: enabled
-- name: blocks_message_debug_0
-  id: blocks_message_debug
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    en_uvec: 'True'
-    log_level: info
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [448, 732.0]
-    rotation: 0
-    state: enabled
 - name: blocks_throttle2_0
   id: blocks_throttle2
   parameters:
@@ -356,24 +341,6 @@ blocks:
     coordinate: [1576, 52.0]
     rotation: 0
     state: enabled
-- name: zeromq_pull_msg_source_1
-  id: zeromq_pull_msg_source
-  parameters:
-    address: tcp://127.0.0.1:9034
-    affinity: ''
-    alias: ''
-    bind: 'False'
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    timeout: '100'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [32, 732.0]
-    rotation: 0
-    state: enabled
 
 connections:
 - [adsb_decoder_0, decoded, zeromq_pub_msg_sink_0, in]
@@ -384,7 +351,6 @@ connections:
 - [blocks_file_source_0, '0', blocks_throttle2_0, '0']
 - [blocks_throttle2_0, '0', blocks_complex_to_mag_squared_0, '0']
 - [blocks_throttle2_0, '0', qtgui_waterfall_sink_x_0, '0']
-- [zeromq_pull_msg_source_1, out, blocks_message_debug_0, print]
 
 metadata:
   file_format: 1
