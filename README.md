@@ -38,8 +38,12 @@ sudo apt-get update && sudo apt-get install gnuradio
   
 ```bash  
 sudo dnf install gnuradio 
-```  
+```
+**Other Linux Distros:**  
 
+```bash  
+sudo {apt,dnf,yay,emerge,…} install gnuradio
+```  
   
 After installing GNU Radio, build `gr-adsb` manually from source using the following procedure:  
   
