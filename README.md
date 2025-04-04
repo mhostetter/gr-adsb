@@ -1,8 +1,10 @@
 
 # Fork Notice  
-  
-This repository is a fork of [gr-adsb](https://github.com/mhostetter/gr-adsb).    
+
+This work was done as an assignment for [Prof. Boaz Ben-Moshe](https://www.ariel.ac.il/wp/bmboaz/)'s SDR course at Ariel University.  
+This repository is a fork of [gr-adsb](https://github.com/mhostetter/gr-adsb).  
 The goal of this fork is to adapt the `adsb_rx.grc` example for use with RTL-SDR (RTL2832U) chips or file source and update dependencies for better compatibility.  
+
   
 ## Changes in this Fork  
   
@@ -51,7 +53,7 @@ git clone https://github.com/iMRUM/gr-adsb.git
 cd gr-adsb
 mkdir build
 cd build
-cmake ../  # or cmake -DCMAKE_INSTALL_PREFIX=<path_to_install> 
+cmake ..  # or cmake -DCMAKE_INSTALL_PREFIX=<path_to_install> 
 make  
 sudo make install
 sudo ldconfig 
