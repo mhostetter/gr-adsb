@@ -12,7 +12,6 @@
 from PyQt5 import Qt
 from gnuradio import qtgui
 from gnuradio import blocks
-from gnuradio import blocks, gr
 from gnuradio import gr
 from gnuradio.filter import firdes
 from gnuradio.fft import window
@@ -71,7 +70,6 @@ class AU_adsb_rx_from_SoapyRTLSDR(gr.top_block, Qt.QWidget):
         # Blocks
         ##################################################
 
-        self.zeromq_pull_msg_source_1 = zeromq.pull_msg_source('tcp://127.0.0.1:9034', 100, False)
         self.zeromq_pub_msg_sink_0 = zeromq.pub_msg_sink('tcp://127.0.0.1:9034', 100, True)
         self.soapy_rtlsdr_source_0 = None
         dev = 'driver=rtlsdr'
@@ -191,7 +189,6 @@ class AU_adsb_rx_from_SoapyRTLSDR(gr.top_block, Qt.QWidget):
 
         self._qtgui_time_sink_x_1_win = sip.wrapinstance(self.qtgui_time_sink_x_1.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_time_sink_x_1_win)
-        self.blocks_message_debug_0 = blocks.message_debug(True, gr.log_levels.info)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(1)
         self.adsb_framer_0 = adsb.framer(2e6, 0.01)
         self.adsb_demod_0 = adsb.demod(2e6)
@@ -203,7 +200,6 @@ class AU_adsb_rx_from_SoapyRTLSDR(gr.top_block, Qt.QWidget):
         ##################################################
         self.msg_connect((self.adsb_decoder_0, 'decoded'), (self.zeromq_pub_msg_sink_0, 'in'))
         self.msg_connect((self.adsb_demod_0, 'demodulated'), (self.adsb_decoder_0, 'demodulated'))
-        self.msg_connect((self.zeromq_pull_msg_source_1, 'out'), (self.blocks_message_debug_0, 'print'))
         self.connect((self.adsb_demod_0, 0), (self.qtgui_time_sink_x_1, 0))
         self.connect((self.adsb_framer_0, 0), (self.adsb_demod_0, 0))
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.adsb_framer_0, 0))

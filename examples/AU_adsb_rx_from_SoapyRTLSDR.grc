@@ -142,21 +142,6 @@ blocks:
     coordinate: [1096, 608.0]
     rotation: 0
     state: disabled
-- name: blocks_message_debug_0
-  id: blocks_message_debug
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    en_uvec: 'True'
-    log_level: info
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [520, 604.0]
-    rotation: 0
-    state: enabled
 - name: qtgui_time_sink_x_1
   id: qtgui_time_sink_x
   parameters:
@@ -355,24 +340,6 @@ blocks:
     coordinate: [1528, 52.0]
     rotation: 0
     state: enabled
-- name: zeromq_pull_msg_source_1
-  id: zeromq_pull_msg_source
-  parameters:
-    address: tcp://127.0.0.1:9034
-    affinity: ''
-    alias: ''
-    bind: 'False'
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    timeout: '100'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [56, 604.0]
-    rotation: 0
-    state: enabled
 
 connections:
 - [adsb_decoder_0, decoded, zeromq_pub_msg_sink_0, in]
@@ -383,7 +350,6 @@ connections:
 - [soapy_rtlsdr_source_0, '0', blocks_complex_to_mag_squared_0, '0']
 - [soapy_rtlsdr_source_0, '0', blocks_file_sink_0, '0']
 - [soapy_rtlsdr_source_0, '0', qtgui_waterfall_sink_x_0, '0']
-- [zeromq_pull_msg_source_1, out, blocks_message_debug_0, print]
 
 metadata:
   file_format: 1
