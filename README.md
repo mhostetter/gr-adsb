@@ -60,17 +60,20 @@ sudo ldconfig
   
 ### Webserver Python Dependencies:  
 
-If using the built-in updated Google Maps webserver, you'll need to install the following Python packages.  
 NOTE: If using a Python virtual environment, create one and make it aware to the system-wide GNU Radio packages. Here's how to do it:  
   
 ```bash  
 python3 -m venv .venv --system-site-packages
-source .venv/bin/activate
-pip3 install zmq
-pip3 install flask
-pip3 install flask-socketio
-pip3 install gevent
-pip3 install gevent-websocket  
+source .venv/bin/activate  
+```   
+If using the built-in updated Google Maps webserver, you'll need to install the following Python packages:
+  
+```bash  
+pip3 install zmq  
+pip3 install flask  
+pip3 install flask-socketio  
+pip3 install gevent  
+pip3 install gevent-websocket    
 ```  
 **(end of fork notice)**  
 
