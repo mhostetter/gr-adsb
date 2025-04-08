@@ -8,16 +8,22 @@ The goal of this fork is to adapt the `adsb_rx.grc` example for use with RTL-SDR
   
 ## Changes in this Fork  
   
-**Updated GNU Radio Flowgraph**:    
-- Replaced UHD USRP Source with SoapySDR RTL-SDR source (Maintained 2M sample rate and 1.09G center frequency)
-- Added file source version for offline analysis  
-- Added waterfall and time sink displays for signal visualization  
+### GNU Radio Flowgraph Updates:    
+#### AU_adsb_rx_from_SoapyRTLSDR.grc:
+
+- Replaced the **UHD USRP Source** with a **SoapySDR-based RTL-SDR source**  
+  *(Maintained a 2 MS/s sample rate and 1.09 GHz center frequency)*
+- Enabled support for **RTL2832U** devices using the **SoapySDR API**
+- Added **configurable gain control** *(default: 20 dB)*
+- Introduced **waterfall** and **time sink** visualizations for improved real-time signal monitoring
+
+#### AU_adsb_rx_from_file.grc:
+
+- Replaced **live source** with a **file source** to allow offline signal analysis
+- Retained signal visualization using **waterfall** and **time sinks**
   
-**Modifications for RTL2832U Compatibility**:    
-- Added SoapySDR API for RTL-SDR hardware access  
-- Added configurable gain control with default 20dB setting
   
-**Updated Webserver Dependencies**:  
+### Webserver Updates:  
 - Upgraded `socket.io` version to **4.8.1** in `index.html` for v4 support  
 - Added Python virtual environment instructions  
   
