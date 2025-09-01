@@ -80,8 +80,7 @@ class framer(gr.sync_block):
         # the threshold value. 1 = above threshold, 0 = below threshold
         # NOTE: Add the last sample from the previous work() call to the
         # beginning of this block of samples
-        in0_pulses = np.zeros(N+1, dtype=int)
-        in0_pulses[np.insert(in0[0:N], 0, self.prev_in0) >= self.threshold] = 1
+        in0_pulses = (np.insert(in0[0:N], 0, self.prev_in0) >= self.threshold).view(np.int8)
 
         # Set prev_in0 for the next work() call
         self.prev_in0 = in0[N-1]
@@ -89,10 +88,10 @@ class framer(gr.sync_block):
         # Subtract the previous pulse from the current pulse to get transitions
         # +1 = rising edge, -1 = falling edge
         in0_transitions = in0_pulses[1:] - in0_pulses[:-1]
-        in0_rise_edge_idxs = np.nonzero(in0_transitions == 1)[0]
-        in0_fall_edge_idxs = np.nonzero(in0_transitions == -1)[0]
+        in0_rise_edge_idxs = np.flatnonzero(in0_transitions == 1)
+        in0_fall_edge_idxs = np.flatnonzero(in0_transitions == -1)
 
-        if len(in0_rise_edge_idxs) > 0 and len(in0_fall_edge_idxs) > 0:
+        if len(in0_rise_edge_idxs) and len(in0_fall_edge_idxs):
             # Make sure the first sample for the rising and falling edge indices corresponds
             # to the same pulse
             if in0_fall_edge_idxs[0] - in0_rise_edge_idxs[0] < 0:
@@ -137,14 +136,10 @@ class framer(gr.sync_block):
                     amps = in0[pulse_idx:pulse_idx + NUM_PREAMBLE_BITS*self.sps:self.sps // 2]
 
                     # Set a pulse to 1 if it's greater than 1/2 the amplitude of the detected pulse
-                    pulses = np.zeros(NUM_PREAMBLE_PULSES, dtype=int)
-                    pulses[amps > in0[pulse_idx]/2] = 1
-
-                    # Count how many "pulses" or half symbols match the preamble "pulses"
-                    corr_matches = np.sum(pulses == self.preamble_pulses)
+                    pulses = amps > in0[pulse_idx]/2
 
                     # Only assert preamble found if all the 1/2 symbols match
-                    if corr_matches == NUM_PREAMBLE_PULSES:
+                    if np.array_equal(pulses, self.preamble_pulses):
                         # Found a preamble correlation
 
                         # Calculate burst SNR
@@ -169,7 +164,7 @@ class framer(gr.sync_block):
                             0,
                             (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
                             pmt.to_pmt("burst"),
-                            pmt.to_pmt(("SOB", snr)),
+                            pmt.to_pmt(("SOB", float(snr))),
                             pmt.to_pmt("framer")
                         )
 
