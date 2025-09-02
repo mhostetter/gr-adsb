@@ -47,7 +47,7 @@ class framer(gr.sync_block):
 
         # Initialize the preamble "pulses" template
         # This is 2*fsym or 2 Msps, i.e. there are 2 pulses per symbol
-        self.preamble_pulses = [1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0]
+        self.preamble_pulses = np.array([1,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0], dtype=np.bool)
 
         # Last sample from previous work() call.  Needed for finding pulses at
         # the beginning of the current work() call.
