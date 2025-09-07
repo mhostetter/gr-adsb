@@ -51,10 +51,10 @@ class framer(gr.sync_block):
 
         # Last sample from previous work() call.  Needed for finding pulses at
         # the beginning of the current work() call.
-        self.prev_in0 = 0
+        self.prev_in0:float = 0
 
         # End of the last burst (56 bit message).  Don"t look for preambles during a valid packet
-        self.prev_eob_idx = -1
+        self.prev_eob_idx:int = -1
 
         # Set history so we can check for a preambles that wrapped around the
         # end of the previous work() call's input_items[0]
@@ -85,31 +85,18 @@ class framer(gr.sync_block):
         # Set prev_in0 for the next work() call
         self.prev_in0 = in0[N-1]
 
-        # Subtract the previous pulse from the current pulse to get transitions
-        # +1 = rising edge, -1 = falling edge
-        in0_transitions = in0_pulses[1:] - in0_pulses[:-1]
-        in0_rise_edge_idxs = np.flatnonzero(in0_transitions == 1)
-        in0_fall_edge_idxs = np.flatnonzero(in0_transitions == -1)
-
-        if len(in0_rise_edge_idxs) and len(in0_fall_edge_idxs):
-            # Make sure the first sample for the rising and falling edge indices corresponds
-            # to the same pulse
-            if in0_fall_edge_idxs[0] - in0_rise_edge_idxs[0] < 0:
-                # The first falling edge comes before the first rising edge, so remove it
-                in0_fall_edge_idxs = np.delete(in0_fall_edge_idxs, 0)
-
-            if len(in0_rise_edge_idxs) > len(in0_fall_edge_idxs):
-                # If there are more rising edges than falling edges, then
-                # remove the extras
-                # NOTE: There technically can only possibly be 1 extra rising edge, if
-                # there are more, something went terribly wrong
-                if len(in0_rise_edge_idxs) - len(in0_fall_edge_idxs) == 1:
-                    in0_rise_edge_idxs = np.delete(in0_rise_edge_idxs, len(in0_rise_edge_idxs) - 1)
-                else:
-                    print("Oh no, this shouldn't be happening...")
+        # transitions will always come in pairs (minus edge cases dealt with later) so just go through the array once
+        # this is for whatever reason the fastest combination of these two lines of code. Combining them into one slows things down.
+        in0_transitions = in0_pulses[1:] ^ in0_pulses[:-1]
+        trans_indxs = np.where(in0_transitions == 1)[0]
+        if len(trans_indxs) > 2:
+            start_idx = in0_pulses[trans_indxs[0]] # if the first pulse is a 1, that means it was a falling edge first, so move us to the next transition
+            # either rise,fall is 0,1 or 1,2
+            in0_fall_edge_idxs = trans_indxs[start_idx + 1::2]
+            in0_rise_edge_idxs = trans_indxs[start_idx:len(in0_fall_edge_idxs)*2:2]
 
             # Find the index of the center of each pulses
-            pulse_idxs = np.mean((in0_fall_edge_idxs, in0_rise_edge_idxs), axis=0, dtype=int)
+            pulse_idxs = np.mean((in0_fall_edge_idxs, in0_rise_edge_idxs), axis=0, dtype=in0_fall_edge_idxs.dtype)
 
             # For each pulse found, check if that pulse is the beginning of the ADS-B
             # preamble.
