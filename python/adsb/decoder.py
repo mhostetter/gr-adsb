@@ -440,13 +440,13 @@ class decoder(gr.sync_block):
 
 
     def reset_plane_altimetry(self, plane):
-        plane["altitude"] = np.NaN
-        plane["speed"] = np.NaN
-        plane["heading"] = np.NaN
-        plane["vertical_rate"] = np.NaN
-        plane["latitude"] = np.NaN
-        plane["longitude"] = np.NaN
-        plane["cpr"] = [(np.NaN, np.NaN, np.NaN), (np.NaN, np.NaN, np.NaN)]
+        plane["altitude"] = np.nan
+        plane["speed"] = np.nan
+        plane["heading"] = np.nan
+        plane["vertical_rate"] = np.nan
+        plane["latitude"] = np.nan
+        plane["longitude"] = np.nan
+        plane["cpr"] = [(np.nan, np.nan, np.nan), (np.nan, np.nan, np.nan)]
 
 
     def print_planes(self):
@@ -1309,8 +1309,8 @@ class decoder(gr.sync_block):
     def calculate_lat_lon(self, cpr):
         # If the even and odd frame data is still valid, calculate the
         # latitude and longitude
-        lat_dec = np.NaN
-        lon_dec = np.NaN
+        lat_dec = np.nan
+        lon_dec = np.nan
 
         if (int(time.time()) - cpr[0][2]) < CPR_TIMEOUT_S and (int(time.time()) - cpr[1][2]) < CPR_TIMEOUT_S:
             # Get fractional lat/lon for the even and odd frame
