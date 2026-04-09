@@ -169,7 +169,7 @@ class framer(gr.sync_block):
                             0,
                             (self.nitems_written(0) - (self.N_hist-1)) + pulse_idx,
                             pmt.to_pmt("burst"),
-                            pmt.to_pmt(("SOB", snr)),
+                            pmt.to_pmt(("SOB", float(snr))),
                             pmt.to_pmt("framer")
                         )
 
