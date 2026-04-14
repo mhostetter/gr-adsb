@@ -1,4 +1,89 @@
 
+# Fork Notice  
+
+This work was done as an assignment for [Prof. Boaz Ben-Moshe](https://www.ariel.ac.il/wp/bmboaz/)'s SDR course at Ariel University.  
+This repository is a fork of [gr-adsb](https://github.com/mhostetter/gr-adsb).  
+The goal of this fork is to adapt the `adsb_rx.grc` example for use with RTL-SDR (RTL2832U) chips or file source and update dependencies for better compatibility.  
+
+  
+## Changes in this Fork  
+  
+### GNU Radio Flowgraph Updates:    
+#### AU_adsb_rx_from_SoapyRTLSDR.grc:
+
+- Replaced the **UHD USRP Source** with a **SoapySDR-based RTL-SDR source**  
+  *(Maintained a 2 MS/s sample rate and 1.09 GHz center frequency)*
+- Enabled support for **RTL2832U** devices using the **SoapySDR API**
+- Added **configurable gain control** *(default: 20 dB)*
+- Introduced **waterfall** and **time sink** visualizations for improved real-time signal monitoring
+
+#### AU_adsb_rx_from_file.grc:
+
+- Replaced **live source** with a **file source** to allow offline signal analysis
+- Retained signal visualization using **waterfall** and **time sinks**
+  
+  
+### Webserver Updates:  
+- Upgraded `socket.io` version to **4.8.1** in `index.html` for v4 support  
+- Added Python virtual environment instructions  
+  
+If you're using an RTL2832U-based SDR, follow the updated setup instructions below.  
+  
+  
+## Installation  
+  
+GNU Radio is a dependency for `gr-adsb`. First, install GNU Radio and its companion tool on your (Linux) system. 
+  
+**Debian/Ubuntu:**  
+  
+```bash  
+sudo apt-get update && sudo apt-get install gnuradio
+```  
+  
+**Fedora:**  
+  
+```bash  
+sudo dnf install gnuradio 
+```
+**Other Linux Distros:**  
+
+```bash  
+sudo {apt,dnf,yay,emerge,…} install gnuradio
+```  
+  
+After installing GNU Radio, build `gr-adsb` manually from source using the following procedure:  
+  
+```bash  
+git clone https://github.com/iMRUM/gr-adsb.git 
+cd gr-adsb
+mkdir build
+cd build
+cmake ..  
+make  
+sudo make install
+sudo ldconfig 
+  ```  
+  
+### Webserver Python Dependencies:  
+
+NOTE: If using a Python virtual environment, create one and make it aware to the system-wide GNU Radio packages. Here's how to do it:  
+  
+```bash  
+python3 -m venv .venv --system-site-packages
+source .venv/bin/activate  
+```   
+If using the built-in updated Google Maps webserver, you'll need to install the following Python packages:
+  
+```bash  
+pip3 install zmq  
+pip3 install flask  
+pip3 install flask-socketio  
+pip3 install gevent  
+pip3 install gevent-websocket    
+```  
+**(end of fork notice)**  
+
+
 # gr-adsb
 
 A GNU Radio out-of-tree (OOT) module to demodulate and decode Automatic Dependent Surveillance Broadcast (ADS-B) messages.
