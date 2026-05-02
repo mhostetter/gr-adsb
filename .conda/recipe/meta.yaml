@@ -1,0 +1,90 @@
+{% set oot_name = "adsb" %}
+{% set name = "gnuradio-" + oot_name %}
+# Set package version from cleaned up git tags if possible,
+# otherwise fall back to date-based version.
+{% set tag_version = environ.get("GIT_DESCRIBE_TAG", "")|string|replace("-","_")|replace("v","")|replace("git","") %}
+{% set post_commit = environ.get("GIT_DESCRIBE_NUMBER", 0)|string %}
+{% set hash = environ.get("GIT_DESCRIBE_HASH", "local")|string %}
+{% set fallback_version = "0.0.0.{0}.dev+g{1}".format(datetime.datetime.now().strftime("%Y%m%d"), environ.get("GIT_FULL_HASH", "local")[:9]) %}
+{% set version = (tag_version if post_commit == "0" else "{0}.post{1}+{2}".format(tag_version, post_commit, hash)) if tag_version else fallback_version %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  # use local path or git repository depending on if the build is local or done on CI
+  path: "../.."  # [not os.environ.get("CI")]
+  git_url: {{ environ.get('FEEDSTOCK_ROOT', "../..") }}  # [os.environ.get("CI")]
+
+build:
+  number: 0
+  noarch: python
+  string: "unix_pyh{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"  # [unix]
+  string: "win_pyh{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"  # [win]
+  ignore_run_exports_from:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+
+requirements:
+  build:
+    - {{ compiler("c") }}
+    - {{ compiler("cxx") }}
+    - cmake
+    - git
+    - ninja
+    - pkg-config
+
+  host:
+    - asciimatics
+    - colorama
+    # the following two entries are for generating builds against specific GR versions
+    - gnuradio-core  # [not gnuradio_extra_pin]
+    - gnuradio-core {{ gnuradio_extra_pin }}.*  # [gnuradio_extra_pin]
+    - libboost-headers
+    - numpy
+    - pip  # [win]
+    - python >=3.8
+
+  run:
+    - __unix  # [unix]
+    - __win  # [win]
+    - asciimatics
+    - colorama
+    - flask
+    - flask-socketio >=5,<6
+    - gevent
+    - gevent-websocket
+    # Need gnuradio as a run dep because noarch doesn't do run_exports.
+    # This pin can be more relaxed than the gnuradio run_exports because the
+    # API is stable at the 'x.x' level and we don't need to worry about ABI.
+    - {{ pin_compatible('gnuradio-core', min_pin='x.x', max_pin='x.x') }}
+    - numpy
+    - python >=3.8
+    - pyzmq
+
+test:
+  commands:
+    # verify that (some) GRC blocks get installed
+    {% set blocks = ["framer", "demod", "decoder"] %}
+    {% for block in blocks %}
+    - test -f $PREFIX/share/gnuradio/grc/blocks/{{ oot_name }}_{{ block }}.block.yml  # [not win]
+    - if not exist %PREFIX%\\Library\\share\\gnuradio\\grc\\blocks\\{{ oot_name }}_{{ block }}.block.yml exit 1  # [win]
+    {% endfor %}
+
+  imports:
+    # verify that the python module imports
+    - gnuradio.{{ oot_name }}
+    - gnuradio.{{ oot_name }}.webserver
+
+about:
+  home: https://github.com/mhostetter/gr-adsb
+  license: GPL-3.0-or-later
+  license_file: COPYING
+  summary: GNU Radio module to demodulate and decode ADS-B messages
+  description: >
+    A GNU Radio out-of-tree (OOT) module to demodulate and decode Automatic
+    Dependent Surveillance Broadcast (ADS-B) messages.
+
+    To use the built-in web app, run `python -m gnuradio.adsb.webserver` and
+    open a browser to http://127.0.0.1:5000.

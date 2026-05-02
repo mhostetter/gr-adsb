@@ -19,8 +19,8 @@
 # Boston, MA 02110-1301, USA.
 #
 
+import asciimatics.screen
 import atexit
-import curses
 import datetime
 import logging
 import os
@@ -288,11 +288,9 @@ class decoder(gr.sync_block):
         if self.print_level == "Brief":
             logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.CRITICAL)
 
-            atexit.register(curses.endwin)
-            self.screen = curses.initscr()
-            self.screen.addstr(0, 0, "{:^8s} {:^6s} {:^8s} {:^5s} {:^5s} {:^5s} {:^5s} {:^11s} {:^11s} {:^4s}".format("Time", "ICAO", "Callsign", "Alt", "Climb", "Speed", "Hdng", "Latitude", "Longitude", "Msgs"), curses.A_BOLD)
-            self.screen.addstr(1, 0, "{:^8s} {:>6s} {:>8s} {:>5s} {:>5s} {:>5s} {:>5s} {:>11s} {:>11s} {:>4s}".format("", "", "", "ft", "ft/m", "kt", "deg", "deg", "deg", ""), curses.A_DIM)
-            self.screen.refresh()
+            self.screen = asciimatics.screen.Screen.open()
+            atexit.register(self.screen.close)
+            self.screen.clear()
         else:
             logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.DEBUG)
 
@@ -450,8 +448,21 @@ class decoder(gr.sync_block):
 
 
     def print_planes(self):
+        self.screen.reset()
+        self.screen.clear_buffer(
+            self.screen.COLOUR_WHITE,
+            self.screen.A_NORMAL,
+            self.screen.COLOUR_BLACK,
+            0,
+            0,
+            self.screen.dimensions[1],
+            self.screen.dimensions[0],
+        )
+        self.screen.print_at("{:^8s} {:^6s} {:^8s} {:^5s} {:^5s} {:^5s} {:^5s} {:^11s} {:^11s} {:^4s}".format("Time", "ICAO", "Callsign", "Alt", "Climb", "Speed", "Hdng", "Latitude", "Longitude", "Msgs"), 0, 0, colour=self.screen.COLOUR_BLUE, attr=self.screen.A_BOLD)
+        self.screen.print_at("{:^8s} {:>6s} {:>8s} {:>5s} {:>5s} {:>5s} {:>5s} {:>11s} {:>11s} {:>4s}".format("", "", "", "ft", "ft/m", "kt", "deg", "deg", "deg", ""), 0, 1, colour=self.screen.COLOUR_CYAN, attr=self.screen.A_NORMAL)
+
         index = 0
-        for icao in self.plane_dict:
+        for index, icao in enumerate(self.plane_dict):
             last_seen = datetime.datetime.utcfromtimestamp(self.timestamp).strftime("%H:%M:%S")
 
             if self.plane_dict[icao]["callsign"] is not None:
@@ -492,7 +503,7 @@ class decoder(gr.sync_block):
             num_msgs = "{:4d}".format(self.plane_dict[icao]["num_msgs"])
             age = "{:3.0f}".format(int(time.time()) - self.plane_dict[icao]["last_seen"])
 
-            self.screen.addstr(2 + index, 0, "{:8s} {:6s} {} {} {} {} {} {} {} {}".format(
+            self.screen.print_at("{:8s} {:6s} {} {} {} {} {} {} {} {}".format(
                 last_seen,
                 icao,
                 callsign,
@@ -503,11 +514,10 @@ class decoder(gr.sync_block):
                 latitude,
                 longitude,
                 num_msgs
-            ))
-            self.screen.refresh()
+            ), 0, 2 + index, attr=self.screen.A_NORMAL)
 
-            index += 1
-
+        self.screen.move(0, 3 + index)
+        self.screen.refresh()
 
     def publish_decoded_pdu(self, aa_str):
         decoded = self.plane_dict[aa_str].copy()
@@ -759,7 +769,7 @@ class decoder(gr.sync_block):
                 self.log("debug", "FEC", "Conservative error correction lookup failed to get syndrome")
         else:
             self.log("debug", "FEC", "Conservative error correction lookup failed to get syndromes for length "  + str(self.payload_length))
-    
+
         return 0
 
     def correct_errors(self):
